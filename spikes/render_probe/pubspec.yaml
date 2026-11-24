@@ -1,0 +1,11 @@
+name: render_probe
+description: Spike A (issue #5) — PDFium rendering cost probe. Throwaway prototype.
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  ffi: ^2.2.0
+  pdfium_ffi: ^0.0.1

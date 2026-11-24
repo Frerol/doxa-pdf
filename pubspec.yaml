@@ -12,6 +12,8 @@ workspace:
   - packages/doxa_engine
   - packages/pdfium_ffi
   - packages/doxa_platform
+  - spikes/render_probe # spike branch only
+  - spikes/render_lab # spike branch only
 
 dev_dependencies:
   lints: ^6.0.0
