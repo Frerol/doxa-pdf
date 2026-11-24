@@ -52,20 +52,22 @@ Doxa PDF is an **original implementation**:
 - Annotation review panel (filter by color/type/author/page), bookmarks, export of highlights and notes to Markdown.
 - Tabs, recents, favorites, "Open with" integration.
 
+**Promoted to the MVP:** OCR. Scanned study material is common, and OCR makes it searchable and highlightable.
+
 **Tier 3, document utilities (after v1.0 unless cheap):**
 - Page organization: rotate, delete, reorder, extract, merge, split.
 - AcroForm filling, handwritten signatures.
-- Images → PDF, camera scanning, OCR (OCR also makes scanned books highlightable, so it ranks high within this tier).
+- Images → PDF, camera scanning.
 
 ## 6. Scope
 
 ### In scope for v1.0
-Tiers 1 and 2 on Android, Windows and Linux, plus localization (at least English and Brazilian
+The MVP comes first: Android-only public betas v0.1–v0.4 ([11 — MVP](11-mvp.md)). It covers Tiers 1 and 2 plus **OCR**,
+because scanned study material is common. v1.0 then brings the same feature set to Linux and Windows, plus localization (at least English and Brazilian
 Portuguese), accessibility, and distribution through GitHub Releases, F-Droid, Google Play, Flathub and a
 Windows installer/winget.
 
 ### Planned after v1.0 (see [roadmap](08-roadmap.md))
-- OCR (Tesseract), so scanned material can be searched and highlighted.
 - Page organization, form filling, signatures, images → PDF, camera scanning.
 - Sync of annotations between devices through user-owned storage (folder sync, WebDAV/Nextcloud).
 - Study extras: read-aloud (TTS), focus/reading-ruler mode, flashcards generated from highlights.

@@ -4,7 +4,7 @@
 
 1. **The page is the interface.** Chrome is minimal while reading and toolbars auto-hide. Tools appear where the hand already is.
 2. **One gesture to mark up.** The highlighter, pen and eraser are always one tap away when a document is open.
-3. **Predictable input.** Stylus writes, finger navigates (when stylus-only is on), and mouse/keyboard follow desktop conventions.
+3. **Predictable input.** The stylus always writes with the current pen. Fingers read (scroll, zoom, tap), and finger tools are picked from the toolbar. Mouse/keyboard follow desktop conventions.
 4. **Original look.** Material 3 with Doxa's own identity. No visual copying of other apps ([Vision §3](01-vision-and-scope.md#3-product-inspiration-and-originality)).
 
 ## 2. Screen map
@@ -26,8 +26,8 @@ flowchart LR
 | Size class | Layout |
 |---|---|
 | **Compact** (phones) | Top app bar (auto-hide) + bottom **annotation toolbar** in annotate mode. Panels open as full-screen sheets. |
-| **Medium** (small tablets, split screen) | Floating, draggable **tool palette**. Panels open as modal side sheets. |
-| **Expanded** (large tablets, desktop) | Tabs row, left **navigation rail** for panels (outline/thumbnails/review/bookmarks) as a resizable side pane, floating or docked tool palette. |
+| **Medium** (small tablets, split screen) | Tabs row + annotation toolbar **fixed at the top**. Panels open as modal side sheets. |
+| **Expanded** (large tablets, desktop) | Tabs row, annotation toolbar **fixed at the top**, left **navigation rail** for panels (outline/thumbnails/review/bookmarks) as a resizable side pane. |
 
 ### Annotation toolbar (all sizes)
 `[Highlighter ▾] [Underline/Strike ▾] [Pen 1] [Pen 2] [Highlighter pen] [Eraser ▾] [Lasso] [Note] [Shapes ▾] | [Undo] [Redo] | [Stylus-only ✎]`
@@ -64,7 +64,10 @@ Default desktop shortcuts: `H` highlight, `U` underline, `P` pen, `E` eraser, `L
 - Respects OS text scaling and reduced motion. High-contrast theme.
 - Annotation colors are never the only signal: the review panel also shows type icons and color labels.
 
-## 7. Open UX questions (for the MVP session)
-- Should annotate mode be explicit (enter/exit) or modeless (tools always live)?
-- Bottom vs. side toolbar on landscape phones.
-- Do tabs appear on tablets, or only on desktop?
+## 7. Decisions from the MVP session (2026-11-24)
+- **No explicit annotate mode for the stylus**: the S Pen always writes. Finger tools (markup, notes, shapes) are chosen in the toolbar, and otherwise the finger only reads.
+- **Toolbar fixed at the top** on tablets. Phones use the compact bottom toolbar.
+- **Tabs on tablets** as well as desktop.
+
+### Still open
+- Toolbar placement on landscape phones.

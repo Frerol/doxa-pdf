@@ -2,7 +2,8 @@
 
 Each requirement has a stable ID. Reference IDs in issues, PRs and tests (for example `Implements FR-INK-003`).
 **Priority** uses MoSCoW (M = Must, S = Should, C = Could). **MS** is the target milestone from the
-[roadmap](08-roadmap.md). Platforms: **A** = Android, **W** = Windows, **L** = Linux. Every requirement applies to all three unless noted.
+[roadmap](08-roadmap.md). Platforms: **A** = Android, **W** = Windows, **L** = Linux. Every requirement applies to all three unless noted; the MVP (M1–M4) is
+Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 — MVP](11-mvp.md).
 
 ## 1. Functional requirements
 
@@ -13,11 +14,11 @@ Each requirement has a stable ID. Reference IDs in issues, PRs and tests (for ex
 | FR-FILE-002 | Register as a PDF handler: "Open with" / intents (A), file associations (W, L via `.desktop` MIME). | M | M1 |
 | FR-FILE-003 | Open password-protected PDFs, prompting for the password. | M | M1 |
 | FR-FILE-004 | Recent files list with thumbnail, last page and progress; remove entries from the list. | M | M1 |
-| FR-FILE-005 | Favorites/pinned documents. | S | M3 |
-| FR-FILE-006 | Built-in browser for user-chosen folders ("library folders") with sorting and search by name. | S | M3 |
-| FR-FILE-007 | Open several documents as tabs (desktop and tablets); a document switcher on phones. | S | M3 |
-| FR-FILE-008 | Detect when the file was changed or removed externally and offer to reload. | S | M3 |
-| FR-FILE-009 | Open from drag-and-drop (W, L) and from the command line (`doxa-pdf file.pdf`). | S | M1 |
+| FR-FILE-005 | Favorites/pinned documents. | S | M7 |
+| FR-FILE-006 | Built-in browser for user-chosen folders ("library folders") with sorting and search by name. | M | M1 |
+| FR-FILE-007 | Open several documents as tabs (desktop and tablets); a document switcher on phones. | M | M1 |
+| FR-FILE-008 | Detect when the file was changed or removed externally and offer to reload. | M | M3 |
+| FR-FILE-009 | Open from drag-and-drop (W, L) and from the command line (`doxa-pdf file.pdf`). | S | M5 |
 | FR-FILE-010 | Handle files that cannot be written back (read-only, content URIs without write permission) by offering "Save a copy". | M | M2 |
 
 ### 1.2 Reading (VIEW)
@@ -25,7 +26,7 @@ Each requirement has a stable ID. Reference IDs in issues, PRs and tests (for ex
 |---|---|---|---|
 | FR-VIEW-001 | Render pages accurately (text, vector, images, fonts, transparency) using PDFium. | M | M1 |
 | FR-VIEW-002 | Continuous vertical scroll; single-page (paged) mode; horizontal paging. | M | M1 |
-| FR-VIEW-003 | Two-page (facing) layout, with an optional cover page. | S | M3 |
+| FR-VIEW-003 | Two-page (facing) layout, with an optional cover page. | M | M1 |
 | FR-VIEW-004 | Pinch/ctrl+wheel zoom, double-tap smart zoom, fit width/page, zoom presets. | M | M1 |
 | FR-VIEW-005 | Night mode (inverted, image-aware where possible) and sepia mode; follows the app theme or is set per document. | M | M1 |
 | FR-VIEW-006 | Remember page, zoom and layout per document and restore them on reopen. | M | M1 |
@@ -33,36 +34,38 @@ Each requirement has a stable ID. Reference IDs in issues, PRs and tests (for ex
 | FR-VIEW-008 | Page thumbnails panel/grid with navigation. | M | M1 |
 | FR-VIEW-009 | Go to page; page slider/scrubber with a page label preview. | M | M1 |
 | FR-VIEW-010 | Follow internal links and confirm before opening external URIs. | M | M1 |
-| FR-VIEW-011 | Navigation history (back/forward after link jumps). | S | M1 |
+| FR-VIEW-011 | Navigation history (back/forward after link jumps). | M | M1 |
 | FR-VIEW-012 | Fullscreen/immersive reading mode with auto-hiding toolbars. | M | M1 |
-| FR-VIEW-013 | Keep screen on while reading (A, setting). | C | M3 |
-| FR-VIEW-014 | Respect PDF page labels (roman numerals and so on) in all page UIs. | S | M3 |
+| FR-VIEW-013 | Keep screen on while reading (A, setting). | M | M1 |
+| FR-VIEW-014 | Respect PDF page labels (roman numerals and so on) in all page UIs. | M | M1 |
 | FR-VIEW-015 | Reading ruler/focus mode that dims everything except the current lines. | C | post-1.0 |
 
 ### 1.3 Search & text (TEXT)
 | ID | Requirement | Pri | MS |
 |---|---|---|---|
 | FR-TEXT-001 | Full-text search with result count, next/previous, and highlighting of all hits on visible pages. | M | M1 |
-| FR-TEXT-002 | Search options: match case, whole word; diacritics-insensitive by default ("acao" finds "ação"). | S | M1 |
-| FR-TEXT-003 | Results list with context snippets, grouped by page. | S | M3 |
+| FR-TEXT-002 | Search options: match case, whole word; diacritics-insensitive by default ("acao" finds "ação"). | M | M1 |
+| FR-TEXT-003 | Results list with context snippets, grouped by page. | M | M3 |
 | FR-TEXT-004 | Text selection with handles (touch) and drag (mouse); copy to clipboard. | M | M1 |
-| FR-TEXT-005 | Selection follows reading order across columns and continues across a page boundary. | S | M2 |
+| FR-TEXT-005 | Selection follows reading order across columns and continues across a page boundary. | M | M2 |
 | FR-TEXT-006 | Selection context actions: highlight, underline, strikeout, copy, search, share, define/translate via OS. | M | M2 |
 | FR-TEXT-007 | Clear feedback when a page has no text layer (scanned) and markup is unavailable; later points to OCR. | M | M2 |
 
 ### 1.4 Text markup (MARK), Tier 1
 | ID | Requirement | Pri | MS |
 |---|---|---|---|
-| FR-MARK-001 | Create Highlight, Underline, StrikeOut and Squiggly annotations from a text selection. | M | M2 |
+| FR-MARK-001 | Create Highlight, Underline and Squiggly annotations from a text selection (StrikeOut creation: FR-MARK-012; existing StrikeOuts are always displayed and editable). | M | M2 |
 | FR-MARK-002 | Quick palette with at least 6 user-configurable colors; recently used color is the default. | M | M2 |
 | FR-MARK-003 | "Sticky tool" mode: once the highlighter is chosen, each drag over text creates a highlight right away, with no confirmation step. | M | M2 |
 | FR-MARK-004 | Highlight by dragging freely over text with finger, mouse or stylus (the tool snaps to glyphs). | M | M2 |
 | FR-MARK-005 | Tap a markup to change its color or type, add or edit a note, copy its text, or delete it. | M | M2 |
-| FR-MARK-006 | Extend or shrink an existing highlight with handles. | S | M3 |
-| FR-MARK-007 | Merge overlapping highlights of the same color into one annotation. | C | M3 |
-| FR-MARK-008 | Opacity setting per markup tool (default for highlight is around 40% under multiply blend). | S | M2 |
-| FR-MARK-009 | Rectangular "area highlight" for figures or scanned pages without text. | S | M3 |
+| FR-MARK-006 | Extend or shrink an existing highlight with handles. | M | M3 |
+| FR-MARK-007 | Merge overlapping highlights of the same color into one annotation. | M | M3 |
+| FR-MARK-008 | Opacity setting per markup tool (default for highlight is around 40% under multiply blend). | M | M2 |
+| FR-MARK-009 | Rectangular "area highlight" for figures or scanned pages without text. | M | M2 |
 | FR-MARK-010 | Store the selected text in the annotation (`/Contents` or a private key) for review and export. | M | M2 |
+| FR-MARK-011 | Color labels: name palette colors (e.g. "Definition", "Exam"); labels are used for filtering and in exports. | M | M3 |
+| FR-MARK-012 | Create StrikeOut annotations from a text selection. | S | M7 |
 
 ### 1.5 Pen & ink (INK), Tier 1
 | ID | Requirement | Pri | MS |
@@ -73,11 +76,11 @@ Each requirement has a stable ID. Reference IDs in issues, PRs and tests (for ex
 | FR-INK-004 | Highlighter pen: semi-transparent, flat-tipped, multiply blend, optional straight-line snap. | M | M2 |
 | FR-INK-005 | Eraser: stroke eraser (deletes whole strokes) and partial/pixel eraser (splits strokes). | M | M2 |
 | FR-INK-006 | Stylus-only mode: the pen draws, fingers scroll and zoom (palm rejection). Auto-enabled when a stylus is detected. | M | M2 |
-| FR-INK-007 | Stylus button/eraser end mapping (side button → eraser or lasso; eraser tip → eraser). | S | M2 |
-| FR-INK-008 | Lasso selection of strokes and annotations: move, resize, recolor, delete, copy/paste. | S | M3 |
+| FR-INK-007 | Stylus button/eraser end mapping (side button → eraser or lasso; eraser tip → eraser). | M | M2 |
+| FR-INK-008 | Lasso selection of strokes and annotations: move, resize, recolor, delete, copy/paste. | M | M2 |
 | FR-INK-009 | Pen presets: at least 3 favorite pen configurations (color, width, type) one tap away. | M | M2 |
-| FR-INK-010 | Shape recognition: hold at the end of a stroke to snap it to a line, rectangle, ellipse or arrow. | C | M3 |
-| FR-INK-011 | Group strokes drawn within a short window into one Ink annotation to keep files lean. | S | M2 |
+| FR-INK-010 | Shape recognition: hold at the end of a stroke to snap it to a line, rectangle, ellipse or arrow. | M | M3 |
+| FR-INK-011 | Group strokes drawn within a short window into one Ink annotation to keep files lean. | M | M2 |
 | FR-INK-012 | A stroke belongs to the page it starts on and is clipped to it; the view never scrolls or zooms while a stroke is in progress. | M | M2 |
 | FR-INK-013 | Zoomed-in writing area ("magnifier box" that auto-advances) for neat handwriting. | C | post-1.0 |
 
@@ -86,10 +89,10 @@ Each requirement has a stable ID. Reference IDs in issues, PRs and tests (for ex
 |---|---|---|---|
 | FR-NOTE-001 | Sticky notes (Text annotations) with an icon on the page and an editor popup. | M | M3 |
 | FR-NOTE-002 | Notes attached to markups (Popup/`/Contents`), shown in the review panel. | M | M2 |
-| FR-NOTE-003 | Free text boxes with font size, color and background options. | S | M3 |
-| FR-NOTE-004 | Shapes: line, arrow, rectangle, ellipse, with stroke and fill options. | S | M3 |
-| FR-NOTE-005 | Insert blank, ruled, grid or dotted **note pages** after the current page, sized like it. | S | M3 |
-| FR-NOTE-006 | Stamps (✓, ✗, ?, !, "Important", "Review"), plus custom text stamps. | C | M3 |
+| FR-NOTE-003 | Free text boxes with font size, color and background options. | M | M3 |
+| FR-NOTE-004 | Shapes: line, arrow, rectangle, ellipse, with stroke and fill options. | M | M3 |
+| FR-NOTE-005 | Insert blank, ruled, grid or dotted **note pages** after the current page, sized like it. | M | M3 |
+| FR-NOTE-006 | Stamps (✓, ✗, ?, !, "Important", "Review"), plus custom text stamps. | M | M3 |
 
 ### 1.7 Annotation management (ANNO)
 | ID | Requirement | Pri | MS |
@@ -97,11 +100,11 @@ Each requirement has a stable ID. Reference IDs in issues, PRs and tests (for ex
 | FR-ANNO-001 | Undo/redo for all annotation operations, per document, at least 100 steps. | M | M2 |
 | FR-ANNO-002 | Read, render and edit annotations created by other apps (no data loss for unknown keys). | M | M2 |
 | FR-ANNO-003 | Review panel listing all annotations with type, color, page, text excerpt and note; filter and sort. | M | M3 |
-| FR-ANNO-004 | Show/hide all annotations (view toggle, file unchanged). | S | M3 |
-| FR-ANNO-005 | Export highlights and notes to Markdown (grouped by page/outline section, with page links) and plain text. | S | M3 |
-| FR-ANNO-006 | Author name setting stored in `/T` (default empty or the OS user name, user confirms). | S | M2 |
+| FR-ANNO-004 | Show/hide all annotations (view toggle, file unchanged). | M | M3 |
+| FR-ANNO-005 | Export highlights and notes to Markdown (grouped by page/outline section, with page links) and plain text. | M | M3 |
+| FR-ANNO-006 | Author name setting stored in `/T` (default empty or the OS user name, user confirms). | M | M2 |
 | FR-ANNO-007 | Flatten annotations into page content when exporting a copy. | C | post-1.0 |
-| FR-ANNO-008 | Lock an annotation against accidental edits. | C | M3 |
+| FR-ANNO-008 | Lock an annotation against accidental edits. | M | M3 |
 
 ### 1.8 Saving & data safety (SAVE)
 | ID | Requirement | Pri | MS |
@@ -109,29 +112,29 @@ Each requirement has a stable ID. Reference IDs in issues, PRs and tests (for ex
 | FR-SAVE-001 | Autosave annotations to the original file (configurable: autosave, or ask on close). | M | M2 |
 | FR-SAVE-002 | Save atomically: write a temp file and replace the original only after a successful write, on every platform. | M | M2 |
 | FR-SAVE-003 | Journal of unsaved operations, used for crash recovery on next launch. | M | M2 |
-| FR-SAVE-004 | Use incremental save when possible (fast, keeps existing signatures valid). | S | M2 |
+| FR-SAVE-004 | Use incremental save when possible (fast, keeps existing signatures valid). | M | M2 |
 | FR-SAVE-005 | "Save a copy as…" and share/export. | M | M2 |
-| FR-SAVE-006 | Optional backup of the original before the first modification. | C | M3 |
+| FR-SAVE-006 | Optional backup of the original before the first modification. | M | M3 |
 
 ### 1.9 Bookmarks & progress (BOOK)
 | ID | Requirement | Pri | MS |
 |---|---|---|---|
-| FR-BOOK-001 | User bookmarks on pages, with a name, listed in a panel. Stored in the app database and optionally written as outline entries. | S | M3 |
-| FR-BOOK-002 | Reading progress per document (percentage, last read date), shown in recents. | S | M1 |
+| FR-BOOK-001 | User bookmarks on pages, with a name, listed in a panel. Stored in the app database and optionally written as outline entries. | M | M3 |
+| FR-BOOK-002 | Reading progress per document (percentage, last read date), shown in recents. | M | M1 |
 
 ### 1.10 Settings & personalization (SET)
 | ID | Requirement | Pri | MS |
 |---|---|---|---|
 | FR-SET-001 | Theme: system/light/dark; accent color (Material You dynamic color on Android 12+). | M | M1 |
-| FR-SET-002 | Language selection, defaulting to the system language. | M | M4 |
+| FR-SET-002 | Language selection, defaulting to the system language. | M | M1 |
 | FR-SET-003 | Default tool behaviors (sticky tool, autosave, stylus-only auto-detect, pressure curve). | M | M2 |
-| FR-SET-004 | Customizable keyboard shortcuts (desktop). | C | M4 |
-| FR-SET-005 | Reset settings, plus import/export of settings and pen presets. | C | M4 |
+| FR-SET-004 | Customizable keyboard shortcuts (desktop). | C | M7 |
+| FR-SET-005 | Reset settings, plus import/export of settings and pen presets. | C | M7 |
 
 ### 1.11 Tier 3, post-1.0 document utilities (UTIL)
 | ID | Requirement | Pri | MS |
 |---|---|---|---|
-| FR-UTIL-001 | OCR scanned pages to add an invisible text layer (Tesseract), enabling search and markup. | S | post-1.0 |
+| FR-UTIL-001 | OCR scanned pages to add an invisible text layer (Tesseract), enabling search and markup. | M | M4 |
 | FR-UTIL-002 | Page organization: rotate, delete, reorder, extract, merge, split. | S | post-1.0 |
 | FR-UTIL-003 | Fill AcroForm fields; save filled values. | C | post-1.0 |
 | FR-UTIL-004 | Handwritten signature saved for reuse and placed as a stamp. | C | post-1.0 |
@@ -153,6 +156,7 @@ Reference devices are defined in [QA §4](06-quality-assurance.md#4-performance-
 | NFR-PERF-006 | Memory: ≤ 400 MB for a 1000-page document on Android; tile cache bounded and trimmed on memory pressure. |
 | NFR-PERF-007 | Search over a 1000-page text document streams first results within 1 s and stays cancellable. |
 | NFR-PERF-008 | Saving annotations on a 100 MB file takes ≤ 2 s with incremental save. |
+| NFR-PERF-009 | OCR runs in the background without affecting reading/ink performance, is cancellable, and processes a typical text page in ≤ 5 s on the reference tablet (to be validated in M0 Spike D). |
 
 ### 2.2 Reliability & data integrity (REL)
 | ID | Requirement |
@@ -165,7 +169,7 @@ Reference devices are defined in [QA §4](06-quality-assurance.md#4-performance-
 ### 2.3 Compatibility (COMP)
 | ID | Requirement |
 |---|---|
-| NFR-COMP-001 | Android 8.0 (API 26)+; arm64-v8a, armeabi-v7a, x86_64. |
+| NFR-COMP-001 | Android 10 (API 29)+; arm64-v8a, armeabi-v7a, x86_64. |
 | NFR-COMP-002 | Windows 10 1809+ x64 (arm64 is a stretch goal). |
 | NFR-COMP-003 | Linux x86_64 (arm64 stretch) on X11 and Wayland; tested on Ubuntu LTS, Fedora and Arch. |
 | NFR-COMP-004 | Stylus: Android MotionEvent stylus/pressure/tilt/buttons; Windows Ink (pointer events with pressure); Linux libinput tablets through GTK. |

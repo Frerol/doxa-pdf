@@ -24,6 +24,8 @@ A change is done when:
 
 ## 3. PDF test corpus & interoperability
 
+- MVP interop targets: **Acrobat Reader, Xodo, Firefox (pdf.js), Chrome, Okular**. pdf.js, Poppler and MuPDF are automated. Acrobat and Xodo (Android) are checked manually before each beta.
+- Large-document fixtures: openly licensed textbooks (500–1000+ pages, 100 MB+), two-column scientific articles, and scanned chapters (for OCR).
 - `test_corpus/` (in repo): small, license-cleared PDFs covering rotated pages, odd CropBoxes, multi-column text, RTL/CJK text,
   scanned pages without text, encrypted files, large page counts, and annotations created by Acrobat, Okular, Xournal++ and pdf.js.
 - A larger corpus is fetched on demand (`tools/fetch_corpus`) from openly licensed sources. A license manifest is required for every file.
@@ -32,8 +34,8 @@ A change is done when:
 
 ## 4. Performance budgets
 
-Reference hardware (to be confirmed at the MVP session):
-- **Android tablet** with stylus, mid-range (for example a Samsung Galaxy Tab S6 Lite class device).
+Reference hardware:
+- **Android tablet: the maintainer's Samsung Galaxy Tab with S Pen** (record the exact model and Android version here). This is the primary device for the MVP.
 - **Android phone**, low-mid range (4 GB RAM).
 - **Windows** laptop, 4-core, integrated GPU, 8 GB RAM, ideally a pen-capable 2-in-1.
 - **Linux** laptop of the same class, tested on both Wayland and X11.

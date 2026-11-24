@@ -21,3 +21,4 @@ Flutter + Dart FFI to PDFium (no V8/XFA), monorepo with pub workspaces (`app/`, 
 - New source files get `// SPDX-License-Identifier: GPL-3.0-or-later`.
 - Annotations are stored in the PDF itself (no sidecar format), with our own appearance streams. Unknown keys of foreign annotations must be preserved.
 - All PDFium calls run in the single engine isolate. PDFium is not thread-safe.
+- Current target: the Android-only MVP (betas v0.1–v0.4) in `docs/plan/11-mvp.md`. Reference device: Samsung Galaxy Tab + S Pen, minSdk 29. Desktop comes after (Linux first).
