@@ -8,6 +8,7 @@ library;
 export 'src/arc_smooth.dart';
 export 'src/ink_sample.dart';
 export 'src/pressure_curve.dart';
+export 'src/resampling.dart';
 
 /// Name of this package, used by smoke tests until real APIs land.
 const String packageName = 'doxa_ink';
