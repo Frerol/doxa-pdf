@@ -38,12 +38,16 @@ Future<void> main() async {
     return;
   }
 
-  // libclang does not always find its own builtin headers (stddef.h, ...),
-  // so point it at the resource directory of the clang on PATH.
+  // libclang does not always find its own builtin headers (stddef.h, ...).
+  // Pass the resource directory of the clang on PATH; unlike `-isystem`,
+  // `-resource-dir` keeps the normal include order, so builtin headers that
+  // use `#include_next` (stdint.h) still reach the system headers.
   final resourceDir = Process.runSync('clang', ['-print-resource-dir']);
   final builtinIncludes = [
-    if (resourceDir.exitCode == 0)
-      '-isystem${(resourceDir.stdout as String).trim()}/include',
+    if (resourceDir.exitCode == 0) ...[
+      '-resource-dir',
+      (resourceDir.stdout as String).trim(),
+    ],
   ];
 
   final generator = FfiGenerator(
