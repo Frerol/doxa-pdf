@@ -78,7 +78,12 @@ Future<void> main() async {
     visitors: [
       Visitor(
         func: (n) => n.isIncluded = true,
-        struct: (n) => n.isIncluded = true,
+        struct: (n) {
+          n.isIncluded = true;
+          // C tags such as `_FS_QUADPOINTSF` would become library-private Dart
+          // classes; drop the leading underscore so they are usable.
+          if (n.name.startsWith('_')) n.name = n.name.substring(1);
+        },
         union: (n) => n.isIncluded = true,
         // C enums are int-sized on every ABI we target (Android, Linux,
         // Windows; arm64/arm/x86_64), so ffigen's size guess is safe here.
