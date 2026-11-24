@@ -26,5 +26,12 @@ reverse as [ADRs](adr/).
 | [0002](adr/0002-pdfium-as-pdf-engine.md) | PDFium as the PDF engine | Accepted |
 | [0003](adr/0003-gpl-3-license.md) | GPL-3.0-or-later as the project license | Accepted |
 | [0004](adr/0004-monorepo-with-pub-workspaces.md) | Monorepo with Dart pub workspaces | Accepted |
+| [0006](adr/0006-ink-rendering-in-flutter.md) | Ink rendering in pure Flutter (no native front-buffer path) | Accepted |
 
 New ADRs start from [the template](adr/0000-template.md).
+
+## Spike reports (M0)
+
+| Spike | Report | Result |
+|---|---|---|
+| B: S Pen ink latency | [B-ink.md](spikes/B-ink.md) | GO, pure Flutter |

@@ -29,4 +29,5 @@ Flutter + Dart FFI to PDFium (no V8/XFA), monorepo with pub workspaces (`app/`, 
 - `doxa_core` must stay pure Dart (enforced by its `dependency_rule_test.dart`).
 - Annotations are stored in the PDF itself (no sidecar format), with our own appearance streams. Unknown keys of foreign annotations must be preserved.
 - All PDFium calls run in the single engine isolate. PDFium is not thread-safe.
+- Ink (ADR-0006): pure Flutter, raw `Listener`, live stroke as vectors, committed ink in tiles (never replay all vectors per frame), no smoothing by default (never One-Euro), pan/zoom via repaint not rebuild. S Pen side button = `kPrimaryStylusButton`.
 - Current target: the Android-only MVP (betas v0.1–v0.4) in `docs/plan/11-mvp.md`. Reference device: Samsung Galaxy Tab S10 FE + S Pen (Android 16), minSdk 29. Desktop comes after (Linux first).
