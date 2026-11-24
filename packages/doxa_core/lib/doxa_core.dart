@@ -11,6 +11,7 @@ export 'src/annotation_id.dart';
 export 'src/geometry.dart';
 export 'src/page_transform.dart';
 export 'src/pdf_date.dart';
+export 'src/study_palette.dart';
 
 /// Name of this package, used by smoke tests until real APIs land.
 const String packageName = 'doxa_core';
