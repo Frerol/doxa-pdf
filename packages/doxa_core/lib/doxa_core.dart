@@ -9,6 +9,7 @@ library;
 
 export 'src/annotation_id.dart';
 export 'src/geometry.dart';
+export 'src/page_transform.dart';
 export 'src/pdf_date.dart';
 
 /// Name of this package, used by smoke tests until real APIs land.
