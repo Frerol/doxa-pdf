@@ -12,6 +12,8 @@ workspace:
   - packages/doxa_engine
   - packages/pdfium_ffi
   - packages/doxa_platform
+  - spikes/annot_write # spike branch only
+  - spikes/saf_lab # spike branch only
 
 dev_dependencies:
   lints: ^6.0.0

@@ -1,0 +1,13 @@
+name: annot_write
+description: Spike C (issue #7) — write highlight/ink annotations with PDFium and check interop. Throwaway prototype.
+version: 0.0.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  ffi: ^2.2.0
+  image: ^4.5.0
+  pdfium_ffi: ^0.0.1
