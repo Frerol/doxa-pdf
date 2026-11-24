@@ -1,9 +1,57 @@
 {
   "@@locale": "en",
   "appTitle": "Doxa PDF",
-  "@appTitle": { "description": "Application name. Do not translate." },
+  "@appTitle": {
+    "description": "Application name. Do not translate."
+  },
   "homeTagline": "A free PDF reader for studying",
-  "@homeTagline": { "description": "Short subtitle on the placeholder home screen." },
+  "@homeTagline": {
+    "description": "Short subtitle on the placeholder home screen."
+  },
   "previewNotice": "Engineering preview — nothing to see here yet.",
-  "@previewNotice": { "description": "Notice shown while the app is only a scaffold." }
+  "@previewNotice": {
+    "description": "Notice shown while the app is only a scaffold."
+  },
+  "engineCheckTitle": "PDF engine check",
+  "@engineCheckTitle": {
+    "description": "Title of the temporary M0 diagnostic card that tests the bundled PDF engine."
+  },
+  "engineCheckRun": "Run check",
+  "@engineCheckRun": {
+    "description": "Button that runs the engine check."
+  },
+  "engineCheckRunning": "Checking…",
+  "@engineCheckRunning": {
+    "description": "Shown while the engine check runs."
+  },
+  "engineCheckOk": "PDFium OK: {pages} page(s), {width} × {height} pt, text “{text}”, {millis} ms",
+  "@engineCheckOk": {
+    "description": "Engine check success summary.",
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      },
+      "width": {
+        "type": "String"
+      },
+      "height": {
+        "type": "String"
+      },
+      "text": {
+        "type": "String"
+      },
+      "millis": {
+        "type": "int"
+      }
+    }
+  },
+  "engineCheckFailed": "PDFium failed: {error}",
+  "@engineCheckFailed": {
+    "description": "Engine check failure message.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

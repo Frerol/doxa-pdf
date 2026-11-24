@@ -5,5 +5,4 @@
 /// See docs/plan/04-pdf-engine.md.
 library;
 
-/// Name of this package, used by smoke tests until real APIs land.
-const String packageName = 'doxa_engine';
+export 'src/engine_check.dart';

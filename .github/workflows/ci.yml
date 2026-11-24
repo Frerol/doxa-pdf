@@ -35,3 +35,30 @@ jobs:
           cache: true
       - name: Format, analyze and test the workspace
         run: tools/check.sh
+
+  pdfium-bindings:
+    name: PDFium bindings up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Read pinned Flutter version
+        id: fvm
+        run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+      - name: Install libclang (needed by ffigen)
+        run: sudo apt-get update && sudo apt-get install -y libclang-dev clang
+      - run: tools/fetch_pdfium.sh linux
+      - run: flutter pub get
+      - name: Regenerate bindings
+        working-directory: packages/pdfium_ffi
+        run: dart run tool/ffigen.dart
+      - name: Fail if the generated bindings differ from the committed ones
+        run: |
+          git diff --exit-code -- packages/pdfium_ffi/lib/src/pdfium_bindings.g.dart || {
+            echo "::error::pdfium_bindings.g.dart is out of date. Run 'dart run tool/ffigen.dart' in packages/pdfium_ffi and commit the result."
+            exit 1
+          }

@@ -13,6 +13,9 @@ if [[ -x .fvm/flutter_sdk/bin/flutter ]]; then
   export PATH="$PWD/.fvm/flutter_sdk/bin:$PATH"
 fi
 
+echo "==> PDFium (Linux) for native tests"
+tools/fetch_pdfium.sh linux
+
 echo "==> flutter pub get"
 flutter pub get >/dev/null
 
