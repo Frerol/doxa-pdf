@@ -13,7 +13,7 @@ jobs:
     name: Docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check Markdown links
         uses: lycheeverse/lychee-action@v2
         with:
@@ -24,7 +24,7 @@ jobs:
     name: Analyze & test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Read pinned Flutter version
         id: fvm
         run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
