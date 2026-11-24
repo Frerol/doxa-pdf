@@ -133,10 +133,11 @@ Ink is the hardest real-time path, so it has its own pipeline in `doxa_ink`:
 1. **Input**: a raw `Listener` (not gesture arenas) receives pointer events with `kind`, `pressure`, `tilt` and `buttons`. Coalesced and predicted samples come in where the platform provides them.
 2. **Palm rejection**: in stylus-only mode, touch pointers go to scroll/zoom and stylus pointers go to the active tool. When a stylus is detected, the mode turns on automatically (FR-INK-006).
 3. **Live layer**: the in-progress stroke is drawn incrementally on a dedicated `RepaintBoundary` above the page, so only the new segment is drawn each frame.
-4. **Smoothing**: a One-Euro filter for jitter, then pressure-to-width mapping through the user's curve, then a variable-width outline polygon (perfect-freehand style).
+4. **Smoothing**: none by default. The S Pen's raw input is clean ([Spike B](../spikes/B-ink.md)). Optional light arc-length smoothing (2–4 px) is available, but not a One-Euro filter. Then pressure-to-width mapping through the user's curve, then a variable-width outline polygon (perfect-freehand style).
 5. **Commit**: on pointer up, the stroke becomes a command. Strokes drawn within a short window on the same page are grouped into one Ink annotation (FR-INK-011).
-6. **Android fast path**: if pure Flutter misses the 25 ms budget (NFR-PERF-004), `doxa_platform` provides a native overlay using
-   `androidx.graphics` front-buffered rendering and `androidx.input` motion prediction. It is only shown while a stroke is in progress.
+6. **No native fast path**: Spike B measured 5–7 ms event → raster (≈ 15–20 ms end-to-end) in pure Flutter, so the planned Android
+   front-buffer overlay is not built ([ADR-0006](../adr/0006-ink-rendering-in-flutter.md)). Committed ink must live in the **tile cache**.
+   Replaying it as vectors every frame does not scale, and erasing and editing invalidate only the affected tiles.
 
 Storage: `/InkList` keeps the smoothed centerline points (for compatibility and editing), `/BS /W` keeps the base width, and the
 **appearance stream** draws the true variable-width filled outline. Raw pressure samples go in a private key (`/DoxaPressure`),

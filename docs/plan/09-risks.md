@@ -4,7 +4,7 @@ Likelihood (L) and impact (I) use the scale Low/Med/High. Review this register a
 
 | ID | Risk | L | I | Mitigation | Owner/When |
 |---|---|---|---|---|---|
-| R1 | **Ink latency** in Flutter misses the budget on Android (no front-buffer rendering in Flutter) | Med | High | Spike B measures early. Fallback: native overlay with `androidx.graphics` front-buffered renderer + motion prediction | M0 |
+| R1 | **Ink latency** in Flutter misses the budget on Android (no front-buffer rendering in Flutter) | Low | High | **Retired by Spike B:** 5–7 ms event → raster on the reference device ([ADR-0006](../adr/0006-ink-rendering-in-flutter.md)). Remaining check: camera test before v0.2 | M0 ✓ |
 | R2 | **Stylus support gaps on desktop** (affects M5/M6, not the Android MVP): Flutter Windows/Linux embedders may not expose pen pressure/tilt/eraser reliably | High | High | Spike B on real hardware. Fallbacks: contribute upstream fixes, or a small platform plugin that reads Windows Pointer/WM_POINTER and GTK tablet events | M0 |
 | R3 | **PDFium crashes** on hostile files take down the whole app (in-process native code) | Med | Med | Fuzzing, timely PDFium updates, journaling so no annotations are lost. Evaluate out-of-process engine (Android service / desktop subprocess) | M0 → M4 |
 | R4 | **Annotation interop bugs** (rotation, CropBox, appearance streams) make notes look wrong in other readers | Med | High | Own appearance writer, corpus covering edge cases, automated cross-renderer tests | M0, ongoing |
