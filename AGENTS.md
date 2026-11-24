@@ -1,125 +1,140 @@
 # AGENTS.md
 
-Instructions for coding agents (e.g. OpenAI Codex) working in this repository. Claude Code reads `CLAUDE.md`; the rules below are the same.
+Instructions for coding agents (OpenAI Codex and others) working on Doxa PDF. Claude Code reads `CLAUDE.md`, which has the same rules.
+When you change a rule here, update `CLAUDE.md` too.
 
-## Project
-Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Windows and Linux. Its core features are text markup and pen annotation.
-Stack: Flutter (pinned in `.fvmrc`) + Dart FFI to PDFium, in a pub-workspace monorepo:
+## 1. Project in one minute
+Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Windows and Linux. The core features are **text markup**
+(highlight, underline, squiggly) and **pen annotation** with the S Pen. The MVP is **Android-only** (betas v0.1–v0.4 on GitHub Releases), and Linux comes next.
 
+- Plan: `docs/README.md` (index), especially `docs/plan/11-mvp.md` (MVP scope), `02-requirements.md` (IDs like `FR-INK-002`) and `08-roadmap.md`.
+- Decisions: `docs/adr/`. Spike reports with measurements: `docs/spikes/`. **Read the relevant ones before designing anything.**
+- The maintainer (GitHub `Frerol`) speaks **Brazilian Portuguese**. Talk to them in pt-BR. Code, comments, docs, commits, issues and PRs are in **English**.
+
+## 2. Current status (update this section when it changes)
+- **M0 (foundations and spikes), almost done.** Done: monorepo scaffold, PDFium bindings, Spike A (rendering, ADR-0005), Spike B (ink, ADR-0006),
+  Spike C (annotation writing, ADR-0008), tasks T-01..T-10 (`doxa_core` geometry/dates/IDs/page transforms/palette, `doxa_ink` pressure/smoothing/simplification/erasing).
+- **Open:** #8 Spike D (OCR), #9 test corpus, #3 full CI, #10 Code of Conduct contact (maintainer only), #11 M0 wrap-up. Specs are in §8.
+- **Next:** M1 = v0.1 Reader (§9).
+
+## 3. Repository layout
 | Path | What | Tests |
 |---|---|---|
-| `app/` | Flutter app (Android first) | `flutter test` |
-| `packages/doxa_core` | Pure Dart domain: models, geometry, commands. **No Flutter imports** (enforced by a test) | `dart test` |
-| `packages/doxa_ink` | Pure Dart ink: smoothing, outlines, hit testing | `dart test` |
-| `packages/doxa_engine` | PDF engine on top of PDFium (single worker isolate) | `dart test` (needs PDFium) |
-| `packages/pdfium_ffi` | Generated PDFium bindings + loader | `dart test` (needs PDFium) |
+| `app/` | Flutter app (Android; applicationId `io.github.frerol.doxapdf`, minSdk 29) | `flutter test` |
+| `packages/doxa_core` | Pure Dart domain: geometry, page transforms, dates, IDs, palette. **No Flutter imports** (enforced by a test) | `dart test` |
+| `packages/doxa_ink` | Pure Dart ink: pressure curve, arc smoothing, resampling, hit testing, partial erase | `dart test` |
+| `packages/doxa_engine` | PDF engine on PDFium (today: a temporary engine check) | `dart test` (needs PDFium) |
+| `packages/pdfium_ffi` | ffigen-generated PDFium bindings + `openPdfium()` loader | `dart test` (needs PDFium) |
 | `packages/doxa_platform` | Android plugin (pigeon) | `flutter test` |
+| `tools/` | `check.sh`, `fetch_pdfium.sh`, `pdfium.lock` | — |
+| `spike/*` branches | Throwaway prototypes (`ink_lab`, `annot_write`, `saf_lab`, `render_probe`, `render_lab`). **Reuse their code as a reference; never merge them** | — |
 
-Read `docs/README.md` for the plan and `docs/adr/` for decisions before changing behaviour or architecture.
+## 4. Environment (maintainer's machine)
+- Flutter **3.50.1** via FVM: `export PATH="$HOME/fvm/default/bin:$PATH"` (or `.fvm/flutter_sdk/bin`). JDK 17: `export JAVA_HOME=$HOME/.local/share/jdk/17`.
+  Android SDK: `export ANDROID_HOME=$HOME/Android/Sdk`, `adb` at `$ANDROID_HOME/platform-tools/adb`.
+- PDFium binaries are git-ignored: run `tools/fetch_pdfium.sh` (all), or `linux`/`android` only. The Android build fails early with a clear message if they are missing.
+- **Reference device:** Galaxy Tab S10 FE (SM-X520), Android 16, 90 Hz, S Pen, usually on USB as serial `RXGL20545MJ`. Install and run with
+  `cd app && flutter run --profile -d RXGL20545MJ` (use **profile** builds for any performance measurement, never debug). Read logs with `adb logcat -s flutter`.
+  You cannot see the screen. Ask the maintainer to try things and describe what they see. Never take screenshots without asking.
+- `/tmp` is a **small RAM disk**. Never copy SDKs, caches or the repo there to get around a sandbox restriction: if a command is blocked (writes outside
+  the workspace, network, git metadata), stop and report which command failed and why. Clean up temporary files before finishing.
 
-## Setup and checks
+## 5. Commands
 ```sh
-fvm install                    # Flutter version from .fvmrc (or use .fvm/flutter_sdk/bin)
-tools/fetch_pdfium.sh linux    # pinned PDFium for native tests (third_party/, git-ignored)
-fvm flutter pub get            # whole workspace
-tools/check.sh                 # format + analyze + every test; must pass before you finish
+tools/fetch_pdfium.sh linux          # pinned PDFium for native tests
+flutter pub get                      # whole pub workspace, from the repo root
+tools/check.sh                       # format + analyze + all tests (what CI runs); must pass before any PR
+cd app && flutter build apk --debug  # Android build
+cd packages/pdfium_ffi && dart run tool/ffigen.dart   # regenerate bindings (only when headers change)
+cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dart format .   # regenerate platform messages
 ```
-Run a single package's tests from its directory: `dart test` (pure Dart) or `flutter test` (Flutter packages).
 
-## Rules
-- **English** for code, comments, docs and commits.
-- Every new source file starts with `// SPDX-License-Identifier: GPL-3.0-or-later`.
-- `dart format` and `flutter analyze` must be clean (strict lints in `analysis_options.yaml`).
-- Every change ships with tests. Bug fixes get a regression test.
-- Import Material from `package:material_ui/material_ui.dart`, **not** `package:flutter/material.dart` (deprecated in Flutter 3.47+).
-- Requirement IDs (`FR-INK-002`, `NFR-PERF-004`, …) are stable. Reference them in commits and tests, and never renumber them.
-- Dependencies must be GPL-3.0-compatible (MIT, BSD, Apache-2.0, LGPL, MPL-2.0, GPL). Ask before adding any dependency.
-- **Never name the commercial PDF reader that inspired Doxa** anywhere (code, docs, commits, issues). Write "a commercial PDF reader" instead.
-- Do **not** edit: `packages/pdfium_ffi/lib/src/pdfium_bindings.g.dart` (generated), `tools/pdfium.lock`, ADRs (`docs/adr/`), `LICENSE`, CI secrets or signing config.
-- Do **not** merge PRs or push to `main`. Work on a branch `codex/<task-id>-<topic>`, use Conventional Commits signed off with `git commit -s`, and open a PR.
-- **Sandbox limits:** never copy SDKs, caches or the repository into `/tmp` (or anywhere else) to get around a sandbox restriction; `/tmp` is a small RAM disk on the maintainer's machine. If a command is blocked (writes outside the workspace, network, git metadata), stop and report which command failed and why.
-- Clean up any temporary files you create before finishing.
-- PDFium rules (ADR-0008): full saves only (never `FPDF_INCREMENTAL`), call `FPDFAnnot_AppendObject` after all other annotation setters, and never render the editing document with `FPDF_ANNOT`.
+## 6. Git, PRs and GitHub
+- Never push to `main` and **never merge PRs**. The maintainer approves every merge, and may ask you to merge after approving.
+- Branch names: `feat/…`, `fix/…`, `docs/…`, `chore/…`, `spike/…`. Conventional Commits, signed off (`git commit -s`), ending with
+  `Co-Authored-By: Codex <noreply@openai.com>`.
+- **Pushing:** the SSH key needs a passphrase, so push over HTTPS with the GitHub CLI token:
+  `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push -u https://github.com/Frerol/doxa-pdf.git <branch>`
+- Open PRs with `gh pr create --repo Frerol/doxa-pdf --base main`. Give each a milestone (`M0 — Foundations & spikes`, `M1 — v0.1 Reader`, …) and labels
+  (`type:*`, `area:*`, `platform:*`). Reference requirement IDs and use `Closes #n`. Wait for CI (`gh pr checks <n> --watch`) and report the result.
+- One issue per PR. Keep PRs small. Never use `git add -A` blindly: check `git status` (agent worktrees under `.claude/worktrees/` must never be committed).
+- Avoid chaining destructive commands with `;` after commands that may fail (a failed step must stop the chain).
 
-## Task queue for agents
-Low-complexity, well-specified tasks delegated to agents. Each one is pure Dart with unit tests, touches only the listed package, and needs no device.
-Do one task per PR. Name it `<type>(<package>): … (T-xx)`. When it is merged, the maintainer ticks it here.
-T-01..T-10 were done in PRs #19–#28.
+## 7. Rules and hard-won pitfalls
+**General**
+- English everywhere in the repo. SPDX header `// SPDX-License-Identifier: GPL-3.0-or-later` on every source file. Strict lints, so `dart format` and `flutter analyze` must be clean.
+- Tests for every change, and a regression test for every bug fix. Requirement IDs are stable: never renumber them.
+- Dependencies must be GPL-3.0-compatible. **Ask before adding any dependency.** No Google ML Kit or other proprietary SDKs.
+- **Never name the commercial PDF reader that inspired Doxa** anywhere (code, docs, commits, issues, PRs). Write "a commercial PDF reader".
+  The UI should resemble the leading commercial mobile readers in **layout and flows**, with an original identity (`docs/plan/05-ux-design.md` §8).
+- Significant decisions need an ADR (`docs/adr/0000-template.md`). The next free numbers are 0007 (OCR) and 0009+.
+- Do not edit generated files by hand (`pdfium_bindings.g.dart`, `messages.g.*`, `app/lib/l10n/gen/`), `tools/pdfium.lock`, accepted ADRs, or `LICENSE`.
 
-| ID | Status | Package | Task |
-|---|---|---|---|
-| T-01 | ✅ | doxa_core | PDF date strings |
-| T-02 | ✅ | doxa_core | Annotation IDs (UUID v4) |
-| T-03 | ✅ | doxa_core | Geometry value types |
-| T-04 | ✅ | doxa_core | Page coordinate transforms |
-| T-05 | ✅ | doxa_core | Study colour palette and labels |
-| T-06 | ✅ | doxa_ink | Pressure curve and width mapping |
-| T-07 | ✅ | doxa_ink | Arc-length smoothing |
-| T-08 | ✅ | doxa_ink | Resampling and simplification |
-| T-09 | ✅ | doxa_ink | Stroke hit testing and partial erase |
-| T-10 | ✅ | repo/CI | Dependabot for pub and Gradle |
+**Flutter 3.50**
+- Import `package:material_ui/material_ui.dart`, **not** `package:flutter/material.dart` (deprecated).
+- Localization: use `[AppLocalizations.delegate, ...GlobalMaterialLocalizations.delegates]` (from material_ui). The gen-l10n list breaks `pt`.
+  New strings go to both `app/lib/l10n/app_en.arb` and `app_pt.arb`.
+- `Isolate.run` closures must capture only sendable values: build them in a top-level function that takes plain arguments (capturing `this`/State fails).
+- `CustomPainter`: never `canvas.drawColor` without `clipRect`, because it paints the whole screen.
 
-### T-01 · PDF date strings (doxa_core)
-Implement `formatPdfDate(DateTime)` and `parsePdfDate(String) → DateTime?` for the PDF date format `D:YYYYMMDDHHmmSSOHH'mm'` (ISO 32000 §7.9.4),
-in `lib/src/pdf_date.dart`, exported from `doxa_core.dart`.
-- Formatting always writes UTC as `D:20261124120000Z`.
-- Parsing accepts every truncated form the spec allows (`D:2026`, `D:202611`, …), the optional `D:` prefix, `Z`, `+HH'mm'`, `-HH'mm'` and `+HH'mm` (no trailing quote). It returns UTC, or `null` for invalid input; it never throws.
-- Tests: round trip, each truncation, offsets, invalid strings (letters, month 13, empty).
+**PDFium (ADR-0005, 0006, 0008)**
+- All PDFium calls run in **one engine isolate**. PDFium is not thread-safe.
+- **Two document instances per file:** a read-only *render instance* (Doxa's own annotations hidden in memory via the Hidden flag, rendered with
+  `FPDF_ANNOT`) and an *editing instance* (never rendered with `FPDF_ANNOT`; the only one saved).
+- **Saving:** `FPDF_SaveAsCopy` **full save** (flags 0) → temp file → verify → atomic replace. **Never `FPDF_INCREMENTAL`**: it bloats files and corrupts xref-stream PDFs.
+  On Android, write back through SAF with `"wt"` and verify by reading back (SHA-256).
+- Text markup is written **without `/AP`**. Ink AP comes from page objects via `FPDFAnnot_AppendObject`, called **after every other setter**
+  (`FPDFAnnot_SetBorder` deletes an existing AP, and `FPDFAnnot_SetColor` fails once an AP exists).
+- `FPDF_BOOL` is an `int` (0 = false). Strings to PDFium are UTF-16LE (`toNativeUtf16`). Free every native allocation.
+- ffigen 23 uses a Dart config (`tool/ffigen.dart`): declarations are excluded by default, `-resource-dir` (not `-isystem`) for clang builtins, and leading underscores stripped from struct names.
 
-### T-02 · Annotation IDs (doxa_core)
-`AnnotationId.generate()` returns a random **UUID v4** string (lowercase, 36 chars), using `Random.secure()` and no packages.
-`AnnotationId.isValid(String)` checks the format. Used for `/NM` (docs/plan/03-architecture.md §5).
-Tests: format and version/variant bits, uniqueness over 10,000 ids, validator accepts and rejects.
+**Ink (ADR-0006)**
+- Pure Flutter, raw `Listener`. Live stroke as vectors on its own layer; committed ink rasterized into tiles (never replay all vectors every frame).
+- No smoothing by default; optional arc-length smoothing (2–4 px); **never a One-Euro filter**. S Pen side button = `kPrimaryStylusButton` → eraser.
+- Pan/zoom through a `ValueNotifier` (repaint) instead of `setState` (rebuild).
 
-### T-03 · Geometry value types (doxa_core)
-Immutable `PdfPoint(x, y)`, `PdfRect(left, bottom, right, top)` and `PdfQuad(p1..p4)` in PDF user space (y grows **upwards**), with `==`/`hashCode`.
-- `PdfRect`: `normalized()`, `width`, `height`, `union`, `intersect` (nullable), `inflate(d)`, `contains(point)`, `overlaps`.
-- `PdfQuad.fromRect(rect)` uses Acrobat order **upper-left, upper-right, lower-left, lower-right**. Also `boundingRect` and `toList()` (8 doubles, `/QuadPoints` order).
-- Tests for each method, including degenerate rects.
+## 8. Next tasks (M0)
+Work on them in this order, one PR each.
 
-### T-04 · Page coordinate transforms (doxa_core) — depends on T-03
-`PageTransform` maps between **PDF user space** and **view space** (origin top-left, y down, in view pixels) for a page with
-`cropBox` (`PdfRect`, possibly with a non-zero origin), `rotation` (0/90/180/270, clockwise as `/Rotate`) and `scale` (pixels per point).
-Methods: `toView(PdfPoint) → (double x, double y)`, `toUser(double x, double y) → PdfPoint`, `viewSize`.
-- The displayed page is the crop box rotated clockwise by `rotation`. The crop box's top-left corner (after rotation) maps to view (0, 0).
-- Tests: round trip for all rotations with a non-zero crop origin; known corner mappings for each rotation; `viewSize` swaps width/height at 90/270.
-- Reason: Spike C follow-up, user-drawn ink on rotated/cropped pages (docs/spikes/C-annotation-write.md §2).
+### #9 · PDF test corpus
+`test_corpus/` with small, license-cleared PDFs (rotated pages, odd CropBox, two-column text, RTL/CJK, scanned page without text, encrypted, annotations made by
+other apps) and `test_corpus/MANIFEST` (file, source URL, license). Add `tools/fetch_corpus.sh` for large openly licensed fixtures (a 1000+ page textbook,
+two-column articles, a scanned chapter) into git-ignored `test_corpus/external/`, verified by SHA-256. Generated fixtures are fine (see the generators in `spike/annot-write`
+and `spike/render`). **Only use files whose license allows redistribution, and record it.**
 
-### T-05 · Study colour palette (doxa_core)
-`StudyColor { int argb; String? label; }` and `StudyPalette` (ordered list, max 12) with `defaults()`. The defaults are 6 colours chosen to read well under
-multiply blending: yellow `0xFFFFEB3B`, green `0xFFA5D6A7`, blue `0xFF90CAF9`, pink `0xFFF48FB1`, orange `0xFFFFCC80`, purple `0xFFCE93D8`.
-Add `relabel(index, label)`, `move(from, to)`, `toJson()`/`fromJson()` (tolerant of unknown fields). Refs FR-MARK-002, FR-MARK-011.
-Tests: defaults, JSON round trip, bounds errors, max size.
+### #3 · Full CI
+Extend `.github/workflows/ci.yml`: an Android job (JDK 17, Android SDK, `tools/fetch_pdfium.sh android`, `flutter build apk --debug`, upload the APK as an artifact);
+a license check of pub dependencies (GPL-3.0-compatible only); keep the existing jobs. Branch protection on `main` is set by the maintainer. List the settings in the PR.
 
-### T-06 · Pressure curve and width mapping (doxa_ink)
-`PressureCurve` maps raw pressure 0..1 to 0..1 with a `gamma` (0.3–3.0, default 1.0). `PressureCurve.linear` ignores pressure and returns 0.5.
-`strokeRadius(double baseWidth, double mappedPressure)` returns `baseWidth / 2 * (0.35 + 1.3 * p)` (the Spike B mapping).
-Inputs are clamped, and NaN is treated as 0.5. Refs FR-INK-002.
-Tests: endpoints, monotonicity, clamping, NaN, gamma bounds.
+### #8 · Spike D: on-device OCR (needs the tablet)
+Goal: make scanned pages searchable and highlightable (FR-UTIL-001, NFR-PERF-009: ≤ 5 s per page on the reference tablet, in the background, cancellable).
+1. Prototype on branch `spike/ocr` (a small app like `spike/render:spikes/render_lab`). Use **Tesseract** (Apache-2.0) through a maintained Android binding or
+   an FFI build. Compare the options and check licenses. Models: `tessdata_fast` **por** + **eng**, downloadable on demand.
+2. Write an **invisible text layer** with PDFium: `FPDFText_LoadStandardFont`, `FPDFPageObj_NewTextObj`, `FPDFText_SetText`,
+   `FPDFTextObj_SetTextRenderMode(FPDF_TEXTRENDERMODE_INVISIBLE)`, `FPDFPageObj_Transform` (position and size from each word box), `FPDFPage_InsertObject`,
+   `FPDFPage_GenerateContent`, then a full save. Afterwards, check that `FPDFText_*` search and selection boxes line up with the words in the image.
+3. Measure on the tablet: time per page, memory, model and APK size. Test with `scanned-300.pdf`-like pages and a real scanned chapter.
+4. Deliver `docs/spikes/D-ocr.md` (method, numbers, go/no-go) and **ADR-0007** (OCR integration approach) on `main` via a docs PR. Never merge the spike code.
 
-### T-07 · Arc-length smoothing (doxa_ink)
-Port `_arcSmooth` from the Spike B prototype (`git show spike/ink:spikes/ink_lab/lib/main.dart`, around line 726) as a pure function
-`List<InkSample> arcSmooth(List<InkSample> raw, double radius)`, with `InkSample(x, y, pressure, timeUs)` defined in `lib/src/ink_sample.dart`.
-Behaviour: resample every `radius / 4` along the polyline, then a triangular moving average over ±4 samples whose window shrinks at both ends,
-so the **first and last points are unchanged**. `radius <= 0` or fewer than 3 points returns a copy. Pressure is interpolated and averaged the same way.
-Tests: identity cases, endpoints preserved, a straight line stays straight, zig-zag noise amplitude is reduced, no NaN for duplicate points.
-Context: smoothing is **off by default** and must never be a One-Euro filter (ADR-0006).
+### #11 · M0 wrap-up
+After #8: update `docs/plan/09-risks.md` (R13 OCR, R14 memory), the roadmap if scope changed, and `docs/README.md`; then create the **M1 issues** (one per
+coherent feature slice, referencing requirement IDs from `08-roadmap.md` M1), each with tasks and acceptance criteria, in milestone `M1 — v0.1 Reader`.
 
-### T-08 · Resampling and simplification (doxa_ink) — depends on T-07's `InkSample`
-`resampleByDistance(samples, minStep)` drops samples closer than `minStep` to the last kept one (always keeping the first and last).
-`simplify(samples, tolerance)` uses Ramer–Douglas–Peucker on positions and keeps pressure/time of the kept points.
-Tests: counts, endpoint preservation, collinear input collapses to 2 points, tolerance 0 keeps everything.
+## 9. Guide for M1 (v0.1 Reader)
+Scope: `docs/plan/11-mvp.md` §3 v0.1 and `08-roadmap.md` M1. Suggested order (each a separate PR, behind tests):
+1. **`doxa_engine` production engine** from `spike/render:spikes/render_lab/lib/engine.dart`: a typed request/response protocol instead of maps,
+   a priority queue with generation cancellation, the render/edit instance split (ADR-0005), page sizes, outline, text, search. Unit tests with the PDFium fixture.
+2. **Reader view** in `app/`: continuous vertical layout first, previews + 512 px tiles + LRU cache, pinch zoom and fling (from `render_lab/lib/main.dart`),
+   then single page, two pages and horizontal layouts. Add `onTrimMemory` handling and keep RSS under 400 MB on scanned books.
+3. **Opening files:** SAF picker and "Open with" intents through `doxa_platform` (pigeon; see `spike/annot-write:spikes/saf_lab` for the Kotlin side),
+   then recents with progress, library folders and tabs.
+4. Navigation panels (outline, thumbnails), search, night/sepia, and pt-BR + en strings.
+Before coding a slice, write its issue (if missing) and keep the UI **familiar and original** (§7).
 
-### T-09 · Stroke hit testing and partial erase (doxa_ink) — depends on T-07's `InkSample`
-- `double distanceToPolyline(x, y, samples)`.
-- `bool hitsStroke(samples, x, y, radius, {double strokeRadius = 0})` is the whole-stroke eraser test.
-- `List<List<InkSample>> eraseSegment(samples, x, y, radius)` is the partial eraser. It removes the part within `radius` of the point and returns the remaining pieces in order, splitting segments exactly at the circle boundary and dropping pieces shorter than 2 samples. Refs FR-INK-005.
-- Tests: hit/miss near endpoints and mid-segment, single-point strokes, erase in the middle (2 pieces), at an end (1 piece), everything (0 pieces).
+## 10. When to stop and ask the maintainer
+Anything that needs the physical tablet (S Pen feel, visual checks), UI/UX choices not covered by `05-ux-design.md`, new dependencies, licensing questions,
+ADR-level decisions, releases/store/signing, the Code of Conduct contact (#10), or any destructive git operation (force-push to shared branches, history rewrites, deleting branches you did not create).
 
-### T-10 · Dependabot for pub and Gradle (repo)
-Extend `.github/dependabot.yml` with weekly updates for `pub` (directory `/`, the workspace root) and `gradle` (`/app/android`). Group minor/patch updates per
-ecosystem and keep GitHub Actions as is. Validate the YAML. No other CI changes; issue #3 covers the rest.
-
-## Not for agents (ask the maintainer)
-Architecture or ADR changes, PDFium/FFI changes, platform code (Kotlin, Gradle signing), UI/UX design, release and store work, licensing questions,
-and anything that needs the physical tablet (S Pen, performance measurements).
+## Completed agent tasks
+T-01..T-10 (PRs #19–#28): PDF dates, annotation UUIDs, geometry, page transforms, study palette, pressure curve, arc smoothing, resampling/RDP,
+hit testing and partial erase, Dependabot. Their specs are in git history (`git log -p -- AGENTS.md`).
