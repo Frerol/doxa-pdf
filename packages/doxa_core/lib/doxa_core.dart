@@ -7,6 +7,7 @@
 /// `dart test`. See docs/plan/03-architecture.md §2.
 library;
 
+export 'src/annotation_id.dart';
 export 'src/pdf_date.dart';
 
 /// Name of this package, used by smoke tests until real APIs land.
