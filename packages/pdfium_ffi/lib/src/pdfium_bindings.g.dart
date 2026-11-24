@@ -1057,7 +1057,7 @@ class PdfiumBindings {
 
   int FPDFAnnot_AppendAttachmentPoints(
     ffi.Pointer<fpdf_annotation_t__> annot,
-    ffi.Pointer<_FS_QUADPOINTSF> quad_points,
+    ffi.Pointer<FS_QUADPOINTSF> quad_points,
   ) {
     return _FPDFAnnot_AppendAttachmentPoints(annot, quad_points);
   }
@@ -1067,7 +1067,7 @@ class PdfiumBindings {
         ffi.NativeFunction<
           ffi.Int Function(
             ffi.Pointer<fpdf_annotation_t__>,
-            ffi.Pointer<_FS_QUADPOINTSF>,
+            ffi.Pointer<FS_QUADPOINTSF>,
           )
         >
       >('FPDFAnnot_AppendAttachmentPoints');
@@ -1075,7 +1075,7 @@ class PdfiumBindings {
       _FPDFAnnot_AppendAttachmentPointsPtr.asFunction<
         int Function(
           ffi.Pointer<fpdf_annotation_t__>,
-          ffi.Pointer<_FS_QUADPOINTSF>,
+          ffi.Pointer<FS_QUADPOINTSF>,
         )
       >();
 
@@ -1149,7 +1149,7 @@ class PdfiumBindings {
   int FPDFAnnot_GetAttachmentPoints(
     ffi.Pointer<fpdf_annotation_t__> annot,
     int quad_index,
-    ffi.Pointer<_FS_QUADPOINTSF> quad_points,
+    ffi.Pointer<FS_QUADPOINTSF> quad_points,
   ) {
     return _FPDFAnnot_GetAttachmentPoints(annot, quad_index, quad_points);
   }
@@ -1160,7 +1160,7 @@ class PdfiumBindings {
           ffi.Int Function(
             ffi.Pointer<fpdf_annotation_t__>,
             ffi.Size,
-            ffi.Pointer<_FS_QUADPOINTSF>,
+            ffi.Pointer<FS_QUADPOINTSF>,
           )
         >
       >('FPDFAnnot_GetAttachmentPoints');
@@ -1169,7 +1169,7 @@ class PdfiumBindings {
         int Function(
           ffi.Pointer<fpdf_annotation_t__>,
           int,
-          ffi.Pointer<_FS_QUADPOINTSF>,
+          ffi.Pointer<FS_QUADPOINTSF>,
         )
       >();
 
@@ -1898,7 +1898,7 @@ class PdfiumBindings {
 
   int FPDFAnnot_GetRect(
     ffi.Pointer<fpdf_annotation_t__> annot,
-    ffi.Pointer<_FS_RECTF_> rect,
+    ffi.Pointer<FS_RECTF_> rect,
   ) {
     return _FPDFAnnot_GetRect(annot, rect);
   }
@@ -1908,13 +1908,13 @@ class PdfiumBindings {
         ffi.NativeFunction<
           ffi.Int Function(
             ffi.Pointer<fpdf_annotation_t__>,
-            ffi.Pointer<_FS_RECTF_>,
+            ffi.Pointer<FS_RECTF_>,
           )
         >
       >('FPDFAnnot_GetRect');
   late final _FPDFAnnot_GetRect =
       _FPDFAnnot_GetRectPtr.asFunction<
-        int Function(ffi.Pointer<fpdf_annotation_t__>, ffi.Pointer<_FS_RECTF_>)
+        int Function(ffi.Pointer<fpdf_annotation_t__>, ffi.Pointer<FS_RECTF_>)
       >();
 
   int FPDFAnnot_GetStringValue(
@@ -2176,7 +2176,7 @@ class PdfiumBindings {
   int FPDFAnnot_SetAttachmentPoints(
     ffi.Pointer<fpdf_annotation_t__> annot,
     int quad_index,
-    ffi.Pointer<_FS_QUADPOINTSF> quad_points,
+    ffi.Pointer<FS_QUADPOINTSF> quad_points,
   ) {
     return _FPDFAnnot_SetAttachmentPoints(annot, quad_index, quad_points);
   }
@@ -2187,7 +2187,7 @@ class PdfiumBindings {
           ffi.Int Function(
             ffi.Pointer<fpdf_annotation_t__>,
             ffi.Size,
-            ffi.Pointer<_FS_QUADPOINTSF>,
+            ffi.Pointer<FS_QUADPOINTSF>,
           )
         >
       >('FPDFAnnot_SetAttachmentPoints');
@@ -2196,7 +2196,7 @@ class PdfiumBindings {
         int Function(
           ffi.Pointer<fpdf_annotation_t__>,
           int,
-          ffi.Pointer<_FS_QUADPOINTSF>,
+          ffi.Pointer<FS_QUADPOINTSF>,
         )
       >();
 
@@ -2363,7 +2363,7 @@ class PdfiumBindings {
 
   int FPDFAnnot_SetRect(
     ffi.Pointer<fpdf_annotation_t__> annot,
-    ffi.Pointer<_FS_RECTF_> rect,
+    ffi.Pointer<FS_RECTF_> rect,
   ) {
     return _FPDFAnnot_SetRect(annot, rect);
   }
@@ -2373,13 +2373,13 @@ class PdfiumBindings {
         ffi.NativeFunction<
           ffi.Int Function(
             ffi.Pointer<fpdf_annotation_t__>,
-            ffi.Pointer<_FS_RECTF_>,
+            ffi.Pointer<FS_RECTF_>,
           )
         >
       >('FPDFAnnot_SetRect');
   late final _FPDFAnnot_SetRect =
       _FPDFAnnot_SetRectPtr.asFunction<
-        int Function(ffi.Pointer<fpdf_annotation_t__>, ffi.Pointer<_FS_RECTF_>)
+        int Function(ffi.Pointer<fpdf_annotation_t__>, ffi.Pointer<FS_RECTF_>)
       >();
 
   int FPDFAnnot_SetStringValue(
@@ -2884,7 +2884,7 @@ class PdfiumBindings {
 
   ffi.Pointer<fpdf_form_handle_t__> FPDFDOC_InitFormFillEnvironment(
     ffi.Pointer<fpdf_document_t__> document,
-    ffi.Pointer<_FPDF_FORMFILLINFO> formInfo,
+    ffi.Pointer<FPDF_FORMFILLINFO> formInfo,
   ) {
     return _FPDFDOC_InitFormFillEnvironment(document, formInfo);
   }
@@ -2894,7 +2894,7 @@ class PdfiumBindings {
         ffi.NativeFunction<
           ffi.Pointer<fpdf_form_handle_t__> Function(
             ffi.Pointer<fpdf_document_t__>,
-            ffi.Pointer<_FPDF_FORMFILLINFO>,
+            ffi.Pointer<FPDF_FORMFILLINFO>,
           )
         >
       >('FPDFDOC_InitFormFillEnvironment');
@@ -2902,7 +2902,7 @@ class PdfiumBindings {
       _FPDFDOC_InitFormFillEnvironmentPtr.asFunction<
         ffi.Pointer<fpdf_form_handle_t__> Function(
           ffi.Pointer<fpdf_document_t__>,
-          ffi.Pointer<_FPDF_FORMFILLINFO>,
+          ffi.Pointer<FPDF_FORMFILLINFO>,
         )
       >();
 
@@ -3862,7 +3862,7 @@ class PdfiumBindings {
 
   int FPDFLink_GetAnnotRect(
     ffi.Pointer<fpdf_link_t__> link_annot,
-    ffi.Pointer<_FS_RECTF_> rect,
+    ffi.Pointer<FS_RECTF_> rect,
   ) {
     return _FPDFLink_GetAnnotRect(link_annot, rect);
   }
@@ -3870,12 +3870,12 @@ class PdfiumBindings {
   late final _FPDFLink_GetAnnotRectPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<fpdf_link_t__>, ffi.Pointer<_FS_RECTF_>)
+          ffi.Int Function(ffi.Pointer<fpdf_link_t__>, ffi.Pointer<FS_RECTF_>)
         >
       >('FPDFLink_GetAnnotRect');
   late final _FPDFLink_GetAnnotRect =
       _FPDFLink_GetAnnotRectPtr.asFunction<
-        int Function(ffi.Pointer<fpdf_link_t__>, ffi.Pointer<_FS_RECTF_>)
+        int Function(ffi.Pointer<fpdf_link_t__>, ffi.Pointer<FS_RECTF_>)
       >();
 
   ffi.Pointer<fpdf_dest_t__> FPDFLink_GetDest(
@@ -3951,7 +3951,7 @@ class PdfiumBindings {
   int FPDFLink_GetQuadPoints(
     ffi.Pointer<fpdf_link_t__> link_annot,
     int quad_index,
-    ffi.Pointer<_FS_QUADPOINTSF> quad_points,
+    ffi.Pointer<FS_QUADPOINTSF> quad_points,
   ) {
     return _FPDFLink_GetQuadPoints(link_annot, quad_index, quad_points);
   }
@@ -3962,7 +3962,7 @@ class PdfiumBindings {
           ffi.Int Function(
             ffi.Pointer<fpdf_link_t__>,
             ffi.Int,
-            ffi.Pointer<_FS_QUADPOINTSF>,
+            ffi.Pointer<FS_QUADPOINTSF>,
           )
         >
       >('FPDFLink_GetQuadPoints');
@@ -3971,7 +3971,7 @@ class PdfiumBindings {
         int Function(
           ffi.Pointer<fpdf_link_t__>,
           int,
-          ffi.Pointer<_FS_QUADPOINTSF>,
+          ffi.Pointer<FS_QUADPOINTSF>,
         )
       >();
 
@@ -4918,7 +4918,7 @@ class PdfiumBindings {
 
   int FPDFPageObj_GetMatrix(
     ffi.Pointer<fpdf_pageobject_t__> page_object,
-    ffi.Pointer<_FS_MATRIX_> matrix,
+    ffi.Pointer<FS_MATRIX_> matrix,
   ) {
     return _FPDFPageObj_GetMatrix(page_object, matrix);
   }
@@ -4928,13 +4928,13 @@ class PdfiumBindings {
         ffi.NativeFunction<
           ffi.Int Function(
             ffi.Pointer<fpdf_pageobject_t__>,
-            ffi.Pointer<_FS_MATRIX_>,
+            ffi.Pointer<FS_MATRIX_>,
           )
         >
       >('FPDFPageObj_GetMatrix');
   late final _FPDFPageObj_GetMatrix =
       _FPDFPageObj_GetMatrixPtr.asFunction<
-        int Function(ffi.Pointer<fpdf_pageobject_t__>, ffi.Pointer<_FS_MATRIX_>)
+        int Function(ffi.Pointer<fpdf_pageobject_t__>, ffi.Pointer<FS_MATRIX_>)
       >();
 
   ffi.Pointer<fpdf_bitmap_t__> FPDFPageObj_GetRenderedFillPattern(
@@ -4987,7 +4987,7 @@ class PdfiumBindings {
 
   int FPDFPageObj_GetRotatedBounds(
     ffi.Pointer<fpdf_pageobject_t__> page_object,
-    ffi.Pointer<_FS_QUADPOINTSF> quad_points,
+    ffi.Pointer<FS_QUADPOINTSF> quad_points,
   ) {
     return _FPDFPageObj_GetRotatedBounds(page_object, quad_points);
   }
@@ -4997,7 +4997,7 @@ class PdfiumBindings {
         ffi.NativeFunction<
           ffi.Int Function(
             ffi.Pointer<fpdf_pageobject_t__>,
-            ffi.Pointer<_FS_QUADPOINTSF>,
+            ffi.Pointer<FS_QUADPOINTSF>,
           )
         >
       >('FPDFPageObj_GetRotatedBounds');
@@ -5005,7 +5005,7 @@ class PdfiumBindings {
       _FPDFPageObj_GetRotatedBoundsPtr.asFunction<
         int Function(
           ffi.Pointer<fpdf_pageobject_t__>,
-          ffi.Pointer<_FS_QUADPOINTSF>,
+          ffi.Pointer<FS_QUADPOINTSF>,
         )
       >();
 
@@ -5320,7 +5320,7 @@ class PdfiumBindings {
 
   int FPDFPageObj_SetMatrix(
     ffi.Pointer<fpdf_pageobject_t__> page_object,
-    ffi.Pointer<_FS_MATRIX_> matrix,
+    ffi.Pointer<FS_MATRIX_> matrix,
   ) {
     return _FPDFPageObj_SetMatrix(page_object, matrix);
   }
@@ -5330,13 +5330,13 @@ class PdfiumBindings {
         ffi.NativeFunction<
           ffi.Int Function(
             ffi.Pointer<fpdf_pageobject_t__>,
-            ffi.Pointer<_FS_MATRIX_>,
+            ffi.Pointer<FS_MATRIX_>,
           )
         >
       >('FPDFPageObj_SetMatrix');
   late final _FPDFPageObj_SetMatrix =
       _FPDFPageObj_SetMatrixPtr.asFunction<
-        int Function(ffi.Pointer<fpdf_pageobject_t__>, ffi.Pointer<_FS_MATRIX_>)
+        int Function(ffi.Pointer<fpdf_pageobject_t__>, ffi.Pointer<FS_MATRIX_>)
       >();
 
   int FPDFPageObj_SetStrokeColor(
@@ -5464,7 +5464,7 @@ class PdfiumBindings {
 
   int FPDFPageObj_TransformF(
     ffi.Pointer<fpdf_pageobject_t__> page_object,
-    ffi.Pointer<_FS_MATRIX_> matrix,
+    ffi.Pointer<FS_MATRIX_> matrix,
   ) {
     return _FPDFPageObj_TransformF(page_object, matrix);
   }
@@ -5474,13 +5474,13 @@ class PdfiumBindings {
         ffi.NativeFunction<
           ffi.Int Function(
             ffi.Pointer<fpdf_pageobject_t__>,
-            ffi.Pointer<_FS_MATRIX_>,
+            ffi.Pointer<FS_MATRIX_>,
           )
         >
       >('FPDFPageObj_TransformF');
   late final _FPDFPageObj_TransformF =
       _FPDFPageObj_TransformFPtr.asFunction<
-        int Function(ffi.Pointer<fpdf_pageobject_t__>, ffi.Pointer<_FS_MATRIX_>)
+        int Function(ffi.Pointer<fpdf_pageobject_t__>, ffi.Pointer<FS_MATRIX_>)
       >();
 
   void FPDFPage_CloseAnnot(ffi.Pointer<fpdf_annotation_t__> annot) {
@@ -6226,8 +6226,8 @@ class PdfiumBindings {
 
   int FPDFPage_TransFormWithClip(
     ffi.Pointer<fpdf_page_t__> page,
-    ffi.Pointer<_FS_MATRIX_> matrix,
-    ffi.Pointer<_FS_RECTF_> clipRect,
+    ffi.Pointer<FS_MATRIX_> matrix,
+    ffi.Pointer<FS_RECTF_> clipRect,
   ) {
     return _FPDFPage_TransFormWithClip(page, matrix, clipRect);
   }
@@ -6237,8 +6237,8 @@ class PdfiumBindings {
         ffi.NativeFunction<
           ffi.Int Function(
             ffi.Pointer<fpdf_page_t__>,
-            ffi.Pointer<_FS_MATRIX_>,
-            ffi.Pointer<_FS_RECTF_>,
+            ffi.Pointer<FS_MATRIX_>,
+            ffi.Pointer<FS_RECTF_>,
           )
         >
       >('FPDFPage_TransFormWithClip');
@@ -6246,8 +6246,8 @@ class PdfiumBindings {
       _FPDFPage_TransFormWithClipPtr.asFunction<
         int Function(
           ffi.Pointer<fpdf_page_t__>,
-          ffi.Pointer<_FS_MATRIX_>,
-          ffi.Pointer<_FS_RECTF_>,
+          ffi.Pointer<FS_MATRIX_>,
+          ffi.Pointer<FS_RECTF_>,
         )
       >();
 
@@ -7094,7 +7094,7 @@ class PdfiumBindings {
   int FPDFText_GetLooseCharBox(
     ffi.Pointer<fpdf_textpage_t__> text_page,
     int index,
-    ffi.Pointer<_FS_RECTF_> rect,
+    ffi.Pointer<FS_RECTF_> rect,
   ) {
     return _FPDFText_GetLooseCharBox(text_page, index, rect);
   }
@@ -7105,7 +7105,7 @@ class PdfiumBindings {
           ffi.Int Function(
             ffi.Pointer<fpdf_textpage_t__>,
             ffi.Int,
-            ffi.Pointer<_FS_RECTF_>,
+            ffi.Pointer<FS_RECTF_>,
           )
         >
       >('FPDFText_GetLooseCharBox');
@@ -7114,14 +7114,14 @@ class PdfiumBindings {
         int Function(
           ffi.Pointer<fpdf_textpage_t__>,
           int,
-          ffi.Pointer<_FS_RECTF_>,
+          ffi.Pointer<FS_RECTF_>,
         )
       >();
 
   int FPDFText_GetMatrix(
     ffi.Pointer<fpdf_textpage_t__> text_page,
     int index,
-    ffi.Pointer<_FS_MATRIX_> matrix,
+    ffi.Pointer<FS_MATRIX_> matrix,
   ) {
     return _FPDFText_GetMatrix(text_page, index, matrix);
   }
@@ -7132,7 +7132,7 @@ class PdfiumBindings {
           ffi.Int Function(
             ffi.Pointer<fpdf_textpage_t__>,
             ffi.Int,
-            ffi.Pointer<_FS_MATRIX_>,
+            ffi.Pointer<FS_MATRIX_>,
           )
         >
       >('FPDFText_GetMatrix');
@@ -7141,7 +7141,7 @@ class PdfiumBindings {
         int Function(
           ffi.Pointer<fpdf_textpage_t__>,
           int,
-          ffi.Pointer<_FS_MATRIX_>,
+          ffi.Pointer<FS_MATRIX_>,
         )
       >();
 
@@ -8034,7 +8034,7 @@ class PdfiumBindings {
 
   int FPDF_GetPageBoundingBox(
     ffi.Pointer<fpdf_page_t__> page,
-    ffi.Pointer<_FS_RECTF_> rect,
+    ffi.Pointer<FS_RECTF_> rect,
   ) {
     return _FPDF_GetPageBoundingBox(page, rect);
   }
@@ -8042,12 +8042,12 @@ class PdfiumBindings {
   late final _FPDF_GetPageBoundingBoxPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<fpdf_page_t__>, ffi.Pointer<_FS_RECTF_>)
+          ffi.Int Function(ffi.Pointer<fpdf_page_t__>, ffi.Pointer<FS_RECTF_>)
         >
       >('FPDF_GetPageBoundingBox');
   late final _FPDF_GetPageBoundingBox =
       _FPDF_GetPageBoundingBoxPtr.asFunction<
-        int Function(ffi.Pointer<fpdf_page_t__>, ffi.Pointer<_FS_RECTF_>)
+        int Function(ffi.Pointer<fpdf_page_t__>, ffi.Pointer<FS_RECTF_>)
       >();
 
   int FPDF_GetPageCount(ffi.Pointer<fpdf_document_t__> document) {
@@ -8806,7 +8806,7 @@ class PdfiumBindings {
     int rotate,
     int flags,
     ffi.Pointer<FPDF_COLORSCHEME_> color_scheme,
-    ffi.Pointer<_IFSDK_PAUSE> pause,
+    ffi.Pointer<IFSDK_PAUSE> pause,
   ) {
     return _FPDF_RenderPageBitmapWithColorScheme_Start(
       bitmap,
@@ -8835,7 +8835,7 @@ class PdfiumBindings {
             ffi.Int,
             ffi.Int,
             ffi.Pointer<FPDF_COLORSCHEME_>,
-            ffi.Pointer<_IFSDK_PAUSE>,
+            ffi.Pointer<IFSDK_PAUSE>,
           )
         >
       >('FPDF_RenderPageBitmapWithColorScheme_Start');
@@ -8851,15 +8851,15 @@ class PdfiumBindings {
           int,
           int,
           ffi.Pointer<FPDF_COLORSCHEME_>,
-          ffi.Pointer<_IFSDK_PAUSE>,
+          ffi.Pointer<IFSDK_PAUSE>,
         )
       >();
 
   void FPDF_RenderPageBitmapWithMatrix(
     ffi.Pointer<fpdf_bitmap_t__> bitmap,
     ffi.Pointer<fpdf_page_t__> page,
-    ffi.Pointer<_FS_MATRIX_> matrix,
-    ffi.Pointer<_FS_RECTF_> clipping,
+    ffi.Pointer<FS_MATRIX_> matrix,
+    ffi.Pointer<FS_RECTF_> clipping,
     int flags,
   ) {
     return _FPDF_RenderPageBitmapWithMatrix(
@@ -8877,8 +8877,8 @@ class PdfiumBindings {
           ffi.Void Function(
             ffi.Pointer<fpdf_bitmap_t__>,
             ffi.Pointer<fpdf_page_t__>,
-            ffi.Pointer<_FS_MATRIX_>,
-            ffi.Pointer<_FS_RECTF_>,
+            ffi.Pointer<FS_MATRIX_>,
+            ffi.Pointer<FS_RECTF_>,
             ffi.Int,
           )
         >
@@ -8888,8 +8888,8 @@ class PdfiumBindings {
         void Function(
           ffi.Pointer<fpdf_bitmap_t__>,
           ffi.Pointer<fpdf_page_t__>,
-          ffi.Pointer<_FS_MATRIX_>,
-          ffi.Pointer<_FS_RECTF_>,
+          ffi.Pointer<FS_MATRIX_>,
+          ffi.Pointer<FS_RECTF_>,
           int,
         )
       >();
@@ -8903,7 +8903,7 @@ class PdfiumBindings {
     int size_y,
     int rotate,
     int flags,
-    ffi.Pointer<_IFSDK_PAUSE> pause,
+    ffi.Pointer<IFSDK_PAUSE> pause,
   ) {
     return _FPDF_RenderPageBitmap_Start(
       bitmap,
@@ -8930,7 +8930,7 @@ class PdfiumBindings {
             ffi.Int,
             ffi.Int,
             ffi.Int,
-            ffi.Pointer<_IFSDK_PAUSE>,
+            ffi.Pointer<IFSDK_PAUSE>,
           )
         >
       >('FPDF_RenderPageBitmap_Start');
@@ -8945,7 +8945,7 @@ class PdfiumBindings {
           int,
           int,
           int,
-          ffi.Pointer<_IFSDK_PAUSE>,
+          ffi.Pointer<IFSDK_PAUSE>,
         )
       >();
 
@@ -8964,7 +8964,7 @@ class PdfiumBindings {
 
   int FPDF_RenderPage_Continue(
     ffi.Pointer<fpdf_page_t__> page,
-    ffi.Pointer<_IFSDK_PAUSE> pause,
+    ffi.Pointer<IFSDK_PAUSE> pause,
   ) {
     return _FPDF_RenderPage_Continue(page, pause);
   }
@@ -8972,15 +8972,12 @@ class PdfiumBindings {
   late final _FPDF_RenderPage_ContinuePtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Int Function(
-            ffi.Pointer<fpdf_page_t__>,
-            ffi.Pointer<_IFSDK_PAUSE>,
-          )
+          ffi.Int Function(ffi.Pointer<fpdf_page_t__>, ffi.Pointer<IFSDK_PAUSE>)
         >
       >('FPDF_RenderPage_Continue');
   late final _FPDF_RenderPage_Continue =
       _FPDF_RenderPage_ContinuePtr.asFunction<
-        int Function(ffi.Pointer<fpdf_page_t__>, ffi.Pointer<_IFSDK_PAUSE>)
+        int Function(ffi.Pointer<fpdf_page_t__>, ffi.Pointer<IFSDK_PAUSE>)
       >();
 
   int FPDF_SaveAsCopy(
@@ -9266,17 +9263,17 @@ class PdfiumBindings {
         void Function(ffi.Pointer<ffi.NativeFunction<ffi.Long Function()>>)
       >();
 
-  int FSDK_SetUnSpObjProcessHandler(ffi.Pointer<_UNSUPPORT_INFO> unsp_info) {
+  int FSDK_SetUnSpObjProcessHandler(ffi.Pointer<UNSUPPORT_INFO> unsp_info) {
     return _FSDK_SetUnSpObjProcessHandler(unsp_info);
   }
 
   late final _FSDK_SetUnSpObjProcessHandlerPtr =
       _lookup<
-        ffi.NativeFunction<ffi.Int Function(ffi.Pointer<_UNSUPPORT_INFO>)>
+        ffi.NativeFunction<ffi.Int Function(ffi.Pointer<UNSUPPORT_INFO>)>
       >('FSDK_SetUnSpObjProcessHandler');
   late final _FSDK_SetUnSpObjProcessHandler =
       _FSDK_SetUnSpObjProcessHandlerPtr.asFunction<
-        int Function(ffi.Pointer<_UNSUPPORT_INFO>)
+        int Function(ffi.Pointer<UNSUPPORT_INFO>)
       >();
 }
 
@@ -9750,6 +9747,746 @@ const int FPDF_FORMFIELD_TEXTFIELD = 6;
 
 const int FPDF_FORMFIELD_UNKNOWN = 0;
 
+final class FPDF_FORMFILLINFO extends ffi.Struct {
+  @ffi.Int()
+  external int version;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FPDF_FORMFILLINFO> pThis)>
+  >
+  Release;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<fpdf_page_t__> page,
+        ffi.Double left,
+        ffi.Double top,
+        ffi.Double right,
+        ffi.Double bottom,
+      )
+    >
+  >
+  FFI_Invalidate;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<fpdf_page_t__> page,
+        ffi.Double left,
+        ffi.Double top,
+        ffi.Double right,
+        ffi.Double bottom,
+      )
+    >
+  >
+  FFI_OutputSelectedRect;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Int nCursorType,
+      )
+    >
+  >
+  FFI_SetCursor;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Int uElapse,
+        ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Int idEvent)>>
+        lpTimerFunc,
+      )
+    >
+  >
+  FFI_SetTimer;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(ffi.Pointer<FPDF_FORMFILLINFO> pThis, ffi.Int nTimerID)
+    >
+  >
+  FFI_KillTimer;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      FPDF_SYSTEMTIME Function(ffi.Pointer<FPDF_FORMFILLINFO> pThis)
+    >
+  >
+  FFI_GetLocalTime;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FPDF_FORMFILLINFO> pThis)>
+  >
+  FFI_OnChange;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Pointer<fpdf_page_t__> Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<fpdf_document_t__> document,
+        ffi.Int nPageIndex,
+      )
+    >
+  >
+  FFI_GetPage;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Pointer<fpdf_page_t__> Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<fpdf_document_t__> document,
+      )
+    >
+  >
+  FFI_GetCurrentPage;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<fpdf_page_t__> page,
+      )
+    >
+  >
+  FFI_GetRotation;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<ffi.Char> namedAction,
+      )
+    >
+  >
+  FFI_ExecuteNamedAction;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<ffi.UnsignedShort> value,
+        ffi.UnsignedLong valueLen,
+        ffi.Int is_focus,
+      )
+    >
+  >
+  FFI_SetTextFieldFocus;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<ffi.Char> bsURI,
+      )
+    >
+  >
+  FFI_DoURIAction;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Int nPageIndex,
+        ffi.Int zoomMode,
+        ffi.Pointer<ffi.Float> fPosArray,
+        ffi.Int sizeofArray,
+      )
+    >
+  >
+  FFI_DoGoToAction;
+
+  external ffi.Pointer<IPDF_JsPlatform> m_pJsPlatform;
+
+  @ffi.Int()
+  external int xfa_disabled;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<fpdf_page_t__> page,
+        ffi.Int bVisible,
+        ffi.Double left,
+        ffi.Double top,
+        ffi.Double right,
+        ffi.Double bottom,
+      )
+    >
+  >
+  FFI_DisplayCaret;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<fpdf_document_t__> document,
+      )
+    >
+  >
+  FFI_GetCurrentPageIndex;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<fpdf_document_t__> document,
+        ffi.Int iCurPage,
+      )
+    >
+  >
+  FFI_SetCurrentPage;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<fpdf_document_t__> document,
+        ffi.Pointer<ffi.UnsignedShort> wsURL,
+      )
+    >
+  >
+  FFI_GotoURL;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<fpdf_page_t__> page,
+        ffi.Pointer<ffi.Double> left,
+        ffi.Pointer<ffi.Double> top,
+        ffi.Pointer<ffi.Double> right,
+        ffi.Pointer<ffi.Double> bottom,
+      )
+    >
+  >
+  FFI_GetPageViewRect;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Int page_count,
+        ffi.UnsignedLong event_type,
+      )
+    >
+  >
+  FFI_PageEvent;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<fpdf_page_t__> page,
+        ffi.Pointer<fpdf_widget_t__> hWidget,
+        ffi.Int menuFlag,
+        ffi.Float x,
+        ffi.Float y,
+      )
+    >
+  >
+  FFI_PopupMenu;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Pointer<FPDF_FILEHANDLER_> Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Int fileFlag,
+        ffi.Pointer<ffi.UnsignedShort> wsURL,
+        ffi.Pointer<ffi.Char> mode,
+      )
+    >
+  >
+  FFI_OpenFile;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<FPDF_FILEHANDLER_> fileHandler,
+        ffi.Pointer<ffi.UnsignedShort> pTo,
+        ffi.Pointer<ffi.UnsignedShort> pSubject,
+        ffi.Pointer<ffi.UnsignedShort> pCC,
+        ffi.Pointer<ffi.UnsignedShort> pBcc,
+        ffi.Pointer<ffi.UnsignedShort> pMsg,
+      )
+    >
+  >
+  FFI_EmailTo;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<FPDF_FILEHANDLER_> fileHandler,
+        ffi.Int fileFlag,
+        ffi.Pointer<ffi.UnsignedShort> uploadTo,
+      )
+    >
+  >
+  FFI_UploadTo;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<ffi.Void> platform,
+        ffi.Int length,
+      )
+    >
+  >
+  FFI_GetPlatform;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<ffi.Void> language,
+        ffi.Int length,
+      )
+    >
+  >
+  FFI_GetLanguage;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Pointer<FPDF_FILEHANDLER_> Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<ffi.UnsignedShort> URL,
+      )
+    >
+  >
+  FFI_DownloadFromURL;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<ffi.UnsignedShort> wsURL,
+        ffi.Pointer<ffi.UnsignedShort> wsData,
+        ffi.Pointer<ffi.UnsignedShort> wsContentType,
+        ffi.Pointer<ffi.UnsignedShort> wsEncode,
+        ffi.Pointer<ffi.UnsignedShort> wsHeader,
+        ffi.Pointer<FPDF_BSTR_> response,
+      )
+    >
+  >
+  FFI_PostRequestURL;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+        ffi.Pointer<ffi.UnsignedShort> wsURL,
+        ffi.Pointer<ffi.UnsignedShort> wsData,
+        ffi.Pointer<ffi.UnsignedShort> wsEncode,
+      )
+    >
+  >
+  FFI_PutRequestURL;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> param,
+        ffi.Pointer<fpdf_annotation_t__> annot,
+        ffi.Int page_index,
+      )
+    >
+  >
+  FFI_OnFocusChange;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<FPDF_FORMFILLINFO> param,
+        ffi.Pointer<ffi.Char> uri,
+        ffi.Int modifiers,
+      )
+    >
+  >
+  FFI_DoURIActionWithKeyboardModifier;
+
+  static ffi.Pointer<FPDF_FORMFILLINFO> $allocate(
+    ffi.Allocator $allocator, {
+    required int version,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(ffi.Pointer<FPDF_FORMFILLINFO> pThis)
+      >
+    >
+    Release,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<fpdf_page_t__> page,
+          ffi.Double left,
+          ffi.Double top,
+          ffi.Double right,
+          ffi.Double bottom,
+        )
+      >
+    >
+    FFI_Invalidate,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<fpdf_page_t__> page,
+          ffi.Double left,
+          ffi.Double top,
+          ffi.Double right,
+          ffi.Double bottom,
+        )
+      >
+    >
+    FFI_OutputSelectedRect,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Int nCursorType,
+        )
+      >
+    >
+    FFI_SetCursor,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Int uElapse,
+          ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Int idEvent)>>
+          lpTimerFunc,
+        )
+      >
+    >
+    FFI_SetTimer,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Int nTimerID,
+        )
+      >
+    >
+    FFI_KillTimer,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        FPDF_SYSTEMTIME Function(ffi.Pointer<FPDF_FORMFILLINFO> pThis)
+      >
+    >
+    FFI_GetLocalTime,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(ffi.Pointer<FPDF_FORMFILLINFO> pThis)
+      >
+    >
+    FFI_OnChange,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Pointer<fpdf_page_t__> Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<fpdf_document_t__> document,
+          ffi.Int nPageIndex,
+        )
+      >
+    >
+    FFI_GetPage,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Pointer<fpdf_page_t__> Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<fpdf_document_t__> document,
+        )
+      >
+    >
+    FFI_GetCurrentPage,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<fpdf_page_t__> page,
+        )
+      >
+    >
+    FFI_GetRotation,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<ffi.Char> namedAction,
+        )
+      >
+    >
+    FFI_ExecuteNamedAction,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<ffi.UnsignedShort> value,
+          ffi.UnsignedLong valueLen,
+          ffi.Int is_focus,
+        )
+      >
+    >
+    FFI_SetTextFieldFocus,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<ffi.Char> bsURI,
+        )
+      >
+    >
+    FFI_DoURIAction,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Int nPageIndex,
+          ffi.Int zoomMode,
+          ffi.Pointer<ffi.Float> fPosArray,
+          ffi.Int sizeofArray,
+        )
+      >
+    >
+    FFI_DoGoToAction,
+    required ffi.Pointer<IPDF_JsPlatform> m_pJsPlatform,
+    required int xfa_disabled,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<fpdf_page_t__> page,
+          ffi.Int bVisible,
+          ffi.Double left,
+          ffi.Double top,
+          ffi.Double right,
+          ffi.Double bottom,
+        )
+      >
+    >
+    FFI_DisplayCaret,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<fpdf_document_t__> document,
+        )
+      >
+    >
+    FFI_GetCurrentPageIndex,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<fpdf_document_t__> document,
+          ffi.Int iCurPage,
+        )
+      >
+    >
+    FFI_SetCurrentPage,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<fpdf_document_t__> document,
+          ffi.Pointer<ffi.UnsignedShort> wsURL,
+        )
+      >
+    >
+    FFI_GotoURL,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<fpdf_page_t__> page,
+          ffi.Pointer<ffi.Double> left,
+          ffi.Pointer<ffi.Double> top,
+          ffi.Pointer<ffi.Double> right,
+          ffi.Pointer<ffi.Double> bottom,
+        )
+      >
+    >
+    FFI_GetPageViewRect,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Int page_count,
+          ffi.UnsignedLong event_type,
+        )
+      >
+    >
+    FFI_PageEvent,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<fpdf_page_t__> page,
+          ffi.Pointer<fpdf_widget_t__> hWidget,
+          ffi.Int menuFlag,
+          ffi.Float x,
+          ffi.Float y,
+        )
+      >
+    >
+    FFI_PopupMenu,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Pointer<FPDF_FILEHANDLER_> Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Int fileFlag,
+          ffi.Pointer<ffi.UnsignedShort> wsURL,
+          ffi.Pointer<ffi.Char> mode,
+        )
+      >
+    >
+    FFI_OpenFile,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<FPDF_FILEHANDLER_> fileHandler,
+          ffi.Pointer<ffi.UnsignedShort> pTo,
+          ffi.Pointer<ffi.UnsignedShort> pSubject,
+          ffi.Pointer<ffi.UnsignedShort> pCC,
+          ffi.Pointer<ffi.UnsignedShort> pBcc,
+          ffi.Pointer<ffi.UnsignedShort> pMsg,
+        )
+      >
+    >
+    FFI_EmailTo,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<FPDF_FILEHANDLER_> fileHandler,
+          ffi.Int fileFlag,
+          ffi.Pointer<ffi.UnsignedShort> uploadTo,
+        )
+      >
+    >
+    FFI_UploadTo,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<ffi.Void> platform,
+          ffi.Int length,
+        )
+      >
+    >
+    FFI_GetPlatform,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<ffi.Void> language,
+          ffi.Int length,
+        )
+      >
+    >
+    FFI_GetLanguage,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Pointer<FPDF_FILEHANDLER_> Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<ffi.UnsignedShort> URL,
+        )
+      >
+    >
+    FFI_DownloadFromURL,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<ffi.UnsignedShort> wsURL,
+          ffi.Pointer<ffi.UnsignedShort> wsData,
+          ffi.Pointer<ffi.UnsignedShort> wsContentType,
+          ffi.Pointer<ffi.UnsignedShort> wsEncode,
+          ffi.Pointer<ffi.UnsignedShort> wsHeader,
+          ffi.Pointer<FPDF_BSTR_> response,
+        )
+      >
+    >
+    FFI_PostRequestURL,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> pThis,
+          ffi.Pointer<ffi.UnsignedShort> wsURL,
+          ffi.Pointer<ffi.UnsignedShort> wsData,
+          ffi.Pointer<ffi.UnsignedShort> wsEncode,
+        )
+      >
+    >
+    FFI_PutRequestURL,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> param,
+          ffi.Pointer<fpdf_annotation_t__> annot,
+          ffi.Int page_index,
+        )
+      >
+    >
+    FFI_OnFocusChange,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<FPDF_FORMFILLINFO> param,
+          ffi.Pointer<ffi.Char> uri,
+          ffi.Int modifiers,
+        )
+      >
+    >
+    FFI_DoURIActionWithKeyboardModifier,
+  }) => $allocator<FPDF_FORMFILLINFO>()
+    ..ref.version = version
+    ..ref.Release = Release
+    ..ref.FFI_Invalidate = FFI_Invalidate
+    ..ref.FFI_OutputSelectedRect = FFI_OutputSelectedRect
+    ..ref.FFI_SetCursor = FFI_SetCursor
+    ..ref.FFI_SetTimer = FFI_SetTimer
+    ..ref.FFI_KillTimer = FFI_KillTimer
+    ..ref.FFI_GetLocalTime = FFI_GetLocalTime
+    ..ref.FFI_OnChange = FFI_OnChange
+    ..ref.FFI_GetPage = FFI_GetPage
+    ..ref.FFI_GetCurrentPage = FFI_GetCurrentPage
+    ..ref.FFI_GetRotation = FFI_GetRotation
+    ..ref.FFI_ExecuteNamedAction = FFI_ExecuteNamedAction
+    ..ref.FFI_SetTextFieldFocus = FFI_SetTextFieldFocus
+    ..ref.FFI_DoURIAction = FFI_DoURIAction
+    ..ref.FFI_DoGoToAction = FFI_DoGoToAction
+    ..ref.m_pJsPlatform = m_pJsPlatform
+    ..ref.xfa_disabled = xfa_disabled
+    ..ref.FFI_DisplayCaret = FFI_DisplayCaret
+    ..ref.FFI_GetCurrentPageIndex = FFI_GetCurrentPageIndex
+    ..ref.FFI_SetCurrentPage = FFI_SetCurrentPage
+    ..ref.FFI_GotoURL = FFI_GotoURL
+    ..ref.FFI_GetPageViewRect = FFI_GetPageViewRect
+    ..ref.FFI_PageEvent = FFI_PageEvent
+    ..ref.FFI_PopupMenu = FFI_PopupMenu
+    ..ref.FFI_OpenFile = FFI_OpenFile
+    ..ref.FFI_EmailTo = FFI_EmailTo
+    ..ref.FFI_UploadTo = FFI_UploadTo
+    ..ref.FFI_GetPlatform = FFI_GetPlatform
+    ..ref.FFI_GetLanguage = FFI_GetLanguage
+    ..ref.FFI_DownloadFromURL = FFI_DownloadFromURL
+    ..ref.FFI_PostRequestURL = FFI_PostRequestURL
+    ..ref.FFI_PutRequestURL = FFI_PutRequestURL
+    ..ref.FFI_OnFocusChange = FFI_OnFocusChange
+    ..ref.FFI_DoURIActionWithKeyboardModifier =
+        FFI_DoURIActionWithKeyboardModifier;
+}
+
 const int FPDF_FORMFLAG_CHOICE_COMBO = 131072;
 
 const int FPDF_FORMFLAG_CHOICE_EDIT = 262144;
@@ -9997,6 +10734,52 @@ const int FPDF_SEGMENT_UNKNOWN = -1;
 
 const int FPDF_SUBSET_NEW_FONTS = 8;
 
+final class FPDF_SYSTEMTIME extends ffi.Struct {
+  @ffi.UnsignedShort()
+  external int wYear;
+
+  @ffi.UnsignedShort()
+  external int wMonth;
+
+  @ffi.UnsignedShort()
+  external int wDayOfWeek;
+
+  @ffi.UnsignedShort()
+  external int wDay;
+
+  @ffi.UnsignedShort()
+  external int wHour;
+
+  @ffi.UnsignedShort()
+  external int wMinute;
+
+  @ffi.UnsignedShort()
+  external int wSecond;
+
+  @ffi.UnsignedShort()
+  external int wMilliseconds;
+
+  static ffi.Pointer<FPDF_SYSTEMTIME> $allocate(
+    ffi.Allocator $allocator, {
+    required int wYear,
+    required int wMonth,
+    required int wDayOfWeek,
+    required int wDay,
+    required int wHour,
+    required int wMinute,
+    required int wSecond,
+    required int wMilliseconds,
+  }) => $allocator<FPDF_SYSTEMTIME>()
+    ..ref.wYear = wYear
+    ..ref.wMonth = wMonth
+    ..ref.wDayOfWeek = wDayOfWeek
+    ..ref.wDay = wDay
+    ..ref.wHour = wHour
+    ..ref.wMinute = wMinute
+    ..ref.wSecond = wSecond
+    ..ref.wMilliseconds = wMilliseconds;
+}
+
 enum FPDF_TEXT_DIRECTION {
   FPDF_TEXTDIR_UNKNOWN(0),
   FPDF_TEXTDIR_AUTO(1),
@@ -10082,6 +10865,42 @@ const int FPDF_UNSP_DOC_SHAREDREVIEW = 5;
 
 const int FPDF_UNSP_DOC_XFAFORM = 1;
 
+final class FS_MATRIX_ extends ffi.Struct {
+  @ffi.Float()
+  external double a;
+
+  @ffi.Float()
+  external double b;
+
+  @ffi.Float()
+  external double c;
+
+  @ffi.Float()
+  external double d;
+
+  @ffi.Float()
+  external double e;
+
+  @ffi.Float()
+  external double f;
+
+  static ffi.Pointer<FS_MATRIX_> $allocate(
+    ffi.Allocator $allocator, {
+    required double a,
+    required double b,
+    required double c,
+    required double d,
+    required double e,
+    required double f,
+  }) => $allocator<FS_MATRIX_>()
+    ..ref.a = a
+    ..ref.b = b
+    ..ref.c = c
+    ..ref.d = d
+    ..ref.e = e
+    ..ref.f = f;
+}
+
 final class FS_POINTF_ extends ffi.Struct {
   @ffi.Float()
   external double x;
@@ -10096,6 +10915,78 @@ final class FS_POINTF_ extends ffi.Struct {
   }) => $allocator<FS_POINTF_>()
     ..ref.x = x
     ..ref.y = y;
+}
+
+final class FS_QUADPOINTSF extends ffi.Struct {
+  @ffi.Float()
+  external double x1;
+
+  @ffi.Float()
+  external double y1;
+
+  @ffi.Float()
+  external double x2;
+
+  @ffi.Float()
+  external double y2;
+
+  @ffi.Float()
+  external double x3;
+
+  @ffi.Float()
+  external double y3;
+
+  @ffi.Float()
+  external double x4;
+
+  @ffi.Float()
+  external double y4;
+
+  static ffi.Pointer<FS_QUADPOINTSF> $allocate(
+    ffi.Allocator $allocator, {
+    required double x1,
+    required double y1,
+    required double x2,
+    required double y2,
+    required double x3,
+    required double y3,
+    required double x4,
+    required double y4,
+  }) => $allocator<FS_QUADPOINTSF>()
+    ..ref.x1 = x1
+    ..ref.y1 = y1
+    ..ref.x2 = x2
+    ..ref.y2 = y2
+    ..ref.x3 = x3
+    ..ref.y3 = y3
+    ..ref.x4 = x4
+    ..ref.y4 = y4;
+}
+
+final class FS_RECTF_ extends ffi.Struct {
+  @ffi.Float()
+  external double left;
+
+  @ffi.Float()
+  external double top;
+
+  @ffi.Float()
+  external double right;
+
+  @ffi.Float()
+  external double bottom;
+
+  static ffi.Pointer<FS_RECTF_> $allocate(
+    ffi.Allocator $allocator, {
+    required double left,
+    required double top,
+    required double right,
+    required double bottom,
+  }) => $allocator<FS_RECTF_>()
+    ..ref.left = left
+    ..ref.top = top
+    ..ref.right = right
+    ..ref.bottom = bottom;
 }
 
 final class FS_SIZEF_ extends ffi.Struct {
@@ -10125,6 +11016,277 @@ const int FXCT_NESW = 1;
 const int FXCT_NWSE = 2;
 
 const int FXCT_VBEAM = 3;
+
+final class IFSDK_PAUSE extends ffi.Struct {
+  @ffi.Int()
+  external int version;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<ffi.Int Function(ffi.Pointer<IFSDK_PAUSE> pThis)>
+  >
+  NeedToPauseNow;
+
+  external ffi.Pointer<ffi.Void> user;
+
+  static ffi.Pointer<IFSDK_PAUSE> $allocate(
+    ffi.Allocator $allocator, {
+    required int version,
+    required ffi.Pointer<
+      ffi.NativeFunction<ffi.Int Function(ffi.Pointer<IFSDK_PAUSE> pThis)>
+    >
+    NeedToPauseNow,
+    required ffi.Pointer<ffi.Void> user,
+  }) => $allocator<IFSDK_PAUSE>()
+    ..ref.version = version
+    ..ref.NeedToPauseNow = NeedToPauseNow
+    ..ref.user = user;
+}
+
+final class IPDF_JsPlatform extends ffi.Struct {
+  @ffi.Int()
+  external int version;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<IPDF_JsPlatform> pThis,
+        ffi.Pointer<ffi.UnsignedShort> Msg,
+        ffi.Pointer<ffi.UnsignedShort> Title,
+        ffi.Int Type,
+        ffi.Int Icon,
+      )
+    >
+  >
+  app_alert;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(ffi.Pointer<IPDF_JsPlatform> pThis, ffi.Int nType)
+    >
+  >
+  app_beep;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<IPDF_JsPlatform> pThis,
+        ffi.Pointer<ffi.UnsignedShort> Question,
+        ffi.Pointer<ffi.UnsignedShort> Title,
+        ffi.Pointer<ffi.UnsignedShort> Default,
+        ffi.Pointer<ffi.UnsignedShort> cLabel,
+        ffi.Int bPassword,
+        ffi.Pointer<ffi.Void> response,
+        ffi.Int length,
+      )
+    >
+  >
+  app_response;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<IPDF_JsPlatform> pThis,
+        ffi.Pointer<ffi.Void> filePath,
+        ffi.Int length,
+      )
+    >
+  >
+  Doc_getFilePath;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<IPDF_JsPlatform> pThis,
+        ffi.Pointer<ffi.Void> mailData,
+        ffi.Int length,
+        ffi.Int bUI,
+        ffi.Pointer<ffi.UnsignedShort> To,
+        ffi.Pointer<ffi.UnsignedShort> Subject,
+        ffi.Pointer<ffi.UnsignedShort> CC,
+        ffi.Pointer<ffi.UnsignedShort> BCC,
+        ffi.Pointer<ffi.UnsignedShort> Msg,
+      )
+    >
+  >
+  Doc_mail;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<IPDF_JsPlatform> pThis,
+        ffi.Int bUI,
+        ffi.Int nStart,
+        ffi.Int nEnd,
+        ffi.Int bSilent,
+        ffi.Int bShrinkToFit,
+        ffi.Int bPrintAsImage,
+        ffi.Int bReverse,
+        ffi.Int bAnnotations,
+      )
+    >
+  >
+  Doc_print;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<IPDF_JsPlatform> pThis,
+        ffi.Pointer<ffi.Void> formData,
+        ffi.Int length,
+        ffi.Pointer<ffi.UnsignedShort> URL,
+      )
+    >
+  >
+  Doc_submitForm;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(ffi.Pointer<IPDF_JsPlatform> pThis, ffi.Int nPageNum)
+    >
+  >
+  Doc_gotoPage;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int Function(
+        ffi.Pointer<IPDF_JsPlatform> pThis,
+        ffi.Pointer<ffi.Void> filePath,
+        ffi.Int length,
+      )
+    >
+  >
+  Field_browse;
+
+  external ffi.Pointer<ffi.Void> m_pFormfillinfo;
+
+  external ffi.Pointer<ffi.Void> m_isolate;
+
+  @ffi.UnsignedInt()
+  external int m_v8EmbedderSlot;
+
+  static ffi.Pointer<IPDF_JsPlatform> $allocate(
+    ffi.Allocator $allocator, {
+    required int version,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int Function(
+          ffi.Pointer<IPDF_JsPlatform> pThis,
+          ffi.Pointer<ffi.UnsignedShort> Msg,
+          ffi.Pointer<ffi.UnsignedShort> Title,
+          ffi.Int Type,
+          ffi.Int Icon,
+        )
+      >
+    >
+    app_alert,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(ffi.Pointer<IPDF_JsPlatform> pThis, ffi.Int nType)
+      >
+    >
+    app_beep,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int Function(
+          ffi.Pointer<IPDF_JsPlatform> pThis,
+          ffi.Pointer<ffi.UnsignedShort> Question,
+          ffi.Pointer<ffi.UnsignedShort> Title,
+          ffi.Pointer<ffi.UnsignedShort> Default,
+          ffi.Pointer<ffi.UnsignedShort> cLabel,
+          ffi.Int bPassword,
+          ffi.Pointer<ffi.Void> response,
+          ffi.Int length,
+        )
+      >
+    >
+    app_response,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int Function(
+          ffi.Pointer<IPDF_JsPlatform> pThis,
+          ffi.Pointer<ffi.Void> filePath,
+          ffi.Int length,
+        )
+      >
+    >
+    Doc_getFilePath,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<IPDF_JsPlatform> pThis,
+          ffi.Pointer<ffi.Void> mailData,
+          ffi.Int length,
+          ffi.Int bUI,
+          ffi.Pointer<ffi.UnsignedShort> To,
+          ffi.Pointer<ffi.UnsignedShort> Subject,
+          ffi.Pointer<ffi.UnsignedShort> CC,
+          ffi.Pointer<ffi.UnsignedShort> BCC,
+          ffi.Pointer<ffi.UnsignedShort> Msg,
+        )
+      >
+    >
+    Doc_mail,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<IPDF_JsPlatform> pThis,
+          ffi.Int bUI,
+          ffi.Int nStart,
+          ffi.Int nEnd,
+          ffi.Int bSilent,
+          ffi.Int bShrinkToFit,
+          ffi.Int bPrintAsImage,
+          ffi.Int bReverse,
+          ffi.Int bAnnotations,
+        )
+      >
+    >
+    Doc_print,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<IPDF_JsPlatform> pThis,
+          ffi.Pointer<ffi.Void> formData,
+          ffi.Int length,
+          ffi.Pointer<ffi.UnsignedShort> URL,
+        )
+      >
+    >
+    Doc_submitForm,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(ffi.Pointer<IPDF_JsPlatform> pThis, ffi.Int nPageNum)
+      >
+    >
+    Doc_gotoPage,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int Function(
+          ffi.Pointer<IPDF_JsPlatform> pThis,
+          ffi.Pointer<ffi.Void> filePath,
+          ffi.Int length,
+        )
+      >
+    >
+    Field_browse,
+    required ffi.Pointer<ffi.Void> m_pFormfillinfo,
+    required ffi.Pointer<ffi.Void> m_isolate,
+    required int m_v8EmbedderSlot,
+  }) => $allocator<IPDF_JsPlatform>()
+    ..ref.version = version
+    ..ref.app_alert = app_alert
+    ..ref.app_beep = app_beep
+    ..ref.app_response = app_response
+    ..ref.Doc_getFilePath = Doc_getFilePath
+    ..ref.Doc_mail = Doc_mail
+    ..ref.Doc_print = Doc_print
+    ..ref.Doc_submitForm = Doc_submitForm
+    ..ref.Doc_gotoPage = Doc_gotoPage
+    ..ref.Field_browse = Field_browse
+    ..ref.m_pFormfillinfo = m_pFormfillinfo
+    ..ref.m_isolate = m_isolate
+    ..ref.m_v8EmbedderSlot = m_v8EmbedderSlot;
+}
 
 const int JSPLATFORM_ALERT_BUTTON_DEFAULT = 0;
 
@@ -10210,6 +11372,31 @@ const int PDFDEST_VIEW_UNKNOWN_MODE = 0;
 
 const int PDFDEST_VIEW_XYZ = 1;
 
+final class UNSUPPORT_INFO extends ffi.Struct {
+  @ffi.Int()
+  external int version;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(ffi.Pointer<UNSUPPORT_INFO> pThis, ffi.Int nType)
+    >
+  >
+  FSDK_UnSupport_Handler;
+
+  static ffi.Pointer<UNSUPPORT_INFO> $allocate(
+    ffi.Allocator $allocator, {
+    required int version,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(ffi.Pointer<UNSUPPORT_INFO> pThis, ffi.Int nType)
+      >
+    >
+    FSDK_UnSupport_Handler,
+  }) => $allocator<UNSUPPORT_INFO>()
+    ..ref.version = version
+    ..ref.FSDK_UnSupport_Handler = FSDK_UnSupport_Handler;
+}
+
 enum _FPDF_DUPLEXTYPE_ {
   DuplexUndefined(0),
   Simplex(1),
@@ -10226,605 +11413,6 @@ enum _FPDF_DUPLEXTYPE_ {
     3 => DuplexFlipLongEdge,
     _ => throw ArgumentError('Unknown value for _FPDF_DUPLEXTYPE_: $value'),
   };
-}
-
-final class _FPDF_FORMFILLINFO extends ffi.Struct {
-  @ffi.Int()
-  external int version;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<ffi.Void Function(ffi.Pointer<_FPDF_FORMFILLINFO> pThis)>
-  >
-  Release;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<fpdf_page_t__> page,
-        ffi.Double left,
-        ffi.Double top,
-        ffi.Double right,
-        ffi.Double bottom,
-      )
-    >
-  >
-  FFI_Invalidate;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<fpdf_page_t__> page,
-        ffi.Double left,
-        ffi.Double top,
-        ffi.Double right,
-        ffi.Double bottom,
-      )
-    >
-  >
-  FFI_OutputSelectedRect;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Int nCursorType,
-      )
-    >
-  >
-  FFI_SetCursor;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Int uElapse,
-        ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Int idEvent)>>
-        lpTimerFunc,
-      )
-    >
-  >
-  FFI_SetTimer;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(ffi.Pointer<_FPDF_FORMFILLINFO> pThis, ffi.Int nTimerID)
-    >
-  >
-  FFI_KillTimer;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      _FPDF_SYSTEMTIME Function(ffi.Pointer<_FPDF_FORMFILLINFO> pThis)
-    >
-  >
-  FFI_GetLocalTime;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<ffi.Void Function(ffi.Pointer<_FPDF_FORMFILLINFO> pThis)>
-  >
-  FFI_OnChange;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Pointer<fpdf_page_t__> Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<fpdf_document_t__> document,
-        ffi.Int nPageIndex,
-      )
-    >
-  >
-  FFI_GetPage;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Pointer<fpdf_page_t__> Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<fpdf_document_t__> document,
-      )
-    >
-  >
-  FFI_GetCurrentPage;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<fpdf_page_t__> page,
-      )
-    >
-  >
-  FFI_GetRotation;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<ffi.Char> namedAction,
-      )
-    >
-  >
-  FFI_ExecuteNamedAction;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<ffi.UnsignedShort> value,
-        ffi.UnsignedLong valueLen,
-        ffi.Int is_focus,
-      )
-    >
-  >
-  FFI_SetTextFieldFocus;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<ffi.Char> bsURI,
-      )
-    >
-  >
-  FFI_DoURIAction;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Int nPageIndex,
-        ffi.Int zoomMode,
-        ffi.Pointer<ffi.Float> fPosArray,
-        ffi.Int sizeofArray,
-      )
-    >
-  >
-  FFI_DoGoToAction;
-
-  external ffi.Pointer<_IPDF_JsPlatform> m_pJsPlatform;
-
-  @ffi.Int()
-  external int xfa_disabled;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<fpdf_page_t__> page,
-        ffi.Int bVisible,
-        ffi.Double left,
-        ffi.Double top,
-        ffi.Double right,
-        ffi.Double bottom,
-      )
-    >
-  >
-  FFI_DisplayCaret;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<fpdf_document_t__> document,
-      )
-    >
-  >
-  FFI_GetCurrentPageIndex;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<fpdf_document_t__> document,
-        ffi.Int iCurPage,
-      )
-    >
-  >
-  FFI_SetCurrentPage;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<fpdf_document_t__> document,
-        ffi.Pointer<ffi.UnsignedShort> wsURL,
-      )
-    >
-  >
-  FFI_GotoURL;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<fpdf_page_t__> page,
-        ffi.Pointer<ffi.Double> left,
-        ffi.Pointer<ffi.Double> top,
-        ffi.Pointer<ffi.Double> right,
-        ffi.Pointer<ffi.Double> bottom,
-      )
-    >
-  >
-  FFI_GetPageViewRect;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Int page_count,
-        ffi.UnsignedLong event_type,
-      )
-    >
-  >
-  FFI_PageEvent;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<fpdf_page_t__> page,
-        ffi.Pointer<fpdf_widget_t__> hWidget,
-        ffi.Int menuFlag,
-        ffi.Float x,
-        ffi.Float y,
-      )
-    >
-  >
-  FFI_PopupMenu;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Pointer<FPDF_FILEHANDLER_> Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Int fileFlag,
-        ffi.Pointer<ffi.UnsignedShort> wsURL,
-        ffi.Pointer<ffi.Char> mode,
-      )
-    >
-  >
-  FFI_OpenFile;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<FPDF_FILEHANDLER_> fileHandler,
-        ffi.Pointer<ffi.UnsignedShort> pTo,
-        ffi.Pointer<ffi.UnsignedShort> pSubject,
-        ffi.Pointer<ffi.UnsignedShort> pCC,
-        ffi.Pointer<ffi.UnsignedShort> pBcc,
-        ffi.Pointer<ffi.UnsignedShort> pMsg,
-      )
-    >
-  >
-  FFI_EmailTo;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<FPDF_FILEHANDLER_> fileHandler,
-        ffi.Int fileFlag,
-        ffi.Pointer<ffi.UnsignedShort> uploadTo,
-      )
-    >
-  >
-  FFI_UploadTo;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<ffi.Void> platform,
-        ffi.Int length,
-      )
-    >
-  >
-  FFI_GetPlatform;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<ffi.Void> language,
-        ffi.Int length,
-      )
-    >
-  >
-  FFI_GetLanguage;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Pointer<FPDF_FILEHANDLER_> Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<ffi.UnsignedShort> URL,
-      )
-    >
-  >
-  FFI_DownloadFromURL;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<ffi.UnsignedShort> wsURL,
-        ffi.Pointer<ffi.UnsignedShort> wsData,
-        ffi.Pointer<ffi.UnsignedShort> wsContentType,
-        ffi.Pointer<ffi.UnsignedShort> wsEncode,
-        ffi.Pointer<ffi.UnsignedShort> wsHeader,
-        ffi.Pointer<FPDF_BSTR_> response,
-      )
-    >
-  >
-  FFI_PostRequestURL;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> pThis,
-        ffi.Pointer<ffi.UnsignedShort> wsURL,
-        ffi.Pointer<ffi.UnsignedShort> wsData,
-        ffi.Pointer<ffi.UnsignedShort> wsEncode,
-      )
-    >
-  >
-  FFI_PutRequestURL;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> param,
-        ffi.Pointer<fpdf_annotation_t__> annot,
-        ffi.Int page_index,
-      )
-    >
-  >
-  FFI_OnFocusChange;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_FPDF_FORMFILLINFO> param,
-        ffi.Pointer<ffi.Char> uri,
-        ffi.Int modifiers,
-      )
-    >
-  >
-  FFI_DoURIActionWithKeyboardModifier;
-}
-
-final class _FPDF_SYSTEMTIME extends ffi.Struct {
-  @ffi.UnsignedShort()
-  external int wYear;
-
-  @ffi.UnsignedShort()
-  external int wMonth;
-
-  @ffi.UnsignedShort()
-  external int wDayOfWeek;
-
-  @ffi.UnsignedShort()
-  external int wDay;
-
-  @ffi.UnsignedShort()
-  external int wHour;
-
-  @ffi.UnsignedShort()
-  external int wMinute;
-
-  @ffi.UnsignedShort()
-  external int wSecond;
-
-  @ffi.UnsignedShort()
-  external int wMilliseconds;
-}
-
-final class _FS_MATRIX_ extends ffi.Struct {
-  @ffi.Float()
-  external double a;
-
-  @ffi.Float()
-  external double b;
-
-  @ffi.Float()
-  external double c;
-
-  @ffi.Float()
-  external double d;
-
-  @ffi.Float()
-  external double e;
-
-  @ffi.Float()
-  external double f;
-}
-
-final class _FS_QUADPOINTSF extends ffi.Struct {
-  @ffi.Float()
-  external double x1;
-
-  @ffi.Float()
-  external double y1;
-
-  @ffi.Float()
-  external double x2;
-
-  @ffi.Float()
-  external double y2;
-
-  @ffi.Float()
-  external double x3;
-
-  @ffi.Float()
-  external double y3;
-
-  @ffi.Float()
-  external double x4;
-
-  @ffi.Float()
-  external double y4;
-}
-
-final class _FS_RECTF_ extends ffi.Struct {
-  @ffi.Float()
-  external double left;
-
-  @ffi.Float()
-  external double top;
-
-  @ffi.Float()
-  external double right;
-
-  @ffi.Float()
-  external double bottom;
-}
-
-final class _IFSDK_PAUSE extends ffi.Struct {
-  @ffi.Int()
-  external int version;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<ffi.Int Function(ffi.Pointer<_IFSDK_PAUSE> pThis)>
-  >
-  NeedToPauseNow;
-
-  external ffi.Pointer<ffi.Void> user;
-}
-
-final class _IPDF_JsPlatform extends ffi.Struct {
-  @ffi.Int()
-  external int version;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_IPDF_JsPlatform> pThis,
-        ffi.Pointer<ffi.UnsignedShort> Msg,
-        ffi.Pointer<ffi.UnsignedShort> Title,
-        ffi.Int Type,
-        ffi.Int Icon,
-      )
-    >
-  >
-  app_alert;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(ffi.Pointer<_IPDF_JsPlatform> pThis, ffi.Int nType)
-    >
-  >
-  app_beep;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_IPDF_JsPlatform> pThis,
-        ffi.Pointer<ffi.UnsignedShort> Question,
-        ffi.Pointer<ffi.UnsignedShort> Title,
-        ffi.Pointer<ffi.UnsignedShort> Default,
-        ffi.Pointer<ffi.UnsignedShort> cLabel,
-        ffi.Int bPassword,
-        ffi.Pointer<ffi.Void> response,
-        ffi.Int length,
-      )
-    >
-  >
-  app_response;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_IPDF_JsPlatform> pThis,
-        ffi.Pointer<ffi.Void> filePath,
-        ffi.Int length,
-      )
-    >
-  >
-  Doc_getFilePath;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_IPDF_JsPlatform> pThis,
-        ffi.Pointer<ffi.Void> mailData,
-        ffi.Int length,
-        ffi.Int bUI,
-        ffi.Pointer<ffi.UnsignedShort> To,
-        ffi.Pointer<ffi.UnsignedShort> Subject,
-        ffi.Pointer<ffi.UnsignedShort> CC,
-        ffi.Pointer<ffi.UnsignedShort> BCC,
-        ffi.Pointer<ffi.UnsignedShort> Msg,
-      )
-    >
-  >
-  Doc_mail;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_IPDF_JsPlatform> pThis,
-        ffi.Int bUI,
-        ffi.Int nStart,
-        ffi.Int nEnd,
-        ffi.Int bSilent,
-        ffi.Int bShrinkToFit,
-        ffi.Int bPrintAsImage,
-        ffi.Int bReverse,
-        ffi.Int bAnnotations,
-      )
-    >
-  >
-  Doc_print;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<_IPDF_JsPlatform> pThis,
-        ffi.Pointer<ffi.Void> formData,
-        ffi.Int length,
-        ffi.Pointer<ffi.UnsignedShort> URL,
-      )
-    >
-  >
-  Doc_submitForm;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(ffi.Pointer<_IPDF_JsPlatform> pThis, ffi.Int nPageNum)
-    >
-  >
-  Doc_gotoPage;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(
-        ffi.Pointer<_IPDF_JsPlatform> pThis,
-        ffi.Pointer<ffi.Void> filePath,
-        ffi.Int length,
-      )
-    >
-  >
-  Field_browse;
-
-  external ffi.Pointer<ffi.Void> m_pFormfillinfo;
-
-  external ffi.Pointer<ffi.Void> m_isolate;
-
-  @ffi.UnsignedInt()
-  external int m_v8EmbedderSlot;
-}
-
-final class _UNSUPPORT_INFO extends ffi.Struct {
-  @ffi.Int()
-  external int version;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(ffi.Pointer<_UNSUPPORT_INFO> pThis, ffi.Int nType)
-    >
-  >
-  FSDK_UnSupport_Handler;
 }
 
 final class fpdf_action_t__ extends ffi.Opaque {}

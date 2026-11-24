@@ -13,7 +13,7 @@ GitHub** (no stores yet). Each beta is usable on its own, and the MVP is complet
 | Typical documents | **Large textbooks** (hundreds of pages, 50 MB+), **scientific articles** (two columns, formulas), **scanned material** (frequent) |
 | Distribution | Signed APKs on GitHub Releases (also installable through Obtainium) |
 | UI languages | **Portuguese (pt-BR) and English** from the first beta |
-| Interop targets | Acrobat Reader, Xodo, Firefox (pdf.js), Chrome, Okular. Automated in CI with pdf.js, Poppler and MuPDF; manual checks on Acrobat and Xodo before each beta |
+| Interop targets | Acrobat Reader, a widely used commercial Android reader, Firefox (pdf.js), Chrome, Okular. Automated in CI with pdf.js, Poppler and MuPDF; manual checks on Acrobat and that Android reader before each beta |
 
 ## 2. Interaction model
 
