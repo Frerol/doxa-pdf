@@ -1,0 +1,9 @@
+{
+  "@@locale": "en",
+  "appTitle": "Doxa PDF",
+  "@appTitle": { "description": "Application name. Do not translate." },
+  "homeTagline": "A free PDF reader for studying",
+  "@homeTagline": { "description": "Short subtitle on the placeholder home screen." },
+  "previewNotice": "Engineering preview — nothing to see here yet.",
+  "@previewNotice": { "description": "Notice shown while the app is only a scaffold." }
+}

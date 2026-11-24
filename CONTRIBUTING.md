@@ -21,4 +21,29 @@ By signing off a commit you certify the [DCO 1.1](https://developercertificate.o
 under the project's license (GPL-3.0-or-later).
 
 ## Setting up a development environment
-Build instructions will be added when the first code lands (milestone M0).
+
+The MVP targets **Android** (minSdk 29). You need:
+
+| Tool | Version | Notes |
+|---|---|---|
+| [FVM](https://fvm.app) | 4.x | Installs the Flutter version pinned in `.fvmrc` |
+| Flutter | pinned in `.fvmrc` | `fvm install` in the repo root |
+| JDK | 17 | e.g. Eclipse Temurin; set `JAVA_HOME` |
+| Android SDK | platform 36, build-tools 36 | set `ANDROID_HOME`; accept licenses with `sdkmanager --licenses` |
+
+```sh
+fvm install                 # install the pinned Flutter
+fvm flutter pub get         # resolve the whole pub workspace (app + packages)
+tools/check.sh              # format, analyze and test everything (same as CI)
+cd app && fvm flutter run   # run on a connected Android device or emulator
+```
+
+### Repository layout
+The repo is a [pub workspace](docs/adr/0004-monorepo-with-pub-workspaces.md): the Flutter app is in `app/`, and libraries
+are in `packages/` (`doxa_core`, `doxa_ink`, `doxa_engine`, `pdfium_ffi`, `doxa_platform`). Pure Dart packages are tested
+with `dart test`; Flutter ones with `flutter test`.
+
+### Conventions
+- Every source file starts with `// SPDX-License-Identifier: GPL-3.0-or-later`.
+- Import Material from `package:material_ui/material_ui.dart` (`package:flutter/material.dart` is deprecated since Flutter 3.47).
+- UI strings live in `app/lib/l10n/app_en.arb` and `app_pt.arb`; both must be updated together.

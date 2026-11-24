@@ -1,0 +1,12 @@
+name: pdfium_ffi
+description: Dart FFI bindings to PDFium (generated with ffigen) and native library loading for Doxa PDF.
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.14.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6

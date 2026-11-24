@@ -1,0 +1,16 @@
+name: doxa_engine
+description: PDF engine interface for Doxa PDF and its PDFium implementation (worker isolate, appearance streams).
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  doxa_core: ^0.0.1
+  pdfium_ffi: ^0.0.1
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
