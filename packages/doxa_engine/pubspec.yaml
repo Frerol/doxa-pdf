@@ -9,6 +9,7 @@ environment:
 
 dependencies:
   doxa_core: ^0.0.1
+  ffi: ^2.2.0
   pdfium_ffi: ^0.0.1
 
 dev_dependencies:

@@ -33,6 +33,7 @@ The MVP targets **Android** (minSdk 29). You need:
 
 ```sh
 fvm install                 # install the pinned Flutter
+tools/fetch_pdfium.sh       # download the pinned PDFium binaries (Linux + Android)
 fvm flutter pub get         # resolve the whole pub workspace (app + packages)
 tools/check.sh              # format, analyze and test everything (same as CI)
 cd app && fvm flutter run   # run on a connected Android device or emulator

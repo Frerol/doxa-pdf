@@ -8,6 +8,7 @@ The plan lives in `docs/plan/` and decisions in `docs/adr/`. Read the relevant p
 
 ## Commands
 - Toolchain is user-local: Flutter via FVM (pinned in `.fvmrc`; use `fvm flutter`/`fvm dart` or `.fvm/flutter_sdk/bin`), `JAVA_HOME=~/.local/share/jdk/17`, `ANDROID_HOME=~/Android/Sdk`.
+- `tools/fetch_pdfium.sh [linux|android]`: fetch pinned PDFium into `third_party/pdfium/` (needed before Android builds and native tests). Bindings: `cd packages/pdfium_ffi && dart run tool/ffigen.dart` (ffigen 23 Dart config; never edit `pdfium_bindings.g.dart`).
 - `tools/check.sh`: format + analyze + all tests (what CI runs). Pure Dart packages use `dart test`, Flutter ones `flutter test`, run from the package dir.
 - `cd app && fvm flutter build apk --debug`: Android build.
 

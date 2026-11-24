@@ -2,5 +2,10 @@
   "@@locale": "pt",
   "appTitle": "Doxa PDF",
   "homeTagline": "Um leitor de PDF livre para estudar",
-  "previewNotice": "Prévia de engenharia — ainda não há nada para ver aqui."
+  "previewNotice": "Prévia de engenharia — ainda não há nada para ver aqui.",
+  "engineCheckTitle": "Verificação do motor PDF",
+  "engineCheckRun": "Verificar",
+  "engineCheckRunning": "Verificando…",
+  "engineCheckOk": "PDFium OK: {pages} página(s), {width} × {height} pt, texto “{text}”, {millis} ms",
+  "engineCheckFailed": "Falha no PDFium: {error}"
 }

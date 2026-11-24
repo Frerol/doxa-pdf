@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+import 'dart:ui' as ui;
+
+import 'package:doxa_engine/doxa_engine.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../l10n/gen/app_localizations.dart';
@@ -7,9 +11,14 @@ import '../l10n/gen/app_localizations.dart';
 /// Seed color of the Doxa PDF Material 3 theme (docs/plan/05-ux-design.md §5).
 const Color doxaSeedColor = Color(0xFF3F51B5);
 
+/// Runs the PDF engine diagnostic; injectable for tests.
+typedef EngineCheck = Future<EngineCheckResult> Function();
+
 /// Root widget of Doxa PDF.
 class DoxaApp extends StatelessWidget {
-  const DoxaApp({super.key});
+  const DoxaApp({super.key, this.engineCheck = runEngineCheck});
+
+  final EngineCheck engineCheck;
 
   @override
   Widget build(BuildContext context) {
@@ -28,14 +37,16 @@ class DoxaApp extends StatelessWidget {
         ...GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const PlaceholderHome(),
+      home: PlaceholderHome(engineCheck: engineCheck),
     );
   }
 }
 
 /// Temporary home screen until the library (M1) exists.
 class PlaceholderHome extends StatelessWidget {
-  const PlaceholderHome({super.key});
+  const PlaceholderHome({super.key, required this.engineCheck});
+
+  final EngineCheck engineCheck;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +54,7 @@ class PlaceholderHome extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return Scaffold(
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -53,8 +64,124 @@ class PlaceholderHome extends StatelessWidget {
               Text(l10n.homeTagline, style: textTheme.titleMedium),
               const SizedBox(height: 24),
               Text(l10n.previewNotice, textAlign: TextAlign.center),
+              const SizedBox(height: 32),
+              EngineCheckCard(engineCheck: engineCheck),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Temporary M0 diagnostic (issue #4): proves the bundled PDFium library
+/// loads and renders on the device. Removed once the reader exists.
+class EngineCheckCard extends StatefulWidget {
+  const EngineCheckCard({super.key, required this.engineCheck});
+
+  final EngineCheck engineCheck;
+
+  @override
+  State<EngineCheckCard> createState() => _EngineCheckCardState();
+}
+
+class _EngineCheckCardState extends State<EngineCheckCard> {
+  bool _running = false;
+  EngineCheckResult? _result;
+  ui.Image? _image;
+  Object? _error;
+
+  Future<void> _run() async {
+    setState(() {
+      _running = true;
+      _error = null;
+    });
+    try {
+      final result = await widget.engineCheck();
+      final image = await _decode(result);
+      if (!mounted) return;
+      setState(() {
+        _result = result;
+        _image?.dispose();
+        _image = image;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e);
+    } finally {
+      if (mounted) setState(() => _running = false);
+    }
+  }
+
+  static Future<ui.Image> _decode(EngineCheckResult result) {
+    final completer = Completer<ui.Image>();
+    ui.decodeImageFromPixels(
+      result.bgraPixels,
+      result.renderWidth,
+      result.renderHeight,
+      ui.PixelFormat.bgra8888,
+      completer.complete,
+    );
+    return completer.future;
+  }
+
+  @override
+  void dispose() {
+    _image?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final result = _result;
+    final image = _image;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.engineCheckTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: _running ? null : _run,
+              child: Text(
+                _running ? l10n.engineCheckRunning : l10n.engineCheckRun,
+              ),
+            ),
+            if (result != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                l10n.engineCheckOk(
+                  result.pageCount,
+                  result.pageWidth.toStringAsFixed(0),
+                  result.pageHeight.toStringAsFixed(0),
+                  result.text,
+                  result.elapsed.inMilliseconds,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            if (image != null) ...[
+              const SizedBox(height: 12),
+              DecoratedBox(
+                decoration: BoxDecoration(border: Border.all()),
+                child: RawImage(image: image, width: 200, height: 200),
+              ),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                l10n.engineCheckFailed('$_error'),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
         ),
       ),
     );

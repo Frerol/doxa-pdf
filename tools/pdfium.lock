@@ -1,0 +1,11 @@
+# Pinned PDFium binaries for Doxa PDF (see docs/plan/04-pdf-engine.md §2).
+# Source: https://github.com/bblanchon/pdfium-binaries — builds without V8 and XFA.
+# To update: change `release`, then replace every checksum with the `digest`
+# GitHub publishes for the new assets, and regenerate the bindings
+# (see packages/pdfium_ffi/README.md).
+release chromium/8179
+version 160.0.8179.0
+pdfium-android-arm64.tgz e74f8d3deb968dcf7e09a15152f19393df932ffc4e519149e61e8e0ee15c9753
+pdfium-android-arm.tgz e4270c933ba496681cde6274389b598d97383403acb75ec10fe8b8de1aa51007
+pdfium-android-x64.tgz fd7f3afdae094549e77b44a95e88ff00cb59e84ba5eb5fc79470ccf10c85ccf9
+pdfium-linux-x64.tgz b4766a6bf2856efbcc6c3cc7d6ae9022bdc6bb36ddc1acdd92d1f1873f773f4b

@@ -4,6 +4,24 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// PDFium is bundled from third_party/pdfium (see docs/plan/04-pdf-engine.md §2).
+val pdfiumJniLibs = rootProject.file("../../third_party/pdfium/jniLibs")
+
+val checkPdfium by tasks.registering {
+    description = "Fails early when the PDFium binaries have not been fetched."
+    val marker = pdfiumJniLibs.resolve("arm64-v8a/libpdfium.so")
+    doLast {
+        if (!marker.exists()) {
+            throw GradleException(
+                "PDFium binaries not found in $pdfiumJniLibs. " +
+                    "Run tools/fetch_pdfium.sh android from the repository root.",
+            )
+        }
+    }
+}
+
+tasks.named("preBuild") { dependsOn(checkPdfium) }
+
 android {
     namespace = "io.github.frerol.doxapdf"
     compileSdk = flutter.compileSdkVersion
@@ -26,6 +44,13 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    sourceSets {
+        getByName("main") {
+            // PDFium binaries fetched by tools/fetch_pdfium.sh (git-ignored).
+            jniLibs.srcDir(pdfiumJniLibs)
+        }
     }
 
     buildTypes {
