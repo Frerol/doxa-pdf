@@ -100,8 +100,8 @@ sequenceDiagram
 - **Two levels of detail**: a low-resolution full-page image (fast first paint, used while zooming) plus 256–512 px **tiles** at the current zoom.
 - **Annotations are not baked into tiles.** Page content is rendered with PDFium *without* the annotation flag. Annotations of types Doxa owns
   (markup, ink, notes, shapes) are drawn by Flutter as vectors from the domain model. Edits then show up instantly, with no tile re-render
-  (NFR-PERF-005). Other annotation types (stamps from other tools, widgets, 3D) go to a separate "foreign annotation" layer rendered by PDFium.
-  *How the foreign layer is produced is validated in the M0 spike and will be recorded as ADR-0005.*
+  (NFR-PERF-005). Foreign annotations are baked into the tiles by a separate **read-only render instance** of the document, in which Doxa's own
+  annotations are hidden in memory ([ADR-0005](../adr/0005-rendering-pipeline-and-foreign-annotations.md), [Spike A](../spikes/A-rendering.md)).
 - **Night/sepia** modes are applied as color filters on page tiles only. Annotation colors are kept, with an optional "adapt annotation colors" setting.
 - Long operations (search, text extraction, export) are chunked per page and yield, so render requests can interleave.
 
