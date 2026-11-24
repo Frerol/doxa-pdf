@@ -8,7 +8,7 @@ GitHub** (no stores yet). Each beta is usable on its own, and the MVP is complet
 | Item | Decision |
 |---|---|
 | Platform | Android tablet first, phones supported. Desktop comes after the MVP: **Linux first**, then Windows |
-| Reference device | **Samsung Galaxy Tab with S Pen** (exact model to be recorded in [QA §4](06-quality-assurance.md#4-performance-budgets)) |
+| Reference device | **Samsung Galaxy Tab S10 FE with S Pen, Android 16** ([QA §4](06-quality-assurance.md#4-performance-budgets)) |
 | Minimum Android | **Android 10 (API 29)** |
 | Typical documents | **Large textbooks** (hundreds of pages, 50 MB+), **scientific articles** (two columns, formulas), **scanned material** (frequent) |
 | Distribution | Signed APKs on GitHub Releases (also installable through Obtainium) |

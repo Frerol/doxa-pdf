@@ -35,7 +35,7 @@ A change is done when:
 ## 4. Performance budgets
 
 Reference hardware:
-- **Android tablet: the maintainer's Samsung Galaxy Tab with S Pen** (record the exact model and Android version here). This is the primary device for the MVP.
+- **Android tablet: Samsung Galaxy Tab S10 FE with S Pen, Android 16** (the maintainer's device). This is the primary device for the MVP: ink latency, pressure, palm rejection and performance budgets are measured on it.
 - **Android phone**, low-mid range (4 GB RAM).
 - **Windows** laptop, 4-core, integrated GPU, 8 GB RAM, ideally a pen-capable 2-in-1.
 - **Linux** laptop of the same class, tested on both Wayland and X11.

@@ -1,0 +1,17 @@
+# Doxa PDF — Dart pub workspace root (see docs/adr/0004-monorepo-with-pub-workspaces.md).
+name: doxa_pdf_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.14.0
+
+workspace:
+  - app
+  - packages/doxa_core
+  - packages/doxa_ink
+  - packages/doxa_engine
+  - packages/pdfium_ffi
+  - packages/doxa_platform
+
+dev_dependencies:
+  lints: ^6.0.0

@@ -1,0 +1,29 @@
+name: doxa_pdf
+description: Free and open-source PDF reader for studying.
+publish_to: none
+version: 0.0.1+1
+resolution: workspace
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  doxa_core: ^0.0.1
+  doxa_engine: ^0.0.1
+  doxa_ink: ^0.0.1
+  doxa_platform: ^0.0.1
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  material_ui: ^1.1.0
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  generate: true
