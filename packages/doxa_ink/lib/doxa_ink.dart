@@ -5,6 +5,8 @@
 /// erasing. Pure Dart. See docs/plan/03-architecture.md §6.
 library;
 
+export 'src/arc_smooth.dart';
+export 'src/ink_sample.dart';
 export 'src/pressure_curve.dart';
 
 /// Name of this package, used by smoke tests until real APIs land.
