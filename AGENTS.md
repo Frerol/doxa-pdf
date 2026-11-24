@@ -37,24 +37,27 @@ Run a single package's tests from its directory: `dart test` (pure Dart) or `flu
 - **Never name the commercial PDF reader that inspired Doxa** anywhere (code, docs, commits, issues). Write "a commercial PDF reader" instead.
 - Do **not** edit: `packages/pdfium_ffi/lib/src/pdfium_bindings.g.dart` (generated), `tools/pdfium.lock`, ADRs (`docs/adr/`), `LICENSE`, CI secrets or signing config.
 - Do **not** merge PRs or push to `main`. Work on a branch `codex/<task-id>-<topic>`, use Conventional Commits signed off with `git commit -s`, and open a PR.
+- **Sandbox limits:** never copy SDKs, caches or the repository into `/tmp` (or anywhere else) to get around a sandbox restriction; `/tmp` is a small RAM disk on the maintainer's machine. If a command is blocked (writes outside the workspace, network, git metadata), stop and report which command failed and why.
+- Clean up any temporary files you create before finishing.
 - PDFium rules (ADR-0008): full saves only (never `FPDF_INCREMENTAL`), call `FPDFAnnot_AppendObject` after all other annotation setters, and never render the editing document with `FPDF_ANNOT`.
 
 ## Task queue for agents
 Low-complexity, well-specified tasks delegated to agents. Each one is pure Dart with unit tests, touches only the listed package, and needs no device.
 Do one task per PR. Name it `<type>(<package>): … (T-xx)`. When it is merged, the maintainer ticks it here.
+T-01..T-10 were done in PRs #19–#28.
 
 | ID | Status | Package | Task |
 |---|---|---|---|
-| T-01 | ☐ | doxa_core | PDF date strings |
-| T-02 | ☐ | doxa_core | Annotation IDs (UUID v4) |
-| T-03 | ☐ | doxa_core | Geometry value types |
-| T-04 | ☐ | doxa_core | Page coordinate transforms |
-| T-05 | ☐ | doxa_core | Study colour palette and labels |
-| T-06 | ☐ | doxa_ink | Pressure curve and width mapping |
-| T-07 | ☐ | doxa_ink | Arc-length smoothing |
-| T-08 | ☐ | doxa_ink | Resampling and simplification |
-| T-09 | ☐ | doxa_ink | Stroke hit testing and partial erase |
-| T-10 | ☐ | repo/CI | Dependabot for pub and Gradle |
+| T-01 | ✅ | doxa_core | PDF date strings |
+| T-02 | ✅ | doxa_core | Annotation IDs (UUID v4) |
+| T-03 | ✅ | doxa_core | Geometry value types |
+| T-04 | ✅ | doxa_core | Page coordinate transforms |
+| T-05 | ✅ | doxa_core | Study colour palette and labels |
+| T-06 | ✅ | doxa_ink | Pressure curve and width mapping |
+| T-07 | ✅ | doxa_ink | Arc-length smoothing |
+| T-08 | ✅ | doxa_ink | Resampling and simplification |
+| T-09 | ✅ | doxa_ink | Stroke hit testing and partial erase |
+| T-10 | ✅ | repo/CI | Dependabot for pub and Gradle |
 
 ### T-01 · PDF date strings (doxa_core)
 Implement `formatPdfDate(DateTime)` and `parsePdfDate(String) → DateTime?` for the PDF date format `D:YYYYMMDDHHmmSSOHH'mm'` (ISO 32000 §7.9.4),
