@@ -24,7 +24,7 @@ A change is done when:
 
 ## 3. PDF test corpus & interoperability
 
-- MVP interop targets: **Acrobat Reader, Xodo, Firefox (pdf.js), Chrome, Okular**. pdf.js, Poppler and MuPDF are automated. Acrobat and Xodo (Android) are checked manually before each beta.
+- MVP interop targets: **Acrobat Reader, a widely used commercial Android reader, Firefox (pdf.js), Chrome, Okular**. pdf.js, Poppler and MuPDF are automated. Acrobat and the commercial Android reader are checked manually before each beta.
 - Large-document fixtures: openly licensed textbooks (500–1000+ pages, 100 MB+), two-column scientific articles, and scanned chapters (for OCR).
 - `test_corpus/` (in repo): small, license-cleared PDFs covering rotated pages, odd CropBoxes, multi-column text, RTL/CJK text,
   scanned pages without text, encrypted files, large page counts, and annotations created by Acrobat, Okular, Xournal++ and pdf.js.

@@ -27,6 +27,8 @@ reverse as [ADRs](adr/).
 | [0003](adr/0003-gpl-3-license.md) | GPL-3.0-or-later as the project license | Accepted |
 | [0004](adr/0004-monorepo-with-pub-workspaces.md) | Monorepo with Dart pub workspaces | Accepted |
 | [0006](adr/0006-ink-rendering-in-flutter.md) | Ink rendering in pure Flutter (no native front-buffer path) | Accepted |
+| [0008](adr/0008-annotation-save-strategy.md) | Annotation save strategy (full save, AP-less markup, object-based ink AP) | Accepted |
+| [0008](adr/0008-annotation-save-strategy.md) | Annotation save strategy (full save, AP-less markup, object-based ink AP) | Accepted |
 
 New ADRs start from [the template](adr/0000-template.md).
 
@@ -35,3 +37,5 @@ New ADRs start from [the template](adr/0000-template.md).
 | Spike | Report | Result |
 |---|---|---|
 | B: S Pen ink latency | [B-ink.md](spikes/B-ink.md) | GO, pure Flutter |
+| C: Writing annotations & interop | [C-annotation-write.md](spikes/C-annotation-write.md) | GO, full save instead of incremental |
+| C: Writing annotations & interop | [C-annotation-write.md](spikes/C-annotation-write.md) | GO, full save instead of incremental |
