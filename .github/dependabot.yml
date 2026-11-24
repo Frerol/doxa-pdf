@@ -4,3 +4,25 @@ updates:
     directory: /
     schedule:
       interval: weekly
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      pub-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: gradle
+    directory: /app/android
+    schedule:
+      interval: weekly
+    groups:
+      gradle-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
