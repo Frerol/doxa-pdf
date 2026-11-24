@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Markdown links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --offline --no-progress './**/*.md'
+          fail: true
+
+  flutter:
+    name: Analyze & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect Flutter project
+        id: detect
+        run: |
+          if [ -f pubspec.yaml ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: subosito/flutter-action@v2
+        if: steps.detect.outputs.present == 'true'
+        with:
+          channel: stable
+          cache: true
+      - if: steps.detect.outputs.present == 'true'
+        run: flutter pub get
+      - if: steps.detect.outputs.present == 'true'
+        run: dart format --output=none --set-exit-if-changed .
+      - if: steps.detect.outputs.present == 'true'
+        run: flutter analyze
+      - if: steps.detect.outputs.present == 'true'
+        run: flutter test

@@ -1,0 +1,51 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+**/generated_plugin_registrant.*
+**/flutter_export_environment.sh
+.fvm/flutter_sdk
+coverage/
+*.g.dart.tmp
+
+# Android
+**/android/.gradle/
+**/android/local.properties
+**/android/key.properties
+**/android/app/release/
+*.jks
+*.keystore
+**/android/**/gradle-wrapper.jar
+**/android/captures/
+**/android/.cxx/
+
+# Windows / Linux build outputs
+**/windows/flutter/ephemeral/
+**/linux/flutter/ephemeral/
+*.msix
+*.AppImage
+.flatpak-builder/
+
+# Native PDFium binaries are fetched by tools/fetch_pdfium, never committed
+third_party/pdfium/
+**/libpdfium.so
+**/pdfium.dll
+
+# Large test corpus is fetched on demand
+test_corpus/external/
+
+# IDEs / OS
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# Secrets and local config
+.env
+*.env
+CLAUDE.local.md
+.claude/settings.local.json
