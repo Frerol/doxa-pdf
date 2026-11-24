@@ -31,9 +31,9 @@ The proposed default is (b), with pdfrx as reference code, because annotations-o
 | Foreign annotations layer | `FPDF_FFLDraw` / rendering with annotations | Exact approach decided in M0 → ADR-0005 |
 | Text, selection, search | `FPDFText_*` (chars, boxes, `FPDFText_FindStart`) | Diacritic-insensitive search done in Dart over extracted text with an index map |
 | Outline, links, page labels | `FPDFBookmark_*`, `FPDFLink_*`, `FPDF_GetPageLabel` | — |
-| Read/write annotations | `FPDFPage_CreateAnnot`, `FPDFAnnot_SetAttachmentPoints`, `FPDFAnnot_AddInkStroke`, `FPDFAnnot_SetStringValue`, `FPDFAnnot_SetColor`, `FPDFPage_RemoveAnnot` | Appearance streams written by us via `FPDFAnnot_SetAP` (§4) |
+| Read/write annotations | `FPDFPage_CreateAnnot`, `FPDFAnnot_AppendAttachmentPoints`, `FPDFAnnot_AddInkStroke`, `FPDFAnnot_SetStringValue`, `FPDFAnnot_SetColor`, `FPDFPage_RemoveAnnot` | `FPDFAnnot_SetAP` cannot attach resources (no Multiply). Ink AP via `FPDFAnnot_AppendObject`, called last. Markup without AP (§4) |
 | Private keys (`/DoxaPressure`, `/NM`) | `FPDFAnnot_SetStringValue`; arrays not directly supported | Encode pressure as a compact string (base64 of quantized samples) |
-| Save | `FPDF_SaveAsCopy` with `FPDF_INCREMENTAL` | Write to temp, then atomic replace (FR-SAVE-002) |
+| Save | `FPDF_SaveAsCopy` **full save** (flags 0), streamed to a temp file | `FPDF_INCREMENTAL` is unusable: it rewrites loaded objects and corrupts xref-stream files ([Spike C](../spikes/C-annotation-write.md)). Own incremental writer post-MVP |
 | Insert note pages (M3) | `FPDFPage_New` + page objects for ruling/grid | — |
 | Page organization (post-1.0) | `FPDF_ImportPages`, `FPDFPage_SetRotation`, `FPDFPage_Delete`, `FPDF_MovePages` | — |
 | Forms (post-1.0) | `FPDFDOC_InitFormFillEnvironment`, `FORM_*` | — |
@@ -42,6 +42,8 @@ The proposed default is (b), with pdfrx as reference code, because annotations-o
 | Content editing (future) | `FPDFPage_*`/`FPDFPageObj_*`/`FPDFText_*` object APIs | Feasible for objects; text reflow is hard. Revisit via ADR |
 
 ## 4. Writing annotations
+
+> **Updated by [Spike C](../spikes/C-annotation-write.md) / [ADR-0008](../adr/0008-annotation-save-strategy.md):** in the MVP, text markup is written **without** `/AP`, ink gets an AP built from page objects (`FPDFAnnot_AppendObject`, after all dictionary setters), and saves are full saves. The hand-written appearance-stream writer described below is the target for the post-MVP incremental writer.
 
 Each Doxa-created annotation includes:
 - The standard keys: `/Subtype`, `/Rect`, `/C`, `/CA`, `/NM`, `/M`, `/CreationDate`, `/T` (author), `/Contents`, `/F` (Print).

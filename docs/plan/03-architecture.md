@@ -116,7 +116,7 @@ flowchart LR
   Cmd --> Journal[(Journal<br/>drift)]
   Model --> Overlay[Flutter annotation layer]
   Model -->|debounced| Sync[Engine: apply to PDFium doc<br/>+ write appearance stream]
-  Sync --> SaveC[SaveCoordinator<br/>incremental save → temp → atomic replace]
+  Sync --> SaveC[SaveCoordinator<br/>full save → temp → verify → atomic replace]
   SaveC -->|success| JClear[Clear journal entries]
 ```
 
@@ -124,7 +124,7 @@ flowchart LR
   The undo stack, the crash journal and the engine sync all consume the same command objects.
 - **Identity**: every annotation gets a stable `/NM` (UUID) so commands target it across reloads. Missing `/NM` values on foreign annotations are assigned in memory and only written when that annotation is edited.
 - **Unknown keys are preserved.** Edits patch specific keys and never rebuild foreign annotations from scratch (FR-ANNO-002).
-- **Appearance streams**: Doxa generates its own `/AP /N` streams for the types it creates, so output looks identical in every reader. See [04 §4](04-pdf-engine.md#4-writing-annotations).
+- **Appearance streams** ([ADR-0008](../adr/0008-annotation-save-strategy.md)): ink gets an AP built from page objects. Text markup is written without AP in the MVP, and every tested reader generates it. The editing document is never rendered with `FPDF_ANNOT`, because that makes PDFium rewrite foreign annotations. See [04 §4](04-pdf-engine.md#4-writing-annotations).
 
 ## 6. Ink architecture
 

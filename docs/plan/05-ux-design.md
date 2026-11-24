@@ -5,7 +5,7 @@
 1. **The page is the interface.** Chrome is minimal while reading and toolbars auto-hide. Tools appear where the hand already is.
 2. **One gesture to mark up.** The highlighter, pen and eraser are always one tap away when a document is open.
 3. **Predictable input.** The stylus always writes with the current pen. Fingers read (scroll, zoom, tap), and finger tools are picked from the toolbar. Mouse/keyboard follow desktop conventions.
-4. **Original look.** Material 3 with Doxa's own identity. No visual copying of other apps ([Vision §3](01-vision-and-scope.md#3-product-inspiration-and-originality)).
+4. **Familiar, not copied.** Reading and annotating should feel very close to the most popular commercial mobile PDF readers, so people switching to Doxa feel at home ([§8](#8-familiar-layout-and-workflows)). The visual identity stays Doxa's own: Material 3, own logo, icons and colours ([Vision §3](01-vision-and-scope.md#3-product-inspiration-and-originality)).
 
 ## 2. Screen map
 
@@ -71,3 +71,19 @@ Default desktop shortcuts: `H` highlight, `U` underline, `P` pen, `E` eraser, `L
 
 ### Still open
 - Toolbar placement on landscape phones.
+
+## 8. Familiar layout and workflows
+
+Maintainer decision (2026-11-24): the viewer should **strongly resemble the layout and workflows of the leading commercial mobile PDF readers** without being an exact copy.
+
+| Resemble (layout, flows, conventions) | Keep original (identity) |
+|---|---|
+| Screen structure: top app bar, document tabs, annotation toolbar at the top, side/bottom panels | Name, logo, app icon, splash |
+| Tool order and grouping in the annotation toolbar; long-press for tool options | Icon set (Material Symbols), illustrations |
+| Viewing modes, page navigation, thumbnail grid, outline and annotation list panels | Colour palette (Doxa seed colour) and typography |
+| Gestures: pinch/double-tap zoom, swipe paging, tap to show/hide chrome | UI texts and help content (written by us) |
+| Annotation selection handles, context menu actions, colour/thickness pickers | Store listing, screenshots and marketing |
+
+Why: familiar workflows lower the switching cost, while copying trade dress (the distinctive overall look) or branding would create trademark and
+copyright risk (R10) and could mislead users about affiliation. **No other product is named in this repository.** Detailed screen-by-screen references
+are agreed with the maintainer outside the repo and recorded here only as generic requirements.

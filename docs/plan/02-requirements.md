@@ -112,7 +112,7 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-SAVE-001 | Autosave annotations to the original file (configurable: autosave, or ask on close). | M | M2 |
 | FR-SAVE-002 | Save atomically: write a temp file and replace the original only after a successful write, on every platform. | M | M2 |
 | FR-SAVE-003 | Journal of unsaved operations, used for crash recovery on next launch. | M | M2 |
-| FR-SAVE-004 | Use incremental save when possible (fast, keeps existing signatures valid). | M | M2 |
+| FR-SAVE-004 | Use incremental save when possible (fast, keeps existing signatures valid). Needs Doxa's own incremental writer, because PDFium's incremental save is unusable ([ADR-0008](../adr/0008-annotation-save-strategy.md)). | S | post-1.0 |
 | FR-SAVE-005 | "Save a copy as…" and share/export. | M | M2 |
 | FR-SAVE-006 | Optional backup of the original before the first modification. | M | M3 |
 
