@@ -22,7 +22,7 @@ void main(List<String> args) {
     }
     final a = pdf.FPDFPage_CreateAnnot(page, FPDF_ANNOT_INK);
     w.setRect(a, (l: 90, t: 420, r: 310, b: 380));
-    w.setString(a, 'NM', 'doxa-after-xodo');
+    w.setString(a, 'NM', 'doxa-after-other-app');
     final path = pdf.FPDFPageObj_CreateNewPath(100, 400);
     pdf.FPDFPath_LineTo(path, 300, 410);
     pdf.FPDFPath_LineTo(path, 300, 395);
