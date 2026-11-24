@@ -15,7 +15,7 @@ Goal: prove the risky parts before building features.
 - `pdfium_ffi` bindings and binary fetching on Android (Linux too, as the CI/test host).
 - **Spike A (rendering):** engine isolate + tiles + annotations-off rendering on a large textbook. Decide the foreign-annotation layer (→ ADR-0005).
 - **Spike B (ink):** S Pen pressure/tilt/buttons in Flutter on the reference tablet, plus a latency measurement. Decide whether the native front-buffer path is needed (→ ADR-0006).
-- **Spike C (write):** create a highlight and an ink annotation with our own appearance streams, save incrementally via SAF, verify in Acrobat, Xodo, pdf.js and Okular.
+- **Spike C (write):** create a highlight and an ink annotation with our own appearance streams, save incrementally via SAF, verify in Acrobat, a commercial Android reader, pdf.js and Okular.
 - **Spike D (OCR):** Tesseract on Android. Check speed per page on the reference tablet, model size, and writing an invisible text layer with PDFium (→ ADR-0007).
 
 Exit: a spike report for each with go/no-go; ADRs recorded; [risks](09-risks.md) updated.

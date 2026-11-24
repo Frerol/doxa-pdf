@@ -22,7 +22,7 @@ Broader PDF editing is not excluded. It simply waits until the study experience 
 
 ## 3. Product inspiration and originality
 
-The feature set is inspired by popular all-in-one PDF readers, Xodo PDF Reader in particular.
+The feature set is inspired by popular all-in-one commercial PDF readers.
 Doxa PDF is an **original implementation**:
 
 - No code, icons, artwork, names or trademarks of other products are used.
