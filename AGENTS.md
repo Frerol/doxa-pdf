@@ -13,8 +13,10 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 
 ## 2. Current status (update this section when it changes)
 - **M0 (foundations and spikes), almost done.** Done: monorepo scaffold, PDFium bindings, Spike A (rendering, ADR-0005), Spike B (ink, ADR-0006),
-  Spike C (annotation writing, ADR-0008), tasks T-01..T-10 (`doxa_core` geometry/dates/IDs/page transforms/palette, `doxa_ink` pressure/smoothing/simplification/erasing).
-- **Open:** #8 Spike D (OCR), #9 test corpus, #3 full CI, #10 Code of Conduct contact (maintainer only), #11 M0 wrap-up. Specs are in §8.
+  Spike C (annotation writing, ADR-0008), tasks T-01..T-10 (`doxa_core` geometry/dates/IDs/page transforms/palette, `doxa_ink` pressure/smoothing/simplification/erasing),
+  #9 PDF test corpus (PR #33) and #3 full CI with Android APK and dependency license checks (PR #34).
+- **Open:** #8 Spike D (OCR), #10 Code of Conduct contact (maintainer only), #11 M0 wrap-up. Specs are in §8.
+  Branch protection on `main` is still to be enabled by the maintainer (required checks listed in PR #34).
 - **Next:** M1 = v0.1 Reader (§9).
 
 ## 3. Repository layout
@@ -26,7 +28,8 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 | `packages/doxa_engine` | PDF engine on PDFium (today: a temporary engine check) | `dart test` (needs PDFium) |
 | `packages/pdfium_ffi` | ffigen-generated PDFium bindings + `openPdfium()` loader | `dart test` (needs PDFium) |
 | `packages/doxa_platform` | Android plugin (pigeon) | `flutter test` |
-| `tools/` | `check.sh`, `fetch_pdfium.sh`, `pdfium.lock` | — |
+| `tools/` | `check.sh`, `fetch_pdfium.sh`, `pdfium.lock`, `fetch_corpus.sh`, `generate_corpus.py`, dependency license checks | `python3 -m unittest` |
+| `test_corpus/` | Small license-cleared PDF fixtures, `MANIFEST` (source + license per file); large files fetched into git-ignored `external/` | used by `pdfium_ffi` tests |
 | `spike/*` branches | Throwaway prototypes (`ink_lab`, `annot_write`, `saf_lab`, `render_probe`, `render_lab`). **Reuse their code as a reference; never merge them** | — |
 
 ## 4. Environment (maintainer's machine)
@@ -43,7 +46,9 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 ```sh
 tools/fetch_pdfium.sh linux          # pinned PDFium for native tests
 flutter pub get                      # whole pub workspace, from the repo root
-tools/check.sh                       # format + analyze + all tests (what CI runs); must pass before any PR
+tools/check.sh                       # format + analyze + all tests (with coverage); must pass before any PR
+python3 tools/check_dependency_licenses.py pub   # pub license check (CI also runs it, plus a Gradle check after the APK build)
+tools/fetch_corpus.sh                # large test PDFs into test_corpus/external/ (needs curl, sha256sum, Ghostscript)
 cd app && flutter build apk --debug  # Android build
 cd packages/pdfium_ffi && dart run tool/ffigen.dart   # regenerate bindings (only when headers change)
 cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dart format .   # regenerate platform messages
@@ -94,17 +99,7 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
 - Pan/zoom through a `ValueNotifier` (repaint) instead of `setState` (rebuild).
 
 ## 8. Next tasks (M0)
-Work on them in this order, one PR each.
-
-### #9 · PDF test corpus
-`test_corpus/` with small, license-cleared PDFs (rotated pages, odd CropBox, two-column text, RTL/CJK, scanned page without text, encrypted, annotations made by
-other apps) and `test_corpus/MANIFEST` (file, source URL, license). Add `tools/fetch_corpus.sh` for large openly licensed fixtures (a 1000+ page textbook,
-two-column articles, a scanned chapter) into git-ignored `test_corpus/external/`, verified by SHA-256. Generated fixtures are fine (see the generators in `spike/annot-write`
-and `spike/render`). **Only use files whose license allows redistribution, and record it.**
-
-### #3 · Full CI
-Extend `.github/workflows/ci.yml`: an Android job (JDK 17, Android SDK, `tools/fetch_pdfium.sh android`, `flutter build apk --debug`, upload the APK as an artifact);
-a license check of pub dependencies (GPL-3.0-compatible only); keep the existing jobs. Branch protection on `main` is set by the maintainer. List the settings in the PR.
+Work on them in this order, one PR each. #9 (test corpus) and #3 (full CI) are done.
 
 ### #8 · Spike D: on-device OCR (needs the tablet)
 Goal: make scanned pages searchable and highlightable (FR-UTIL-001, NFR-PERF-009: ≤ 5 s per page on the reference tablet, in the background, cancellable).
@@ -113,7 +108,7 @@ Goal: make scanned pages searchable and highlightable (FR-UTIL-001, NFR-PERF-009
 2. Write an **invisible text layer** with PDFium: `FPDFText_LoadStandardFont`, `FPDFPageObj_NewTextObj`, `FPDFText_SetText`,
    `FPDFTextObj_SetTextRenderMode(FPDF_TEXTRENDERMODE_INVISIBLE)`, `FPDFPageObj_Transform` (position and size from each word box), `FPDFPage_InsertObject`,
    `FPDFPage_GenerateContent`, then a full save. Afterwards, check that `FPDFText_*` search and selection boxes line up with the words in the image.
-3. Measure on the tablet: time per page, memory, model and APK size. Test with `scanned-300.pdf`-like pages and a real scanned chapter.
+3. Measure on the tablet: time per page, memory, model and APK size. Test with `test_corpus/scanned-300.pdf` and `test_corpus/external/scanned-chapter.pdf` (from `tools/fetch_corpus.sh`).
 4. Deliver `docs/spikes/D-ocr.md` (method, numbers, go/no-go) and **ADR-0007** (OCR integration approach) on `main` via a docs PR. Never merge the spike code.
 
 ### #11 · M0 wrap-up
