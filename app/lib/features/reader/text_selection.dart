@@ -132,6 +132,29 @@ final class TextSelectionController {
     return (toScreen(first.bottomLeft), toScreen(last.bottomRight));
   }
 
+  /// Screen rectangle around the selected lines, for placing the
+  /// selection toolbar; null when nothing is selected.
+  Rect? bounds() {
+    final current = selection.value;
+    final pageText = _text;
+    if (current == null || pageText == null) return null;
+    Rect? union;
+    for (final rect in lineRects(
+      pageText,
+      current.first,
+      current.last - current.first + 1,
+    )) {
+      final doc = reader.documentRect(current.page, rect);
+      if (doc == null) continue;
+      final screen = Rect.fromPoints(
+        (doc.topLeft - reader.offset) * reader.zoom,
+        (doc.bottomRight - reader.offset) * reader.zoom,
+      );
+      union = union == null ? screen : union.expandToInclude(screen);
+    }
+    return union;
+  }
+
   void clear() {
     _word = null;
     _fixed = null;

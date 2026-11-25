@@ -233,6 +233,17 @@ void main() {
       expect(view(tester).sheetColor, const Color(0xFF000000));
     });
 
+    testWidgets('custom colours can be picked in the view options', (
+      tester,
+    ) async {
+      await show(tester, const AppSettings(colorMode: PageColorMode.custom));
+      await tester.tap(find.byTooltip('View options'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Page colour 2'));
+      await tester.pumpAndSettle();
+      expect(view(tester).sheetColor, customBackgrounds[1]);
+    });
+
     testWidgets('full screen hides the bars; a tap brings them back', (
       tester,
     ) async {

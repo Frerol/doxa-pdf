@@ -251,9 +251,14 @@ void main() {
       );
       await show(tester);
       final origin = tester.getTopLeft(find.byType(ReaderView));
-      await tester.longPressAt(origin + charCentre(7));
+      final word = origin + charCentre(7);
+      await tester.longPressAt(word);
       await settle(tester);
       expect(find.text('Copy'), findsOneWidget);
+      // The bar floats next to the selected word, not at the bottom.
+      final bar = tester.getRect(find.text('Copy'));
+      expect((bar.center.dy - word.dy).abs(), lessThan(100));
+      expect((bar.center.dx - word.dx).abs(), lessThan(150));
       await tester.tap(find.text('Copy'));
       await settle(tester);
       expect(copied.single, {'text': 'world'});

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:doxa_engine/doxa_engine.dart';
 import 'package:doxa_platform/doxa_platform.dart';
@@ -82,8 +83,15 @@ class _ReaderPageState extends State<ReaderPage> {
   void initState() {
     super.initState();
     unawaited(_open());
-    widget.settings?.addListener(_applyKeepScreenOn);
+    widget.settings?.addListener(_onSettings);
     _applyKeepScreenOn();
+  }
+
+  /// Settings can change while the document is open (custom colours from
+  /// the view options, keep screen on).
+  void _onSettings() {
+    _applyKeepScreenOn();
+    if (mounted) setState(() {});
   }
 
   /// Follows the keep-screen-on setting while the document is open.
@@ -157,7 +165,7 @@ class _ReaderPageState extends State<ReaderPage> {
       unawaited(_engine?.close(controller.document));
     }
     _probe?.dispose();
-    widget.settings?.removeListener(_applyKeepScreenOn);
+    widget.settings?.removeListener(_onSettings);
     if (_keptScreenOn) unawaited(widget.keepScreenOn(false));
     if (_fullscreen) {
       unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
@@ -277,6 +285,7 @@ class _ReaderPageState extends State<ReaderPage> {
                       controller,
                       colorMode: _colorMode,
                       onColorMode: (mode) => setState(() => _colorMode = mode),
+                      settings: widget.settings,
                       fullscreen: _fullscreen,
                       onFullscreen: _setFullscreen,
                     ),
@@ -312,11 +321,8 @@ class _ReaderPageState extends State<ReaderPage> {
               ),
             ),
             if (_selection case final selection?)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 16,
-                child: _SelectionBar(selection: selection),
+              Positioned.fill(
+                child: _SelectionBar(selection: selection, reader: c),
               ),
           ],
         ),
@@ -599,6 +605,7 @@ Future<void> showViewOptions(
   ValueChanged<PageColorMode>? onColorMode,
   bool fullscreen = false,
   ValueChanged<bool>? onFullscreen,
+  SettingsController? settings,
 }) => showModalBottomSheet<void>(
   context: context,
   showDragHandle: true,
@@ -609,6 +616,7 @@ Future<void> showViewOptions(
     onColorMode: onColorMode,
     fullscreen: fullscreen,
     onFullscreen: onFullscreen,
+    settings: settings,
   ),
 );
 
@@ -619,8 +627,10 @@ class _ViewOptions extends StatefulWidget {
     required this.onColorMode,
     required this.fullscreen,
     required this.onFullscreen,
+    required this.settings,
   });
   final ReaderController controller;
+  final SettingsController? settings;
   final PageColorMode colorMode;
   final ValueChanged<PageColorMode>? onColorMode;
   final bool fullscreen;
@@ -673,6 +683,9 @@ class _ViewOptionsState extends State<_ViewOptions> {
                   },
                 ),
               ),
+              if (_colorMode == PageColorMode.custom)
+                if (widget.settings case final settings?)
+                  CustomColorsEditor(settings: settings),
             ],
             if (widget.onFullscreen case final onFullscreen?)
               SwitchListTile(
@@ -874,10 +887,14 @@ class _SearchBarState extends State<_SearchBar> {
   }
 }
 
-/// Actions for selected text (FR-TEXT-004); M2 adds markup here.
+/// Actions for selected text (FR-TEXT-004), floating next to the
+/// selection as on Android: above it, or below it when there is no room
+/// above. It follows the selection while the view pans and zooms. M2 adds
+/// markup here.
 class _SelectionBar extends StatelessWidget {
-  const _SelectionBar({required this.selection});
+  const _SelectionBar({required this.selection, required this.reader});
   final TextSelectionController selection;
+  final ReaderController reader;
 
   Future<void> _copy(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
@@ -894,29 +911,78 @@ class _SelectionBar extends StatelessWidget {
       valueListenable: selection.selection,
       builder: (context, selected, _) {
         if (selected == null) return const SizedBox.shrink();
-        return Center(
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(24),
-            color: Theme.of(context).colorScheme.surfaceContainerHigh,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextButton.icon(
-                  icon: const Icon(Icons.copy),
-                  label: Text(l10n.selectionCopy),
-                  onPressed: () => _copy(context),
+        // Only this small bar rebuilds while the view moves.
+        return ListenableBuilder(
+          listenable: reader.repaint,
+          builder: (context, _) {
+            final bounds = selection.bounds();
+            if (bounds == null) return const SizedBox.shrink();
+            return CustomSingleChildLayout(
+              delegate: _SelectionBarLayout(
+                bounds,
+                MediaQuery.paddingOf(context),
+              ),
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(24),
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton.icon(
+                      icon: const Icon(Icons.copy),
+                      label: Text(l10n.selectionCopy),
+                      onPressed: () => _copy(context),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: l10n.selectionClose,
+                      onPressed: selection.clear,
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  tooltip: l10n.selectionClose,
-                  onPressed: selection.clear,
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
   }
+}
+
+/// Places the selection bar centred above [selection], or below it (past
+/// the handles) when there is no room above, kept inside the view and clear
+/// of the system bars in [padding].
+class _SelectionBarLayout extends SingleChildLayoutDelegate {
+  _SelectionBarLayout(this.selection, this.padding);
+  final Rect selection;
+  final EdgeInsets padding;
+
+  static const _gap = 12.0;
+
+  /// Room below the text taken by the selection handles.
+  static const _handles = 24.0;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      constraints.loosen();
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final top = padding.top + _gap;
+    final bottom = size.height - padding.bottom - _gap - childSize.height;
+    final above = selection.top - _gap - childSize.height;
+    final below = selection.bottom + _handles + _gap;
+    final y = above >= top ? above : below;
+    final x = selection.center.dx - childSize.width / 2;
+    final maxX = size.width - padding.right - _gap - childSize.width;
+    return Offset(
+      x.clamp(padding.left + _gap, math.max(padding.left + _gap, maxX)),
+      y.clamp(top, math.max(top, bottom)),
+    );
+  }
+
+  @override
+  bool shouldRelayout(_SelectionBarLayout old) =>
+      old.selection != selection || old.padding != padding;
 }
