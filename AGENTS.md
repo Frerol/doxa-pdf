@@ -125,7 +125,7 @@ Scope: `docs/plan/11-mvp.md` §3 v0.1 and `08-roadmap.md` M1. Suggested order (e
 3. **Opening files:** SAF picker and "Open with" intents through `doxa_platform` (pigeon; see `spike/annot-write:spikes/saf_lab` for the Kotlin side),
    then recents with progress, library folders and tabs.
 4. Navigation panels (outline, thumbnails), search, night/sepia, and pt-BR + en strings.
-5. **Offline dictionary** (FR-TEXT-008..010, ADR-0009): `packages/doxa_dict` first (tasks T-11..T-15 in §11), then import/settings and the lookup popup in `app/`.
+5. **Offline dictionary** (FR-TEXT-008..010, FR-TEXT-012, ADR-0009): `packages/doxa_dict` first (tasks T-11..T-15 in §11), then the dictionary pack builder in `tools/`, import/settings, the guided empty state and the lookup popup in `app/` (`docs/plan/05-ux-design.md` §9).
 Before coding a slice, write its issue (if missing) and keep the UI **familiar and original** (§7).
 
 ## 10. When to stop and ask the maintainer

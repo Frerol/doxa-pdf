@@ -91,3 +91,24 @@ Maintainer decision (2026-11-24): the viewer should **strongly resemble the layo
 Why: familiar workflows lower the switching cost, while copying trade dress (the distinctive overall look) or branding would create trademark and
 copyright risk (R10) and could mislead users about affiliation. **No other product is named in this repository.** Detailed screen-by-screen references
 are agreed with the maintainer outside the repo and recorded here only as generic requirements.
+
+## 9. Getting a dictionary
+
+Maintainer decision (2026-11-25): within [ADR-0009](../adr/0009-offline-dictionary.md) (user-imported, never bundled), a student must
+never have to search the web for a dictionary. Getting the first one takes about three taps (FR-TEXT-008, FR-TEXT-009, FR-TEXT-012).
+
+1. **Empty state.** Tapping **Dictionary** with no dictionary installed opens the usual popup (bottom sheet on phones) with a short explanation
+   and two actions: **Get dictionaries** and **Import file**. Settings → Dictionaries shows the same empty state.
+2. **Get dictionaries** opens a Doxa project page in the browser with a short, curated list: Portuguese, English, Portuguese → English and
+   English → Portuguese at first. Each entry is one `.zip` with its size, source and license. The browser downloads it, so the app itself never
+   uses the network ([NFR-SEC-001](02-requirements.md#25-security--privacy-sec)).
+3. **Import in one step.** Opening the downloaded `.zip` offers Doxa in "Open with". Doxa imports, validates and enables it, then confirms with a
+   snackbar. **Import file** opens the system picker, which starts in Downloads when possible.
+
+The packs are **built by Doxa** from free sources (Wiktionary via Wiktextract, CC BY-SA; WordNet for a compact English option), converted to
+StarDict by a script in `tools/` and published as release assets with their SHA-256, attribution and license file. Built packs keep the
+quality, the links and the attribution under our control. Users can still import any other StarDict dictionary.
+
+Import is forgiving: a `.zip` with nested folders, a folder, or loose files all work, and a missing companion file (`.idx`, `.dict`) is
+named in a clear error. Settings → Dictionaries lists each dictionary with its name, size and source, and lets the user enable, disable,
+reorder and remove it.
