@@ -194,7 +194,7 @@ void main() {
 
     testWidgets('explains files it cannot open', (tester) async {
       await showPage(tester, 'missing.pdf');
-      expect(find.text('This file could not be opened.'), findsOneWidget);
+      expect(find.text('The file could not be read.'), findsOneWidget);
       await showPage(tester, 'secret.pdf');
       expect(
         find.text('This PDF is protected with a password.'),

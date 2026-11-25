@@ -1,4 +1,12 @@
 {
+  "openFile": "Open file",
+  "pdfPassword": "Password",
+  "unlockPdf": "Unlock",
+  "pdfWrongPassword": "Wrong password. Try again.",
+  "fileMissing": "The file was not found.",
+  "fileUnreadable": "The file could not be read.",
+  "fileNotPdf": "This file is not a valid PDF.",
+  "filePermissionLost": "Access to this file was lost. Open it again with the system picker.",
   "@@locale": "en",
   "appTitle": "Doxa PDF",
   "@appTitle": {

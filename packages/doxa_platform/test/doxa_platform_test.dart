@@ -10,6 +10,9 @@ class MockDoxaPlatformPlatform
     with MockPlatformInterfaceMixin
     implements DoxaPlatformPlatform {
   @override
+  PdfDocuments get pdfDocuments => throw UnimplementedError();
+
+  @override
   Future<String?> getPlatformVersion() => Future.value('42');
 
   final opened = <String>[];
