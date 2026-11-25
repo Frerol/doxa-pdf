@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project state
-Doxa PDF is a FOSS PDF reader **for studying** (Android, Windows, Linux), currently in milestone M0 (scaffold + spikes).
+Doxa PDF is a FOSS PDF reader **for studying** (Android, Windows, Linux), currently starting milestone M1 (v0.1 Reader); M0 (scaffold + spikes A–D, all GO) is done.
 The plan lives in `docs/plan/` and decisions in `docs/adr/`. Read the relevant plan document before proposing features or architecture.
 
 ## Commands

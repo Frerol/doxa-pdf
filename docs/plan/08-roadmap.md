@@ -9,19 +9,19 @@ flowchart LR
   M4 --> M5[M5 · v0.5<br/>Linux] --> M6[M6 · v0.6<br/>Windows] --> M7[M7 · v1.0<br/>Stores & hardening]
 ```
 
-## M0 — Foundations & technical spikes (Android focus)
-Goal: prove the risky parts before building features.
+## M0 — Foundations & technical spikes (Android focus) ✓
+Goal: prove the risky parts before building features. **Done:** every spike is GO ([reports](../README.md#spike-reports-m0)); the outcomes are noted below.
 - Repository, CI skeleton, lints, FVM pin, pub workspace, ADRs 0001–0004.
 - `pdfium_ffi` bindings and binary fetching on Android (Linux too, as the CI/test host).
-- **Spike A (rendering):** engine isolate + tiles + annotations-off rendering on a large textbook. Decide the foreign-annotation layer (→ ADR-0005).
-- **Spike B (ink):** S Pen pressure/tilt/buttons in Flutter on the reference tablet, plus a latency measurement. Decide whether the native front-buffer path is needed (→ ADR-0006).
-- **Spike C (write):** create a highlight and an ink annotation with our own appearance streams, save incrementally via SAF, verify in Acrobat, a commercial Android reader, pdf.js and Okular.
-- **Spike D (OCR):** Tesseract on Android. Check speed per page on the reference tablet, model size, and writing an invisible text layer with PDFium (→ ADR-0007).
+- **Spike A (rendering):** engine isolate + tiles + annotations-off rendering on a large textbook. Decide the foreign-annotation layer (→ ADR-0005). *Outcome:* two PDFium instances per file (render / edit).
+- **Spike B (ink):** S Pen pressure/tilt/buttons in Flutter on the reference tablet, plus a latency measurement. Decide whether the native front-buffer path is needed (→ ADR-0006). *Outcome:* not needed, pure Flutter at 5–7 ms.
+- **Spike C (write):** create a highlight and an ink annotation with our own appearance streams, save incrementally via SAF, verify in Acrobat, a commercial Android reader, pdf.js and Okular. *Outcome:* incremental save is unusable, so the MVP uses full saves and AP-less markup (→ ADR-0008); Acrobat is still to be checked (R4).
+- **Spike D (OCR):** Tesseract on Android. Check speed per page on the reference tablet, model size, and writing an invisible text layer with PDFium (→ ADR-0007). *Outcome:* Tesseract4Android in a Kotlin worker, ≤ 2.6 s per page.
 
 Exit: a spike report for each with go/no-go; ADRs recorded; [risks](09-risks.md) updated.
 
 ## M1 — v0.1 Reader (Android)
-FILE-001..007, 011 · VIEW-001..014, 016..019 · TEXT-001, 002, 004, 008..010 · BOOK-002 · SET-001, 002.
+FILE-001..007, 011 · VIEW-001..014, 016..019 · TEXT-001, 002, 004, 008..010, 012 · BOOK-002 · SET-001, 002.
 Exit: open and read large textbooks and articles on the reference tablet within the performance budgets.
 
 ## M2 — v0.2 Study core: markup + pen ★

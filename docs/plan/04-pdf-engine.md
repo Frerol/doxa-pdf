@@ -72,7 +72,7 @@ abstract interface class PdfEngine {
 
   Future<List<Annotation>> annotations(PdfDocumentHandle doc, int page);
   Future<void> apply(PdfDocumentHandle doc, List<Command> commands);
-  Future<SaveResult> save(PdfDocumentHandle doc, SaveTarget target, {bool incremental = true});
+  Future<SaveResult> save(PdfDocumentHandle doc, SaveTarget target);  // full save → temp → verify → replace (ADR-0008)
 }
 ```
 

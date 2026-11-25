@@ -192,12 +192,12 @@ Reference devices are defined in [QA §4](06-quality-assurance.md#4-performance-
 | NFR-PERF-001 | Cold start to the home screen in ≤ 1.5 s (A mid-range), ≤ 1 s (desktop). |
 | NFR-PERF-002 | First page visible ≤ 500 ms after opening a typical 300-page textbook (a "fast first paint" placeholder within 100 ms). |
 | NFR-PERF-003 | Scroll and zoom hold 60 fps (120 fps where supported) with no jank frames > 32 ms in standard scenarios. |
-| NFR-PERF-004 | Ink: live stroke latency (input event → pixels) ≤ 25 ms on the reference tablet, using Android's low-latency/front-buffer path where available. |
+| NFR-PERF-004 | Ink: live stroke latency (input event → pixels) ≤ 25 ms on the reference tablet. Spike B measured 5–7 ms event → raster in pure Flutter, so no native front-buffer path is built ([ADR-0006](../adr/0006-ink-rendering-in-flutter.md)). |
 | NFR-PERF-005 | Committing a stroke or highlight must not block input; the page re-render after commit has no visible flash. |
 | NFR-PERF-006 | Memory: ≤ 400 MB for a 1000-page document on Android; tile cache bounded and trimmed on memory pressure. |
 | NFR-PERF-007 | Search over a 1000-page text document streams first results within 1 s and stays cancellable. |
-| NFR-PERF-008 | Saving annotations on a 100 MB file takes ≤ 2 s with incremental save. |
-| NFR-PERF-009 | OCR runs in the background without affecting reading/ink performance, is cancellable, and processes a typical text page in ≤ 5 s on the reference tablet (to be validated in M0 Spike D). |
+| NFR-PERF-008 | Saving annotations on a 100 MB file takes ≤ 2 s. In the MVP this is a full save ([ADR-0008](../adr/0008-annotation-save-strategy.md)); Spike C measured 272 ms for a 155 MB file on the reference tablet. |
+| NFR-PERF-009 | OCR runs in the background without affecting reading/ink performance, is cancellable, and processes a typical text page in ≤ 5 s on the reference tablet. Spike D measured at most 2.6 s per dense page ([ADR-0007](../adr/0007-ocr-integration.md)). |
 
 ### 2.2 Reliability & data integrity (REL)
 | ID | Requirement |

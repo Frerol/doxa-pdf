@@ -12,13 +12,13 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 - The maintainer (GitHub `Frerol`) speaks **Brazilian Portuguese**. Talk to them in pt-BR. Code, comments, docs, commits, issues and PRs are in **English**.
 
 ## 2. Current status (update this section when it changes)
-- **M0 (foundations and spikes), almost done.** Done: monorepo scaffold, PDFium bindings, Spike A (rendering, ADR-0005), Spike B (ink, ADR-0006),
+- **M0 (foundations and spikes), done.** Done: monorepo scaffold, PDFium bindings, Spike A (rendering, ADR-0005), Spike B (ink, ADR-0006),
   Spike C (annotation writing, ADR-0008), tasks T-01..T-10 (`doxa_core` geometry/dates/IDs/page transforms/palette, `doxa_ink` pressure/smoothing/simplification/erasing),
   #9 PDF test corpus (PR #33), #3 full CI with Android APK and dependency license checks (PR #34), and #8 Spike D (OCR: GO with
-  Tesseract4Android, `docs/spikes/D-ocr.md`; ADR-0007 accepted).
-- **Open:** #10 Code of Conduct contact (maintainer only), #11 M0 wrap-up. Specs are in §8.
+  Tesseract4Android, `docs/spikes/D-ocr.md`; ADR-0007 accepted), and #11 wrap-up (risks re-rated, roadmap and requirements updated after the spikes).
+- **Open:** #10 Code of Conduct contact (maintainer only), and creating the M1 issues from #11 (one per slice of §9).
   Branch protection on `main` is still to be enabled by the maintainer (required checks listed in PR #34).
-- **Next:** M1 = v0.1 Reader (§9).
+- **Now:** M1 = v0.1 Reader (§9). The offline dictionary is #43 (T-11..T-13 done; T-14, T-15 next in §11).
 
 ## 3. Repository layout
 | Path | What | Tests |
@@ -102,22 +102,9 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
 - **Stylus pointers must never reach pan/zoom recognizers** (`InteractiveViewer`, scrollables). Disabling pan after the pen's pointer-down is too late:
   the recognizer has already joined the gesture arena and the page shifts a little under the pen (seen in Spike D's harness).
 
-## 8. Next tasks (M0)
-Work on them in this order, one PR each. #9 (test corpus), #3 (full CI) and #8 (Spike D) are done.
-
-### #8 · Spike D: on-device OCR (needs the tablet)
-Goal: make scanned pages searchable and highlightable (FR-UTIL-001, NFR-PERF-009: ≤ 5 s per page on the reference tablet, in the background, cancellable).
-1. Prototype on branch `spike/ocr` (a small app like `spike/render:spikes/render_lab`). Use **Tesseract** (Apache-2.0) through a maintained Android binding or
-   an FFI build. Compare the options and check licenses. Models: `tessdata_fast` **por** + **eng**, downloadable on demand.
-2. Write an **invisible text layer** with PDFium: `FPDFText_LoadStandardFont`, `FPDFPageObj_NewTextObj`, `FPDFText_SetText`,
-   `FPDFTextObj_SetTextRenderMode(FPDF_TEXTRENDERMODE_INVISIBLE)`, `FPDFPageObj_Transform` (position and size from each word box), `FPDFPage_InsertObject`,
-   `FPDFPage_GenerateContent`, then a full save. Afterwards, check that `FPDFText_*` search and selection boxes line up with the words in the image.
-3. Measure on the tablet: time per page, memory, model and APK size. Test with `test_corpus/scanned-300.pdf` and `test_corpus/external/scanned-chapter.pdf` (from `tools/fetch_corpus.sh`).
-4. Deliver `docs/spikes/D-ocr.md` (method, numbers, go/no-go) and **ADR-0007** (OCR integration approach) on `main` via a docs PR. Never merge the spike code.
-
-### #11 · M0 wrap-up
-After #8: update `docs/plan/09-risks.md` (R13 OCR, R14 memory), the roadmap if scope changed, and `docs/README.md`; then create the **M1 issues** (one per
-coherent feature slice, referencing requirement IDs from `08-roadmap.md` M1), each with tasks and acceptance criteria, in milestone `M1 — v0.1 Reader`.
+## 8. M0 wrap-up (done)
+All M0 tasks are done (#2–#9, and #11 except its last item); their specs are in git history (`git log -p -- AGENTS.md`). The only M0 leftover is creating the **M1 issues**:
+one per coherent feature slice of §9, referencing requirement IDs from `08-roadmap.md` M1, each with tasks and acceptance criteria, in milestone `M1 — v0.1 Reader`.
 
 ## 9. Guide for M1 (v0.1 Reader)
 Scope: `docs/plan/11-mvp.md` §3 v0.1 and `08-roadmap.md` M1. Suggested order (each a separate PR, behind tests):
