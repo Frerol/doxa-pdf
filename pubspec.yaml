@@ -8,6 +8,7 @@ environment:
 workspace:
   - app
   - packages/doxa_core
+  - packages/doxa_dict
   - packages/doxa_ink
   - packages/doxa_engine
   - packages/pdfium_ffi

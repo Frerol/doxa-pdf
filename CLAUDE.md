@@ -20,7 +20,7 @@ The plan lives in `docs/plan/` and decisions in `docs/adr/`. Read the relevant p
 - Never name the commercial reader that inspired Doxa anywhere in the repo (docs, code, commits, issues); say "a commercial PDF reader". Never copy names, icons, colours or texts from other apps.
 
 ## Decided stack (see ADRs)
-Flutter + Dart FFI to PDFium (no V8/XFA), monorepo with pub workspaces (`app/`, `packages/doxa_core|doxa_ink|doxa_engine|pdfium_ffi|doxa_platform`), Riverpod, drift. License GPL-3.0-or-later; dependencies must be GPL-3-compatible (no MuPDF/AGPL).
+Flutter + Dart FFI to PDFium (no V8/XFA), monorepo with pub workspaces (`app/`, `packages/doxa_core|doxa_dict|doxa_ink|doxa_engine|pdfium_ffi|doxa_platform`), Riverpod, drift. License GPL-3.0-or-later; dependencies must be GPL-3-compatible (no MuPDF/AGPL).
 
 ## Conventions
 - All docs, code, comments and commits in **English** (the maintainer may chat in Portuguese).
@@ -28,7 +28,7 @@ Flutter + Dart FFI to PDFium (no V8/XFA), monorepo with pub workspaces (`app/`, 
 - Conventional Commits, signed off (`git commit -s`). Branches `feat|fix|docs|chore|spike/<topic>`.
 - New source files get `// SPDX-License-Identifier: GPL-3.0-or-later`.
 - Flutter 3.50: import `package:material_ui/material_ui.dart`, not the deprecated `package:flutter/material.dart`. Use `GlobalMaterialLocalizations.delegates` from material_ui (the gen-l10n delegate list is incompatible).
-- `doxa_core` must stay pure Dart (enforced by its `dependency_rule_test.dart`).
+- `doxa_core` and `doxa_dict` must stay pure Dart (enforced by their `dependency_rule_test.dart`).
 - Annotations are stored in the PDF itself (no sidecar format), with our own appearance streams. Unknown keys of foreign annotations must be preserved.
 - All PDFium calls run in the single engine isolate. PDFium is not thread-safe.
 - Rendering (ADR-0005): one engine isolate with priority + generation cancellation; 360 px previews + 512 px tiles at power-of-two zoom buckets; two PDFium instances per file (read-only render instance with Doxa annots hidden in memory and `FPDF_ANNOT` on; editing instance never rendered with annots).

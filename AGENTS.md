@@ -24,6 +24,7 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 |---|---|---|
 | `app/` | Flutter app (Android; applicationId `io.github.frerol.doxapdf`, minSdk 29) | `flutter test` |
 | `packages/doxa_core` | Pure Dart domain: geometry, page transforms, dates, IDs, palette. **No Flutter imports** (enforced by a test) | `dart test` |
+| `packages/doxa_dict` | Pure Dart offline dictionary support (StarDict metadata parser) | `dart test` |
 | `packages/doxa_ink` | Pure Dart ink: pressure curve, arc smoothing, resampling, hit testing, partial erase | `dart test` |
 | `packages/doxa_engine` | PDF engine on PDFium (today: a temporary engine check) | `dart test` (needs PDFium) |
 | `packages/pdfium_ffi` | ffigen-generated PDFium bindings + `openPdfium()` loader | `dart test` (needs PDFium) |
