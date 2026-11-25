@@ -18,6 +18,22 @@
 
 Dependabot covers GitHub Actions, Gradle and pub. A scheduled job checks for new PDFium releases and opens a PR.
 
+The M0 workflow publishes `lcov` for the Linux test suite, including the
+native PDFium integration tests, and `android-debug-apk` for the Android
+debug build. The Android job uses JDK 17 and installs the SDK platform and
+NDK versions required by the Flutter SDK in `.fvmrc`. Update those Android
+versions in the workflow when they change in Flutter.
+
+The license checks read the resolved pub workspace and the Android debug
+compile and runtime Gradle graphs, including transitive dependencies. The
+pub check compares each external package's complete LICENSE, with whitespace
+normalized, against the reviewed fingerprints in
+[pub_licenses.tsv](../../tools/pub_licenses.tsv). Review changes to the license
+text before adding a fingerprint. The Gradle check uses Maven license URLs and
+explicit allowances for the pinned Flutter engine and the reviewed Guava
+artifact with inherited license metadata. Missing or unrecognized license
+metadata fails the check.
+
 ## 3. Packaging & channels
 
 | Platform | Artifacts | Channels |

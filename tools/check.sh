@@ -30,9 +30,10 @@ for pkg in packages/*/ app/; do
   [[ -d "$pkg/test" ]] || continue
   echo "==> test $pkg"
   if grep -q 'sdk: flutter' "$pkg/pubspec.yaml"; then
-    (cd "$pkg" && flutter test)
+    (cd "$pkg" && flutter test --coverage)
   else
-    (cd "$pkg" && dart test)
+    mkdir -p "$pkg/coverage"
+    (cd "$pkg" && dart test --coverage-path=coverage/lcov.info)
   fi
 done
 
