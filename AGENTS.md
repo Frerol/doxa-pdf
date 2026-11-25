@@ -16,7 +16,7 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
   Spike C (annotation writing, ADR-0008), tasks T-01..T-10 (`doxa_core` geometry/dates/IDs/page transforms/palette, `doxa_ink` pressure/smoothing/simplification/erasing),
   #9 PDF test corpus (PR #33), #3 full CI with Android APK and dependency license checks (PR #34), and #8 Spike D (OCR: GO with
   Tesseract4Android, `docs/spikes/D-ocr.md`; ADR-0007 accepted), #10 Code of Conduct contact, and #11 wrap-up (risks re-rated, roadmap and requirements updated after the spikes).
-- **Open:** creating the M1 issues from #11 (one per slice of §9). Branch protection on `main` is still to be enabled by the maintainer (required checks listed in PR #34).
+- **Open:** nothing in M0. Branch protection on `main` is enabled (PR required; checks `Docs`, `Analyze & test`, `Android debug APK`, `PDFium bindings up to date`).
 - **Now:** M1 = v0.1 Reader (§9). The offline dictionary is #43 (T-11..T-13 done; T-14, T-15 next in §11).
 
 ## 3. Repository layout
@@ -102,8 +102,7 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
   the recognizer has already joined the gesture arena and the page shifts a little under the pen (seen in Spike D's harness).
 
 ## 8. M0 wrap-up (done)
-All M0 tasks are done (#2–#9, and #11 except its last item); their specs are in git history (`git log -p -- AGENTS.md`). The only M0 leftover is creating the **M1 issues**:
-one per coherent feature slice of §9, referencing requirement IDs from `08-roadmap.md` M1, each with tasks and acceptance criteria, in milestone `M1 — v0.1 Reader`.
+All M0 tasks are done (#2–#11); their specs are in git history (`git log -p -- AGENTS.md`). The M1 issues (#46–#55, plus #43) are listed in §9.
 
 ## 9. Guide for M1 (v0.1 Reader)
 Scope: `docs/plan/11-mvp.md` §3 v0.1 and `08-roadmap.md` M1. Suggested order (each a separate PR, behind tests):
@@ -115,7 +114,9 @@ Scope: `docs/plan/11-mvp.md` §3 v0.1 and `08-roadmap.md` M1. Suggested order (e
    then recents with progress, library folders and tabs.
 4. Navigation panels (outline, thumbnails), search, night/sepia, and pt-BR + en strings.
 5. **Offline dictionary** (FR-TEXT-008..010, FR-TEXT-012, ADR-0009): `packages/doxa_dict` first (tasks T-11..T-15 in §11), then the dictionary pack builder in `tools/`, import/settings, the guided empty state and the lookup popup in `app/` (`docs/plan/05-ux-design.md` §9).
-Before coding a slice, write its issue (if missing) and keep the UI **familiar and original** (§7).
+M1 issues: #46 engine · #47 continuous reader · #48 paged layouts · #49 opening files · #50 library and reading state · #51 tabs ·
+#52 navigation · #53 search and selection · #54 comfort and settings · #43 dictionary · #55 v0.1 beta release.
+Each issue lists its dependencies, tasks and acceptance criteria. Keep the UI **familiar and original** (§7).
 
 ## 10. When to stop and ask the maintainer
 Anything that needs the physical tablet (S Pen feel, visual checks), UI/UX choices not covered by `05-ux-design.md`, new dependencies, licensing questions,
