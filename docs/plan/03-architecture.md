@@ -163,7 +163,7 @@ the app uses it to re-associate progress. Locations are stored separately: a pat
 |---|---|---|---|
 | Open/save | SAF `ACTION_OPEN_DOCUMENT` + persistable permissions, write via `ContentResolver` | Native file dialogs, direct paths | XDG portals (works in Flatpak) |
 | "Open with" | `VIEW` intent filter for `application/pdf` | File association via installer + single-instance IPC | `.desktop` `MimeType=application/pdf` + D-Bus single instance |
-| Stylus | MotionEvent pressure/tilt/buttons; low-latency overlay | Pointer events with pen pressure (validate in M0) | GTK tablet events (validate in M0) |
+| Stylus | MotionEvent pressure/tilt/buttons through Flutter's `Listener`, no native overlay ([ADR-0006](../adr/0006-ink-rendering-in-flutter.md)) | Pointer events with pen pressure (desktop stylus spike in M6, R2) | GTK tablet events (desktop stylus spike in M5, R2) |
 | Atomic save | Write temp in cache → copy into URI with truncation (fallback, see risks) | `ReplaceFileW` | `rename(2)` in the same directory |
 
 ## 9. Error handling & observability

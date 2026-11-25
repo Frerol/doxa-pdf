@@ -203,7 +203,7 @@ Reference devices are defined in [QA §4](06-quality-assurance.md#4-performance-
 | ID | Requirement |
 |---|---|
 | NFR-REL-001 | No user-visible data loss: a crash or app kill loses at most the in-progress stroke. |
-| NFR-REL-002 | Malformed or hostile PDFs are reported as "cannot open" instead of crashing. Engine errors are caught at the FFI boundary; native crashes are reduced through fuzzing and an up-to-date PDFium, and a crash never loses journaled annotations. Running the engine out of process is evaluated in M0 (see [risks](09-risks.md)). |
+| NFR-REL-002 | Malformed or hostile PDFs are reported as "cannot open" instead of crashing. Engine errors are caught at the FFI boundary; native crashes are reduced through fuzzing and an up-to-date PDFium, and a crash never loses journaled annotations. Running the engine out of process is evaluated between M1 and M4 (R3 in [risks](09-risks.md)). |
 | NFR-REL-003 | Never write a partially saved file over the original (see FR-SAVE-002). |
 | NFR-REL-004 | Output stays valid PDF that other readers open: validated in CI with qpdf `--check` and render comparisons. |
 
