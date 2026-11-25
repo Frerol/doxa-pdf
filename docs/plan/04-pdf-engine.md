@@ -26,8 +26,8 @@ and a C API covering rendering, text, annotations, forms, page objects and savin
 
 | Need | PDFium API | Gap / plan |
 |---|---|---|
-| Open, password | `FPDF_LoadCustomDocument` (file access callbacks, so SAF streams work) | — |
-| Render tiles | `FPDF_RenderPageBitmapWithMatrix` + clip, without `FPDF_ANNOT` | Progressive render for heavy pages (`FPDF_RenderPageBitmap_Start`) |
+| Open, password | `FPDF_LoadDocument` (paths, including `/proc/self/fd/<fd>` for SAF URIs on Android) and `FPDF_LoadMemDocument64` | `FPDF_LoadCustomDocument` (read callbacks) if a provider gives no seekable descriptor |
+| Render tiles | `FPDF_RenderPageBitmapWithMatrix` + clip on the render instance, with `FPDF_ANNOT`; from M2, Doxa's own annotations are hidden in memory there (ADR-0005) | Progressive render for heavy pages (`FPDF_RenderPageBitmap_Start`) |
 | Foreign annotations layer | `FPDF_FFLDraw` / rendering with annotations | Exact approach decided in M0 → ADR-0005 |
 | Text, selection, search | `FPDFText_*` (chars, boxes, `FPDFText_FindStart`) | Diacritic-insensitive search done in Dart over extracted text with an index map |
 | Outline, links, page labels | `FPDFBookmark_*`, `FPDFLink_*`, `FPDF_GetPageLabel` | — |
@@ -56,24 +56,32 @@ Each Doxa-created annotation includes:
 
 Interop is verified by rendering the saved output with pdf.js, MuPDF and Poppler in CI and comparing against goldens ([QA §3](06-quality-assurance.md#3-pdf-test-corpus--interoperability)).
 
-## 5. Engine interface (sketch)
+## 5. Engine interface
+
+Implemented in `packages/doxa_engine` (issue #46). Annotation reading, editing and saving arrive in M2.
 
 ```dart
 abstract interface class PdfEngine {
-  Future<PdfDocumentHandle> open(DocumentSource source, {String? password});
-  Future<void> close(PdfDocumentHandle doc);
+  Future<OpenResult> open(DocumentSource source, {String? password});    // DocumentOpened | PasswordRequired | WrongPassword | OpenFailed
+  Future<void> close(DocumentHandle document);
 
-  Future<DocumentInfo> info(PdfDocumentHandle doc);            // page count, sizes, labels, metadata
-  Future<List<OutlineNode>> outline(PdfDocumentHandle doc);
-  Future<RenderedTile> render(TileRequest request, {CancelToken? cancel});
+  Future<PageDetails> pageDetails(DocumentHandle document, int pageIndex); // crop box + rotation → PageTransform
+  Future<List<OutlineNode>> outline(DocumentHandle document);
+  Future<List<PageLink>> pageLinks(DocumentHandle document, int pageIndex);
 
-  Future<PageText> pageText(PdfDocumentHandle doc, int page);  // chars + boxes, cached
-  Stream<SearchHit> search(PdfDocumentHandle doc, SearchQuery q, {CancelToken? cancel});
+  Future<RenderResult> render(RenderRequest request, {CancelToken? cancel}); // RGBA bitmap | RenderSkipped
+  void setGeneration(DocumentHandle document, int generation);            // drops stale queued renders
 
-  Future<List<Annotation>> annotations(PdfDocumentHandle doc, int page);
-  Future<void> apply(PdfDocumentHandle doc, List<Command> commands);
-  Future<SaveResult> save(PdfDocumentHandle doc, SaveTarget target);  // full save → temp → verify → replace (ADR-0008)
+  Future<PageText> pageText(DocumentHandle document, int pageIndex);       // chars + boxes, cached
+  Stream<SearchHit> search(DocumentHandle document, SearchQuery query);    // page by page; cancel the subscription to stop
+
+  Future<void> dispose();
 }
 ```
 
-The PDFium implementation runs in the engine isolate. A `FakePdfEngine` in `doxa_core/testing` lets UI and controller tests run without native code.
+- `PdfiumEngine` runs every PDFium call in one engine isolate. Commands and replies are typed classes; a priority queue runs one job per
+  event-loop turn (visible previews, visible tiles, near previews, near tiles, search pages, thumbnails, background), so cancellations
+  and new generations apply before the next job. Every failure becomes a typed reply, so one bad document never stops the engine.
+- Each document has a render instance (rendered with `FPDF_ANNOT`) and an editing instance loaded on demand (ADR-0005).
+- Text boxes and destinations are in PDF user space; `PageDetails.transform()` maps them to the view.
+- `FakePdfEngine` (`package:doxa_engine/testing.dart`) lets UI and controller tests run without native code.

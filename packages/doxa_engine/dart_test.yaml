@@ -1,0 +1,3 @@
+# PDFium is not thread-safe, and `dart test` runs test files in parallel
+# isolates of one process. Run the files one at a time.
+concurrency: 1

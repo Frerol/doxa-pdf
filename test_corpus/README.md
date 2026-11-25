@@ -1,6 +1,6 @@
 # PDF test corpus
 
-Use these paths relative to `test_corpus/` when reporting a spike result.
+Use these paths relative to `test_corpus/` when reporting a spike or test result.
 [MANIFEST](MANIFEST) records where each PDF comes from and how it is licensed.
 
 | Spike | Fixtures |
@@ -9,6 +9,7 @@ Use these paths relative to `test_corpus/` when reporting a spike result.
 | B · Ink | `rotated-pages.pdf`, `offset-cropbox.pdf`, and `marked-up-xournalpp.pdf` |
 | C · Annotation writing | `two-column-article.pdf`, `rtl-cjk.pdf` (Hebrew, Japanese, Chinese and Korean), `encrypted.pdf` (user password `study`, owner password `doxa-owner`), and `annotated-*.pdf` |
 | D · OCR | `scanned-300.pdf` and `external/scanned-chapter.pdf` (grayscale page images at 300 dpi with no text layer) |
+| Engine (#46) | `navigation.pdf` (outline, page labels, internal, URI and remote links), `encrypted.pdf`, `rotated-pages.pdf`, `offset-cropbox.pdf` and `many-pages.pdf` |
 
 The Acrobat fixture has a highlight with an appearance stream and a
 linked popup. It retains the upstream file's linearization hints, which

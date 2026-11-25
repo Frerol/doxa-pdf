@@ -5,6 +5,7 @@ annotated-pdfjs.pdf	-	https://github.com/Frerol/doxa-pdf/issues/9	GPL-3.0-or-lat
 encrypted.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. AES-256.
 many-pages.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. 1,001 pages sharing a content stream.
 marked-up-xournalpp.pdf	-	https://github.com/Frerol/doxa-pdf/issues/9	GPL-3.0-or-later	Doxa PDF. Xournal++ 1.3.8 exported pen and highlighter strokes over two-column-article.pdf with its qpdf backend.
+navigation.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. Six pages with an outline, page labels (i, ii, 1–3, A-1), and internal, URI and remote links.
 offset-cropbox.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. Fractional, non-zero CropBox origin.
 rotated-pages.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. Four /Rotate values.
 rtl-cjk.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later; OFL-1.1 fonts	Doxa PDF text and layout. Noto Sans Hebrew copyright 2024 The Noto Project Authors (https://github.com/notofonts/hebrew). Noto Sans CJK copyright Adobe and Google (https://github.com/notofonts/noto-cjk).
