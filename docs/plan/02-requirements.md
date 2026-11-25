@@ -64,6 +64,7 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-TEXT-009 | Import dictionaries in StarDict format (`.ifo` + `.idx`/`.idx.gz` + `.dict`/`.dict.dz`, optional `.syn`) from a file, folder or `.zip`; list, enable/disable, reorder and remove them. | M | M1 |
 | FR-TEXT-010 | Lookup tolerates real text: trims surrounding punctuation, falls back to case- and diacritic-insensitive matches, follows synonym entries, and suggests close headwords when nothing matches. | S | M1 |
 | FR-TEXT-011 | In-app translation of the selection or the whole document. Needs an ADR (online service vs. free offline models; never a proprietary SDK). Until then, FR-TEXT-006 hands off to an OS translator. | C | post-1.0 |
+| FR-TEXT-012 | Getting a dictionary is guided: with none installed, the lookup popup explains the feature and offers **Get dictionaries** (a project page with ready-to-import StarDict packs built by Doxa from free sources) and **Import file**; dictionary `.zip` packs also open through "Open with" and are imported and enabled in one step ([UX §9](05-ux-design.md#9-getting-a-dictionary)). | M | M1 |
 
 ### 1.4 Text markup (MARK), Tier 1
 | ID | Requirement | Pri | MS |
