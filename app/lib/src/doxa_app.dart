@@ -1,15 +1,40 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:io';
+
+import 'package:doxa_engine/doxa_engine.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../features/dev/dev_documents.dart';
 import '../l10n/gen/app_localizations.dart';
 
 /// Seed color of the Doxa PDF Material 3 theme (docs/plan/05-ux-design.md §5).
 const Color doxaSeedColor = Color(0xFF3F51B5);
 
+Future<PdfEngine>? _pdfium;
+
+/// The app's PDFium engine, started on first use and kept for the app's
+/// lifetime (one engine per process).
+/// A failed start is not kept, so the next call tries again.
+Future<PdfEngine> loadPdfiumEngine() =>
+    _pdfium ??= PdfiumEngine.spawn().catchError((Object error) {
+      _pdfium = null;
+      throw error;
+    });
+
 /// Root widget of Doxa PDF.
 class DoxaApp extends StatelessWidget {
-  const DoxaApp({super.key});
+  const DoxaApp({
+    super.key,
+    this.engine = loadPdfiumEngine,
+    this.devDocumentsDir,
+  });
+
+  final Future<PdfEngine> Function() engine;
+
+  /// Folder listed by the temporary developer document list; by default the
+  /// app's own folder on Android, and none elsewhere.
+  final String? devDocumentsDir;
 
   @override
   Widget build(BuildContext context) {
@@ -28,14 +53,26 @@ class DoxaApp extends StatelessWidget {
         ...GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const PlaceholderHome(),
+      home: PlaceholderHome(
+        engine: engine,
+        devDocumentsDir:
+            devDocumentsDir ??
+            (Platform.isAndroid ? androidDevDocumentsDir : null),
+      ),
     );
   }
 }
 
 /// Temporary home screen until the library (M1) exists.
 class PlaceholderHome extends StatelessWidget {
-  const PlaceholderHome({super.key});
+  const PlaceholderHome({
+    super.key,
+    required this.engine,
+    this.devDocumentsDir,
+  });
+
+  final Future<PdfEngine> Function() engine;
+  final String? devDocumentsDir;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +90,10 @@ class PlaceholderHome extends StatelessWidget {
               Text(l10n.homeTagline, style: textTheme.titleMedium),
               const SizedBox(height: 24),
               Text(l10n.previewNotice, textAlign: TextAlign.center),
+              if (devDocumentsDir case final dir?) ...[
+                const SizedBox(height: 24),
+                DevDocuments(engine: engine, directory: dir),
+              ],
             ],
           ),
         ),

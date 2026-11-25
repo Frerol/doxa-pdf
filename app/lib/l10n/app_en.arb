@@ -11,5 +11,55 @@
   "previewNotice": "Engineering preview — nothing to see here yet.",
   "@previewNotice": {
     "description": "Notice shown while the app is only a scaffold."
+  },
+  "readerOpening": "Opening…",
+  "@readerOpening": {
+    "description": "Accessibility label of the progress indicator while a document opens."
+  },
+  "readerOpenFailed": "This file could not be opened.",
+  "@readerOpenFailed": {
+    "description": "Shown when a document is missing, damaged or not a PDF."
+  },
+  "readerPasswordNeeded": "This PDF is protected with a password.",
+  "@readerPasswordNeeded": {
+    "description": "Shown when an encrypted PDF cannot be opened without a password."
+  },
+  "readerZoomMenu": "Zoom",
+  "@readerZoomMenu": {
+    "description": "Tooltip of the reader's zoom menu."
+  },
+  "readerFitWidth": "Fit width",
+  "@readerFitWidth": {
+    "description": "Zoom menu item: pages as wide as the screen."
+  },
+  "readerFitPage": "Fit page",
+  "@readerFitPage": {
+    "description": "Zoom menu item: the whole page fits the screen."
+  },
+  "readerZoomFactor": "{factor}×",
+  "@readerZoomFactor": {
+    "description": "Zoom menu item: a multiple of the fit-width zoom.",
+    "placeholders": {
+      "factor": {
+        "type": "int"
+      }
+    }
+  },
+  "devDocumentsTitle": "PDFs in the app folder (developer)",
+  "@devDocumentsTitle": {
+    "description": "Title of the temporary developer list of test PDFs."
+  },
+  "devDocumentsRefresh": "Refresh",
+  "@devDocumentsRefresh": {
+    "description": "Button that lists the developer folder again."
+  },
+  "devDocumentsEmpty": "Copy PDFs into {path} with adb push, then refresh.",
+  "@devDocumentsEmpty": {
+    "description": "Shown when the developer folder has no PDFs.",
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
   }
 }
