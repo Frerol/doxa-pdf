@@ -56,7 +56,10 @@ Default desktop shortcuts: `H` highlight, `U` underline, `P` pen, `E` eraser, `L
 
 - Material 3 with a **Doxa seed color** and dynamic color on Android 12+.
 - Default palette for study markup, chosen for legibility under multiply blend and tuned for color-vision deficiencies: yellow, green, blue, pink, orange, purple. Users can relabel colors (for example "Definition", "Exam", "Doubt"), and the labels drive review-panel filtering.
-- App icon and brand assets are original. A designer contribution is welcome (tracked as an issue).
+- App icon and brand assets are original. The **provisional icon** is a lowercase delta (δ, for δόξα) drawn as one stroke in four
+  colours, magenta → green → purple → orange, with hard joins; its bowl closes by passing under the stem. Sources are in
+  [`assets/brand/`](../../assets/brand/) (dark, light, transparent, Android adaptive foreground, single-colour). The full branding
+  will be revisited later; a designer contribution is welcome.
 
 ## 6. Accessibility
 
