@@ -1,6 +1,6 @@
 # ADR-0007 — On-device OCR with Tesseract4Android
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-25
 
 ## Context

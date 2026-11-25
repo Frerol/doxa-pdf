@@ -15,7 +15,7 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 - **M0 (foundations and spikes), almost done.** Done: monorepo scaffold, PDFium bindings, Spike A (rendering, ADR-0005), Spike B (ink, ADR-0006),
   Spike C (annotation writing, ADR-0008), tasks T-01..T-10 (`doxa_core` geometry/dates/IDs/page transforms/palette, `doxa_ink` pressure/smoothing/simplification/erasing),
   #9 PDF test corpus (PR #33), #3 full CI with Android APK and dependency license checks (PR #34), and #8 Spike D (OCR: GO with
-  Tesseract4Android, `docs/spikes/D-ocr.md`; ADR-0007 proposed, awaiting the maintainer's acceptance).
+  Tesseract4Android, `docs/spikes/D-ocr.md`; ADR-0007 accepted).
 - **Open:** #10 Code of Conduct contact (maintainer only), #11 M0 wrap-up. Specs are in §8.
   Branch protection on `main` is still to be enabled by the maintainer (required checks listed in PR #34).
 - **Next:** M1 = v0.1 Reader (§9).
