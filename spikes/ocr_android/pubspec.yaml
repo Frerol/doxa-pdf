@@ -1,0 +1,20 @@
+name: ocr_android
+description: Android OCR measurement harness for Doxa PDF Spike D.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ffi: ^2.2.0
+  material_ui: ^1.1.0
+  pdfium_ffi:
+    path: ../../packages/pdfium_ffi
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

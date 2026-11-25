@@ -1,8 +1,8 @@
 # Spike D — On-device OCR
 
 **Issue #8 · Draft · Linux host results.** PDFium preserved the page images and
-made the OCR text selectable on both fixtures. The Android integration and the
-Galaxy Tab S10 FE performance decision are pending. This spike covers
+made the OCR text selectable on both fixtures. The Android measurement harness is in `spikes/ocr_android/`. The APK build
+and the Galaxy Tab S10 FE performance decision are pending. This spike covers
 FR-UTIL-001 and NFR-PERF-009 for v0.4.
 
 ## Android integration options
@@ -168,56 +168,109 @@ font coverage and rotated/cropped-page tests.
 
 ## To measure on the reference tablet
 
-1. Prepare an Android profile build instrumented with Tesseract4Android
-   standard, a dedicated OCR worker, and one asynchronous job at a time.
-   Keep PDFium calls on the engine isolate per ADR-0005. Log job/page IDs and
-   monotonic timings for model init, 300 dpi raster render, OCR, content write,
-   full save, and total page processing. Allow a native stop request while the
-   worker is busy. Check cancellation between pages and before publishing a
-   save. An Android OCR build is a prerequisite for these steps.
-2. Fetch Android PDFium with `tools/fetch_pdfium.sh android`. From the root,
-   push both fixtures to the tablet and open them via SAF in the test build.
-   Run the profile app and capture its timings and frame data.
+The harness uses Tesseract4Android standard
+`cz.adaptech.tesseract4android:tesseract4android:4.9.0` from the
+[JitPack Maven repository](https://jitpack.io).
+The Kotlin worker submits packed 8-bit grayscale pixels, calls the
+interruptible `getHOCRText` entry point and reads words, confidence and
+rectangles from the result iterator. The app loads `por+eng` with OEM 1
+and PSM 3, downloads the pinned models on the first OCR request and
+verifies SHA-256 before installing either file. The Linux engine test
+covers 300 dpi rasterization, full save, reopen and search rectangle
+alignment for a synthetic Portuguese OCR result. Android compilation
+stopped at the Gradle wrapper lock on the sandbox's read-only filesystem,
+so APK sizes and Android runtime behavior are pending.
+
+1. From the repository root, prepare the fixtures and install the profile build.
 
    ```sh
+   export JAVA_HOME="$HOME/.local/share/jdk/17"
+   export ANDROID_HOME="$HOME/Android/Sdk"
+   export PATH="$PWD/.fvm/flutter_sdk/bin:$ANDROID_HOME/platform-tools:$PATH"
+   tools/fetch_pdfium.sh android
+   tools/fetch_corpus.sh
    adb -s RXGL20545MJ push test_corpus/scanned-300.pdf /sdcard/Download/
    adb -s RXGL20545MJ push test_corpus/external/scanned-chapter.pdf /sdcard/Download/
-   cd app
-   flutter run --profile -d RXGL20545MJ
-   # In a second terminal
-   adb -s RXGL20545MJ logcat -s flutter
-   adb -s RXGL20545MJ shell dumpsys meminfo io.github.frerol.doxapdf
+   cd spikes/ocr_android
+   flutter build apk --profile
+   adb -s RXGL20545MJ install -r build/app/outputs/flutter-apk/app-profile.apk
+   adb -s RXGL20545MJ shell am start -n io.github.frerol.doxapdf.ocrlab/.MainActivity
    ```
 
-3. From a fresh install of the test build, start OCR and approve the model
-   download. Record the bytes written for each model, total model size, and
-   download time separately. Verify the hashes above from instrumentation.
-   Turn on airplane mode and repeat with both models cached to confirm offline
-   recognition.
-4. Run one cold process start per fixture with cached models. Then repeat three
-   warm runs of scanned-300 page 1 and scanned-chapter pages 1–3 on fresh
-   copies of the original inputs. Report per-page medians and maxima, including
-   raster and OCR time and the full end-to-end time. Log document save time
-   separately for the multi-page batch. Compare typical pages against the
-   5 s target. Sample `dumpsys meminfo` before OCR, about once per second during
-   the batch, and after cancellation/completion. Record baseline and highest
-   sampled TOTAL PSS/RSS, plus the process high-water RSS from
-   `/proc/self/status` (`VmHWM`) logged by the app.
-5. With the chapter open, establish a control trace for scrolling, pinching
-   and drawing with the S Pen at 90 Hz. Start whole-chapter OCR and repeat
-   those gestures. Use Flutter frame timing to compare slow frames (>32 ms)
-   with the control and repeat the Spike B input-to-pixel measurement against
-   the 25 ms budget if the ink harness is available. Cancel once during native
-   recognition and once between pages. Log tap-to-worker-stop, check that no
-   later page is processed or stale result published, and check that already
-   committed annotations and the source survive. Also cancel during a pending
-   save, verifying that a partial output cannot replace the source. Retry OCR,
-   reopen the output, search for recognized words and select/highlight them.
-6. From `app/`, run
-   `flutter build apk --release --split-per-abi --target-platform android-arm,android-arm64,android-x64`
-   for both the same-revision baseline and OCR-enabled build. For each output
-   in `build/app/outputs/flutter-apk/`, record `wc -c` and inspect
-   `unzip -lv` for the packaged `lib/<abi>/` entries and storage method.
-   Record raw APK byte deltas for armeabi-v7a, arm64-v8a and x86_64, and
-   confirm that there are no `.traineddata` assets. Exercise native loading
-   on a matching device or emulator for any ABI the reference tablet cannot run.
+   In a second terminal, capture the app and native logs.
+
+   ```sh
+   "$HOME/Android/Sdk/platform-tools/adb" -s RXGL20545MJ logcat -v threadtime -s flutter:I OCRLAB:I |
+     tee ocrlab-tablet.log
+   ```
+
+2. With fresh app data and network access, tap **Open PDF**, choose
+   `scanned-300.pdf` from Downloads, then tap **OCR this page**. That
+   button initiates the model download. Copy both native `OCRLAB model=`
+   lines with bytes, hashes and download time. Turn on airplane mode
+   and repeat to check cached recognition.
+3. With models cached, force-stop and relaunch the app for one cold
+   run per fixture. Tap **OCR this page** for `scanned-300.pdf` and
+   **OCR first 3 pages** for `scanned-chapter.pdf`. Repeat each three
+   times in the same process for warm runs. Each run starts from the
+   SAF input snapshot and replaces its private verified copy on success.
+   Use **Search** to look up words visible on the scan and **Next hit**
+   to navigate matches. Check the highlighted PDFium selection rectangles
+   against the printed words at different zoom levels.
+4. Copy the `OCRLAB` lines containing `model_init_ms`,
+   `stage=page_done`, `stage=save_start`, `stage=published`, and
+   `memory=before`, `memory=during` and `memory=after`. Calculate
+   per-page median and maximum from `page_ms` and compare with the 5 s
+   target. `page_ms` covers render through text-layer write, while
+   `total_ms` measures the entire batch through publication. The
+   `full_save_ms` and `verified_ms` values describe one shared
+   document save and reopen. The `VmHWM` and `VmRSS` samples are
+   in kB. For PSS, record the `TOTAL` line before, during and after
+   a batch with:
+
+   ```sh
+   adb -s RXGL20545MJ shell dumpsys meminfo io.github.frerol.doxapdf.ocrlab
+   ```
+
+5. On the chapter, tap **Start control trace**, pan and pinch with touch,
+   and draw with the S Pen. Tap **End control trace** and repeat those
+   gestures during **OCR whole document**. Copy the `trace=` lines with
+   total frames and counts over 16.7 ms and 32 ms. In separate runs, tap
+   **Cancel** while the status says **Recognizing page**, near a
+   `stage=page_done` boundary and while **Saving and verifying PDF**
+   is visible. Copy `cancel_requested`, `native_stop_ms` when present,
+   and `outcome=cancelled` with `cancel_ms`. Check for no
+   `stage=published` for the cancelled job and confirm the previous
+   verified copy, source PDF and in-memory test strokes survive.
+   Repeat the Spike B input-to-pixel test against 25 ms if its equipment
+   is available.
+6. For APK-size measurements, build and inspect the split release
+   outputs from `spikes/ocr_android/`.
+
+   ```sh
+   flutter build apk --release --split-per-abi --target-platform android-arm,android-arm64,android-x64
+   for apk in build/app/outputs/flutter-apk/*-release.apk; do
+     wc -c "$apk"
+     unzip -lv "$apk" | awk '/lib\/|\.traineddata/'
+   done
+   ```
+
+   Record the byte counts and native entries for armeabi-v7a, arm64-v8a
+   and x86_64, confirm no `.traineddata` assets are present and
+   exercise native loading on a matching device or emulator. To
+   measure the Tesseract APK delta, compare with a same-revision build
+   of the harness with the OCR bridge and Maven dependency removed.
+
+## Build outputs on Linux (not tablet measurements)
+
+`spikes/ocr_android` builds with the app's Gradle 9.9.2, AGP 9.5.2 and Kotlin 2.4.21; the Kotlin bridge compiles.
+Split release APKs (all native libraries stored uncompressed), with no `.traineddata` assets:
+
+| ABI | Release APK | Tesseract4Android native libs (`libtesseract`, `libleptonica`, `libjpeg`, `libpngx`) |
+| --- | ---: | ---: |
+| arm64-v8a | 30,897,968 B | 7.17 MiB |
+| armeabi-v7a | 24,200,778 B | 5.26 MiB |
+| x86_64 | 32,917,115 B | 7.58 MiB |
+
+The native libraries are the bulk of the OCR APK delta and fall within the "stored" estimate above; the Java wrapper adds little.
+The profile APK (all ABIs) is 108.3 MB.
