@@ -95,6 +95,13 @@ class _ReaderViewState extends State<ReaderView>
   int _pointers = 0;
   Offset? _doubleTapAt;
 
+  /// The finger or mouse pointer that may become an edge tap, where it went
+  /// down and when; cleared when it moves, a second pointer arrives, or it
+  /// is held too long.
+  int? _edgePointer;
+  Offset _edgeDownAt = Offset.zero;
+  Duration _edgeDownTime = Duration.zero;
+
   ReaderController get _controller => widget.controller;
 
   @override
@@ -232,8 +239,6 @@ class _ReaderViewState extends State<ReaderView>
     ));
   }
 
-  /// Taps near the left or right edge turn the page in paged layouts
-  /// (FR-VIEW-017).
   /// Which edge tap zone [position] is in, in paged layouts with tap zones
   /// on (FR-VIEW-017): true for the left edge, false for the right, null
   /// elsewhere.
@@ -248,15 +253,50 @@ class _ReaderViewState extends State<ReaderView>
     return null;
   }
 
-  /// Turns [times] pages towards the left or right edge, animating the last.
-  void _turnTowards({required bool left, int times = 1}) {
+  /// Turns one page towards the left or right edge. A tap during a turn
+  /// animation continues from where that turn was going, so quick taps
+  /// each turn one page.
+  void _turnTowards({required bool left}) {
+    final pending = _turn.isAnimating ? _turnTo : null;
     _turn.stop();
-    ViewState? target;
-    for (var i = 0; i < times; i++) {
-      if (target != null) _controller.setView(target);
-      target = _controller.turn(towardsLeft: left) ?? target;
-    }
+    if (pending != null) _controller.setView(pending);
+    final target = _controller.turn(towardsLeft: left);
     if (target != null) _animateTo(target);
+  }
+
+  // Edge taps turn the page as soon as the finger lifts (FR-VIEW-017).
+  // Going through the tap recognizer would wait for the double-tap timeout,
+  // which edge taps never need: two quick edge taps simply turn two pages,
+  // one per tap, and never zoom.
+  void _onEdgePointerDown(PointerDownEvent event, Size size) {
+    if (_edgePointer != null || !panZoomDevices.contains(event.kind)) {
+      _edgePointer = null;
+      return;
+    }
+    if (_edgeAt(event.localPosition, size) == null) return;
+    _edgePointer = event.pointer;
+    _edgeDownAt = event.localPosition;
+    _edgeDownTime = event.timeStamp;
+  }
+
+  void _onEdgePointerMove(PointerMoveEvent event) {
+    if (event.pointer == _edgePointer &&
+        (event.localPosition - _edgeDownAt).distance > kTouchSlop) {
+      _edgePointer = null;
+    }
+  }
+
+  void _onEdgePointerUp(PointerUpEvent event, Size size) {
+    if (event.pointer != _edgePointer) return;
+    _edgePointer = null;
+    if (event.timeStamp - _edgeDownTime > kLongPressTimeout) return;
+    // A tap with text selected only clears the selection (see _onTapUp).
+    if (widget.selection?.hasSelection ?? false) return;
+    final left = _edgeAt(event.localPosition, size);
+    if (left != null) {
+      _ticker.stop();
+      _turnTowards(left: left);
+    }
   }
 
   Future<void> _onTapUp(TapUpDetails details, Size size) async {
@@ -266,11 +306,8 @@ class _ReaderViewState extends State<ReaderView>
       selection.clear();
       return;
     }
-    final left = _edgeAt(details.localPosition, size);
-    if (left != null) {
-      _turnTowards(left: left);
-      return;
-    }
+    // Edge taps already turned the page on pointer up.
+    if (_edgeAt(details.localPosition, size) != null) return;
     final onLink = widget.onLink;
     final target = onLink == null
         ? null
@@ -284,16 +321,14 @@ class _ReaderViewState extends State<ReaderView>
   }
 
   void _onDoubleTap(Size size) {
+    final at = _doubleTapAt ?? size.center(Offset.zero);
+    // On an edge each tap already turned a page on pointer up (recognizers
+    // run after the Listener), so leave that turn animating; edge taps never
+    // zoom.
+    if (_edgeAt(at, size) != null) return;
     _ticker.stop();
     _turn.stop();
-    final at = _doubleTapAt ?? size.center(Offset.zero);
-    final left = _edgeAt(at, size);
-    if (left != null) {
-      // Two quick taps on an edge turn two pages; they never zoom.
-      _turnTowards(left: left, times: 2);
-    } else {
-      _controller.smartZoom(at);
-    }
+    _controller.smartZoom(at);
   }
 
   void _onPointerSignal(PointerSignalEvent event) {
@@ -329,6 +364,10 @@ class _ReaderViewState extends State<ReaderView>
         _controller.resize(size, ratio);
         return Listener(
           onPointerSignal: _onPointerSignal,
+          onPointerDown: (event) => _onEdgePointerDown(event, size),
+          onPointerMove: _onEdgePointerMove,
+          onPointerUp: (event) => _onEdgePointerUp(event, size),
+          onPointerCancel: (_) => _edgePointer = null,
           child: GestureDetector(
             supportedDevices: panZoomDevices,
             onScaleStart: _onScaleStart,

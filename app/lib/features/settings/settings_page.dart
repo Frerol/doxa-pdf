@@ -108,22 +108,8 @@ class SettingsPage extends StatelessWidget {
                     settings.update(value.copyWith(colorMode: mode)),
               ),
             ),
-            if (value.colorMode == PageColorMode.custom) ...[
-              _Swatches(
-                label: l10n.settingsCustomBackground,
-                colors: customBackgrounds,
-                selected: value.customBackground,
-                onSelected: (color) =>
-                    settings.update(value.copyWith(customBackground: color)),
-              ),
-              _Swatches(
-                label: l10n.settingsCustomText,
-                colors: customTexts,
-                selected: value.customText,
-                onSelected: (color) =>
-                    settings.update(value.copyWith(customText: color)),
-              ),
-            ],
+            if (value.colorMode == PageColorMode.custom)
+              CustomColorsEditor(settings: settings),
             SwitchListTile(
               title: Text(l10n.settingsKeepScreenOn),
               value: value.keepScreenOn,
@@ -167,6 +153,41 @@ class PageColorModeSelector extends StatelessWidget {
       ],
       selected: {mode},
       onSelectionChanged: (selection) => onChanged(selection.single),
+    );
+  }
+}
+
+/// Background and text swatches for the custom page colours (FR-VIEW-016),
+/// shared by Settings and the reader's view options.
+class CustomColorsEditor extends StatelessWidget {
+  const CustomColorsEditor({super.key, required this.settings});
+  final SettingsController settings;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return ValueListenableBuilder(
+      valueListenable: settings,
+      builder: (context, value, _) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _Swatches(
+            label: l10n.settingsCustomBackground,
+            colors: customBackgrounds,
+            selected: value.customBackground,
+            onSelected: (color) =>
+                settings.update(value.copyWith(customBackground: color)),
+          ),
+          _Swatches(
+            label: l10n.settingsCustomText,
+            colors: customTexts,
+            selected: value.customText,
+            onSelected: (color) =>
+                settings.update(value.copyWith(customText: color)),
+          ),
+        ],
+      ),
     );
   }
 }
