@@ -14,7 +14,7 @@ import '../features/settings/settings_page.dart';
 import '../l10n/gen/app_localizations.dart';
 
 /// Seed color of the Doxa PDF Material 3 theme (docs/plan/05-ux-design.md §5).
-const Color doxaSeedColor = Color(0xFF3F51B5);
+const Color doxaSeedColor = Color(0xFF7048E8);
 
 Future<PdfEngine>? _pdfium;
 
@@ -284,6 +284,12 @@ class _PlaceholderHomeState extends State<PlaceholderHome> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Image.asset(
+                'assets/brand/doxa-glyph.png',
+                width: 96,
+                height: 96,
+                excludeFromSemantics: true,
+              ),
               Text(l10n.appTitle, style: textTheme.displaySmall),
               const SizedBox(height: 8),
               Text(l10n.homeTagline, style: textTheme.titleMedium),
