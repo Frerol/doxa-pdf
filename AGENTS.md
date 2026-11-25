@@ -15,9 +15,8 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 - **M0 (foundations and spikes), done.** Done: monorepo scaffold, PDFium bindings, Spike A (rendering, ADR-0005), Spike B (ink, ADR-0006),
   Spike C (annotation writing, ADR-0008), tasks T-01..T-10 (`doxa_core` geometry/dates/IDs/page transforms/palette, `doxa_ink` pressure/smoothing/simplification/erasing),
   #9 PDF test corpus (PR #33), #3 full CI with Android APK and dependency license checks (PR #34), and #8 Spike D (OCR: GO with
-  Tesseract4Android, `docs/spikes/D-ocr.md`; ADR-0007 accepted), and #11 wrap-up (risks re-rated, roadmap and requirements updated after the spikes).
-- **Open:** #10 Code of Conduct contact (maintainer only), and creating the M1 issues from #11 (one per slice of §9).
-  Branch protection on `main` is still to be enabled by the maintainer (required checks listed in PR #34).
+  Tesseract4Android, `docs/spikes/D-ocr.md`; ADR-0007 accepted), #10 Code of Conduct contact, and #11 wrap-up (risks re-rated, roadmap and requirements updated after the spikes).
+- **Open:** creating the M1 issues from #11 (one per slice of §9). Branch protection on `main` is still to be enabled by the maintainer (required checks listed in PR #34).
 - **Now:** M1 = v0.1 Reader (§9). The offline dictionary is #43 (T-11..T-13 done; T-14, T-15 next in §11).
 
 ## 3. Repository layout
@@ -120,7 +119,7 @@ Before coding a slice, write its issue (if missing) and keep the UI **familiar a
 
 ## 10. When to stop and ask the maintainer
 Anything that needs the physical tablet (S Pen feel, visual checks), UI/UX choices not covered by `05-ux-design.md`, new dependencies, licensing questions,
-ADR-level decisions, releases/store/signing, the Code of Conduct contact (#10), or any destructive git operation (force-push to shared branches, history rewrites, deleting branches you did not create).
+ADR-level decisions, releases/store/signing, Code of Conduct reports, or any destructive git operation (force-push to shared branches, history rewrites, deleting branches you did not create).
 
 ## 11. Task queue for agents
 Well-specified, pure Dart tasks for coding agents. **One task per PR**, titled `<type>(<package>): … (T-xx)`, on a branch `feat/<topic>`.
