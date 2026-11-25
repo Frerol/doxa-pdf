@@ -28,4 +28,9 @@ abstract class DoxaPlatformPlatform extends PlatformInterface {
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
+
+  /// Opens [uri] in another app; see [DoxaPlatform.openUri].
+  Future<bool> openUri(String uri) {
+    throw UnimplementedError('openUri() has not been implemented.');
+  }
 }

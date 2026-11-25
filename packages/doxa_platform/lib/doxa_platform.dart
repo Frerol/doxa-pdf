@@ -6,4 +6,21 @@ class DoxaPlatform {
   Future<String?> getPlatformVersion() {
     return DoxaPlatformPlatform.instance.getPlatformVersion();
   }
+
+  /// Schemes [openUri] accepts. Others (`file:`, `intent:`, `javascript:`,
+  /// app-specific schemes) are refused, so a PDF cannot reach local files
+  /// or other apps' internals through a link.
+  static const openableSchemes = {'http', 'https', 'mailto'};
+
+  /// Opens a web or mail link from a document in another app
+  /// (FR-VIEW-010). Returns false when the link is refused or no app can
+  /// open it. Ask the user to confirm before calling this.
+  Future<bool> openUri(String uri) async {
+    final parsed = Uri.tryParse(uri.trim());
+    if (parsed == null ||
+        !openableSchemes.contains(parsed.scheme.toLowerCase())) {
+      return false;
+    }
+    return DoxaPlatformPlatform.instance.openUri(parsed.toString());
+  }
 }

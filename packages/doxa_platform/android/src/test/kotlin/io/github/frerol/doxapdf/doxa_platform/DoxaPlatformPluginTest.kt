@@ -22,4 +22,12 @@ internal class DoxaPlatformPluginTest {
 
         assertEquals("Android " + android.os.Build.VERSION.RELEASE, result)
     }
+
+    @Test
+    fun openUri_refusesSchemesOtherThanWebAndMail() {
+        val plugin = DoxaPlatformPlugin()
+
+        assertEquals(false, plugin.openUri("file:///sdcard/secret.pdf"))
+        assertEquals(false, plugin.openUri("intent://scan/#Intent;end"))
+    }
 }

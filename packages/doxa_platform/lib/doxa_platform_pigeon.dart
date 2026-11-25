@@ -18,4 +18,7 @@ class PigeonDoxaPlatform extends DoxaPlatformPlatform {
   Future<String?> getPlatformVersion() async {
     return _hostApi.getPlatformVersion();
   }
+
+  @override
+  Future<bool> openUri(String uri) => _hostApi.openUri(uri);
 }

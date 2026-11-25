@@ -14,6 +14,14 @@ void main() {
 
     expect(await plugin.getPlatformVersion(), '42');
   });
+
+  test('openUri reaches the host API', () async {
+    final api = FakeDoxaPlatformPluginApi(platformVersion: '42');
+    final plugin = PigeonDoxaPlatform(api: api);
+
+    expect(await plugin.openUri('https://example.org/'), isTrue);
+    expect(api.opened, ['https://example.org/']);
+  });
 }
 
 /// Fake implementation of the Pigeon API that provides a pre-set response.
@@ -25,6 +33,14 @@ class FakeDoxaPlatformPluginApi implements DoxaPlatformPluginApi {
   @override
   Future<String> getPlatformVersion() async {
     return platformVersion;
+  }
+
+  final opened = <String>[];
+
+  @override
+  Future<bool> openUri(String uri) async {
+    opened.add(uri);
+    return true;
   }
 
   @override
