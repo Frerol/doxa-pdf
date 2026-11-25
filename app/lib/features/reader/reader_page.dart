@@ -48,7 +48,7 @@ class ReaderPage extends StatefulWidget {
   final BitmapDecoder decoder;
   final UriOpener openUri;
 
-  /// App settings: the page colours and screen option documents open with.
+  /// App settings for page colours, layout defaults, and screen wake lock.
   final SettingsController? settings;
 
   /// Keeps the screen on or lets it sleep (FR-VIEW-013); injectable.
@@ -67,9 +67,7 @@ class _ReaderPageState extends State<ReaderPage> {
   TextSelectionController? _selection;
   bool _searchOpen = false;
 
-  /// Page colours of this document (FR-VIEW-005, FR-VIEW-016).
-  late PageColorMode _colorMode =
-      widget.settings?.value.colorMode ?? PageColorMode.normal;
+  PageColorMode _localColorMode = PageColorMode.normal;
 
   /// Full screen (FR-VIEW-012): toolbars and system bars hidden; a tap in
   /// the middle of the page shows the toolbars until the next tap.
@@ -138,11 +136,18 @@ class _ReaderPageState extends State<ReaderPage> {
       _engine = engine;
       switch (result) {
         case DocumentOpened(:final handle, :final info):
+          final settings = widget.settings?.value ?? const AppSettings();
           final controller = ReaderController(
             engine: engine,
             document: handle,
             info: info,
             decoder: widget.decoder,
+            options: ReaderOptions(
+              mode: settings.readerMode,
+              coverPage: settings.coverPage,
+              tapZones: settings.tapZones,
+              keepZoomOnTurn: settings.keepZoomOnTurn,
+            ),
           );
           _controller = controller;
           _search = SearchSession(controller);
@@ -225,6 +230,7 @@ class _ReaderPageState extends State<ReaderPage> {
     final l10n = AppLocalizations.of(context);
     final controller = _controller;
     final settings = widget.settings?.value;
+    final colorMode = settings?.colorMode ?? _localColorMode;
     final showBars = !_fullscreen || _barsShown || _searchOpen;
     final body = Scaffold(
       // In full screen the page keeps its size while the bars come and go:
@@ -283,8 +289,10 @@ class _ReaderPageState extends State<ReaderPage> {
                     onPressed: () => showViewOptions(
                       context,
                       controller,
-                      colorMode: _colorMode,
-                      onColorMode: (mode) => setState(() => _colorMode = mode),
+                      colorMode: colorMode,
+                      onColorMode: settings == null
+                          ? (mode) => setState(() => _localColorMode = mode)
+                          : null,
                       settings: widget.settings,
                       fullscreen: _fullscreen,
                       onFullscreen: _setFullscreen,
@@ -308,13 +316,13 @@ class _ReaderPageState extends State<ReaderPage> {
                 onTap: _onPageTap,
                 selection: _selection,
                 colorFilter: pageColorFilter(
-                  _colorMode,
+                  colorMode,
                   background:
                       settings?.customBackground ?? defaultCustomBackground,
                   text: settings?.customText ?? defaultCustomText,
                 ),
                 sheetColor: sheetColor(
-                  _colorMode,
+                  colorMode,
                   background:
                       settings?.customBackground ?? defaultCustomBackground,
                 ),
@@ -645,8 +653,46 @@ class _ViewOptionsState extends State<_ViewOptions> {
   late PageColorMode _colorMode = widget.colorMode;
   late bool _fullscreen = widget.fullscreen;
 
-  void _set(ReaderOptions options) =>
-      setState(() => widget.controller.setOptions(options));
+  void _set(ReaderOptions options) {
+    final previous = _options;
+    if (options == previous) return;
+    setState(() => widget.controller.setOptions(options));
+    final settings = widget.settings;
+    settings?.update(
+      settings.value.copyWith(
+        readerMode: options.mode == previous.mode ? null : options.mode,
+        coverPage: options.coverPage == previous.coverPage
+            ? null
+            : options.coverPage,
+        tapZones: options.tapZones == previous.tapZones
+            ? null
+            : options.tapZones,
+        keepZoomOnTurn: options.keepZoomOnTurn == previous.keepZoomOnTurn
+            ? null
+            : options.keepZoomOnTurn,
+      ),
+    );
+  }
+
+  Widget _colorOptions(
+    PageColorMode mode,
+    ValueChanged<PageColorMode> onChanged,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListTile(title: Text(l10n.viewPageColors)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: PageColorModeSelector(mode: mode, onChanged: onChanged),
+        ),
+        if (mode == PageColorMode.custom)
+          if (widget.settings case final settings?)
+            CustomColorsEditor(settings: settings),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -671,22 +717,20 @@ class _ViewOptionsState extends State<_ViewOptions> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
-            if (widget.onColorMode case final onColorMode?) ...[
-              ListTile(title: Text(l10n.viewPageColors)),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: PageColorModeSelector(
-                  mode: _colorMode,
-                  onChanged: (mode) {
-                    setState(() => _colorMode = mode);
-                    onColorMode(mode);
-                  },
+            if (widget.settings case final settings?)
+              ValueListenableBuilder<AppSettings>(
+                valueListenable: settings,
+                builder: (context, value, child) => _colorOptions(
+                  value.colorMode,
+                  (mode) =>
+                      settings.update(settings.value.copyWith(colorMode: mode)),
                 ),
-              ),
-              if (_colorMode == PageColorMode.custom)
-                if (widget.settings case final settings?)
-                  CustomColorsEditor(settings: settings),
-            ],
+              )
+            else if (widget.onColorMode case final onColorMode?)
+              _colorOptions(_colorMode, (mode) {
+                setState(() => _colorMode = mode);
+                onColorMode(mode);
+              }),
             if (widget.onFullscreen case final onFullscreen?)
               SwitchListTile(
                 secondary: const Icon(Icons.fullscreen),
@@ -728,7 +772,11 @@ class _ViewOptionsState extends State<_ViewOptions> {
               value: _options.rightToLeft,
               onChanged: mode == ReaderMode.continuous
                   ? null
-                  : (value) => _set(_options.copyWith(rightToLeft: value)),
+                  : (value) => setState(
+                      () => widget.controller.setOptions(
+                        _options.copyWith(rightToLeft: value),
+                      ),
+                    ),
             ),
             SwitchListTile(
               title: Text(l10n.optionTapZones),

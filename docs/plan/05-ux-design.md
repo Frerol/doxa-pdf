@@ -17,9 +17,11 @@ flowchart LR
   Reader --> Search[Search panel]
   Reader --> Review[Annotations review panel]
   Reader --> Bookmarks[Bookmarks panel]
-  Reader --> DocSettings[View options<br/>layout, night/sepia]
+  Reader --> ViewOptions[View options<br/>layout, page colours]
   Home --> Settings[Settings<br/>appearance, pen, markup, saving, language, about]
 ```
+
+View options saves layout, cover page, tap zones, keep zoom and page colours as global defaults. Right-to-left page order is per document.
 
 ## 3. Reader layout by size class
 
