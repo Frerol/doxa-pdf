@@ -2,5 +2,15 @@
   "@@locale": "pt",
   "appTitle": "Doxa PDF",
   "homeTagline": "Um leitor de PDF livre para estudar",
-  "previewNotice": "Prévia de engenharia — ainda não há nada para ver aqui."
+  "previewNotice": "Prévia de engenharia — ainda não há nada para ver aqui.",
+  "readerOpening": "Abrindo…",
+  "readerOpenFailed": "Não foi possível abrir este arquivo.",
+  "readerPasswordNeeded": "Este PDF está protegido por senha.",
+  "readerZoomMenu": "Zoom",
+  "readerFitWidth": "Ajustar à largura",
+  "readerFitPage": "Ajustar à página",
+  "readerZoomFactor": "{factor}×",
+  "devDocumentsTitle": "PDFs na pasta do app (desenvolvedor)",
+  "devDocumentsRefresh": "Atualizar",
+  "devDocumentsEmpty": "Copie PDFs para {path} com adb push e atualize."
 }
