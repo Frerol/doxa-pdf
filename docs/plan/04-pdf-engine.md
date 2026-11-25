@@ -17,10 +17,10 @@ and a C API covering rendering, text, annotations, forms, page objects and savin
 - `pdfium_ffi` loads `libpdfium.so` (Android/Linux) or `pdfium.dll` (Windows) bundled with the app. It never uses a system copy.
 - Bindings are generated with `ffigen` from the pinned headers. A CI check fails if the generated bindings drift from the headers.
 
-### Prior art to evaluate in M0
-[`pdfrx`](https://pub.dev/packages/pdfrx) (MIT) already wraps PDFium for Flutter on all target platforms. M0 decides between:
+### Prior art (decided in M0)
+[`pdfrx`](https://pub.dev/packages/pdfrx) (MIT) already wraps PDFium for Flutter on all target platforms. M0 chose between:
 **(a)** depending on pdfrx for viewing and adding our own FFI for editing, or **(b)** owning the full binding layer.
-The proposed default is (b), with pdfrx as reference code, because annotations-off rendering, tile scheduling and write access are core to the product.
+**Decided: (b)**, with pdfrx as reference code, because annotations-off rendering, tile scheduling and write access are core to the product. `packages/pdfium_ffi` holds the bindings, and Spikes A, C and D were built on them.
 
 ## 3. Capability map
 
@@ -72,7 +72,7 @@ abstract interface class PdfEngine {
 
   Future<List<Annotation>> annotations(PdfDocumentHandle doc, int page);
   Future<void> apply(PdfDocumentHandle doc, List<Command> commands);
-  Future<SaveResult> save(PdfDocumentHandle doc, SaveTarget target, {bool incremental = true});
+  Future<SaveResult> save(PdfDocumentHandle doc, SaveTarget target);  // full save → temp → verify → replace (ADR-0008)
 }
 ```
 

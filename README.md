@@ -6,7 +6,7 @@
   <a href="https://github.com/Frerol/doxa-pdf/actions/workflows/ci.yml"><img src="https://github.com/Frerol/doxa-pdf/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-7048E8" alt="License: GPL-3.0-or-later"></a>
   <img src="https://img.shields.io/badge/platforms-Android%20%C2%B7%20Linux%20%C2%B7%20Windows-2BAE66" alt="Platforms: Android, Linux, Windows">
-  <img src="https://img.shields.io/badge/status-M0%20foundations-F08C00" alt="Status: M0 foundations">
+  <img src="https://img.shields.io/badge/status-M1%20v0.1%20reader-F08C00" alt="Status: M1, v0.1 reader">
 </p>
 
 # Doxa PDF
@@ -16,8 +16,8 @@ It is built around two things: **marking up text** (highlight, underline, strike
 the page with a pen** (low-latency, pressure-sensitive ink with palm rejection). Everything is stored as
 standard PDF annotations, so your notes open in any reader. It runs offline, has no telemetry, no ads and no paywall.
 
-> **Status: M0, foundations and spikes.** The monorepo, PDFium bindings, CI and the rendering, ink and annotation-writing spikes are done;
-> OCR is being evaluated. Next is the **Android MVP**, shipped as public betas v0.1–v0.4 ([MVP](docs/plan/11-mvp.md)). The engineering plan lives in [`docs/`](docs/README.md).
+> **Status: M1, building the v0.1 reader.** M0 is done: the monorepo, PDFium bindings, CI and the rendering, ink, annotation-writing and OCR
+> spikes ([reports](docs/README.md#spike-reports-m0)). Now comes the **Android MVP**, shipped as public betas v0.1–v0.4 ([MVP](docs/plan/11-mvp.md)). The engineering plan lives in [`docs/`](docs/README.md).
 
 ## Goals
 
