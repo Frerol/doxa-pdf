@@ -1,4 +1,12 @@
 {
+  "openFile": "Abrir arquivo",
+  "pdfPassword": "Senha",
+  "unlockPdf": "Desbloquear",
+  "pdfWrongPassword": "Senha incorreta. Tente novamente.",
+  "fileMissing": "O arquivo não foi encontrado.",
+  "fileUnreadable": "Não foi possível ler o arquivo.",
+  "fileNotPdf": "Este arquivo não é um PDF válido.",
+  "filePermissionLost": "O acesso a este arquivo foi perdido. Abra-o novamente pelo seletor do sistema.",
   "@@locale": "pt",
   "appTitle": "Doxa PDF",
   "homeTagline": "Um leitor de PDF livre para estudar",

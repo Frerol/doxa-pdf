@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import 'doxa_platform_platform_interface.dart';
+import 'pdf_documents.dart';
 import 'src/messages.g.dart';
 
 /// An implementation of [DoxaPlatformPlatform] that uses Pigeon, for
@@ -13,6 +17,9 @@ class PigeonDoxaPlatform extends DoxaPlatformPlatform {
     : _hostApi = api ?? DoxaPlatformPluginApi();
 
   final DoxaPlatformPluginApi _hostApi;
+
+  @override
+  late final PdfDocuments pdfDocuments = _PigeonPdfDocuments(_hostApi);
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -30,4 +37,47 @@ class PigeonDoxaPlatform extends DoxaPlatformPlatform {
 
   @override
   Future<String> getDataDirectory() => _hostApi.getDataDirectory();
+}
+
+class _PigeonPdfDocuments implements PdfDocuments, PdfIntentApi {
+  _PigeonPdfDocuments(this._hostApi);
+
+  final DoxaPlatformPluginApi _hostApi;
+  late final _incoming = StreamController<void>.broadcast(
+    onListen: () => PdfIntentApi.setUp(this),
+    onCancel: () => PdfIntentApi.setUp(null),
+  );
+
+  @override
+  Stream<void> get incomingPdfs => _incoming.stream;
+
+  @override
+  Future<void> incomingPdfAvailable() async => _incoming.add(null);
+
+  @override
+  Future<PlatformPdf?> pickPdf() => _access(_hostApi.pickPdf);
+
+  @override
+  Future<PlatformPdf> openPersistedPdf(String uri) =>
+      _access(() => _hostApi.openPersistedPdf(uri));
+
+  @override
+  Future<PlatformPdf?> takeIncomingPdf() => _access(_hostApi.takeIncomingPdf);
+
+  @override
+  Future<void> releasePdf(int leaseId) => _hostApi.releasePdf(leaseId);
+
+  Future<T> _access<T>(Future<T> Function() action) async {
+    try {
+      return await action();
+    } on PlatformException catch (error) {
+      throw PdfAccessException(switch (error.code) {
+        'missing' => PdfAccessError.missing,
+        'notPdf' => PdfAccessError.notPdf,
+        'permissionLost' => PdfAccessError.permissionLost,
+        'unreadable' => PdfAccessError.unreadable,
+        _ => throw error,
+      });
+    }
+  }
 }

@@ -12,6 +12,25 @@ import 'package:pigeon/pigeon.dart';
 //
 // To learn more about Pigeon, see https://pub.dev/packages/pigeon.
 
+/// A document source leased from Android. Release it after closing PDFium.
+class PlatformPdf {
+  PlatformPdf(
+    this.leaseId,
+    this.uri,
+    this.displayName,
+    this.path,
+    this.persistedRead,
+    this.persistedWrite,
+  );
+
+  int leaseId;
+  String uri;
+  String displayName;
+  String path;
+  bool persistedRead;
+  bool persistedWrite;
+}
+
 @ConfigurePigeon(
   PigeonOptions(
     dartPackageName: 'doxa_platform',
@@ -40,4 +59,21 @@ abstract class DoxaPlatformPluginApi {
 
   /// The app's private data directory, for settings and the database.
   String getDataDirectory();
+
+  @asyncCallback
+  PlatformPdf? pickPdf();
+
+  @asyncCallback
+  PlatformPdf openPersistedPdf(String uri);
+
+  @asyncCallback
+  PlatformPdf? takeIncomingPdf();
+
+  void releasePdf(int leaseId);
+}
+
+@FlutterApi()
+abstract class PdfIntentApi {
+  @asyncCallback
+  void incomingPdfAvailable();
 }

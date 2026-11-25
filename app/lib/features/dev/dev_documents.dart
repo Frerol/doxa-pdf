@@ -14,8 +14,7 @@ import '../settings/app_settings.dart';
 const androidDevDocumentsDir =
     '/storage/emulated/0/Android/data/io.github.frerol.doxapdf/files';
 
-/// Temporary developer list of the PDFs in [directory], so the reader can
-/// be tried on a device before file opening exists (issue #49).
+/// Temporary developer list of the PDFs in [directory].
 class DevDocuments extends StatefulWidget {
   const DevDocuments({
     super.key,

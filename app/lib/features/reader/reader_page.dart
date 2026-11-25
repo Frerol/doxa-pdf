@@ -39,12 +39,16 @@ class ReaderPage extends StatefulWidget {
     this.decoder = decodeBitmap,
     this.openUri = _openWithPlatform,
     this.settings,
+    this.releaseSource,
     this.keepScreenOn = _keepScreenOnWithPlatform,
   });
 
   final Future<PdfEngine> engine;
   final DocumentSource source;
   final String title;
+
+  /// Releases a platform source after its last engine operation.
+  final Future<void> Function()? releaseSource;
   final BitmapDecoder decoder;
   final UriOpener openUri;
 
@@ -58,7 +62,7 @@ class ReaderPage extends StatefulWidget {
   State<ReaderPage> createState() => _ReaderPageState();
 }
 
-enum _Failure { password, open }
+enum _Failure { password, wrongPassword, cancelled, open, unreadable, format }
 
 class _ReaderPageState extends State<ReaderPage> {
   PdfEngine? _engine;
@@ -75,12 +79,14 @@ class _ReaderPageState extends State<ReaderPage> {
   bool _barsShown = true;
   bool _keptScreenOn = false;
   _Failure? _failure;
+  late Future<void> _opening;
+  bool _promptPending = false;
   final FrameProbe? _probe = kReleaseMode ? null : FrameProbe();
 
   @override
   void initState() {
     super.initState();
-    unawaited(_open());
+    _opening = _open();
     widget.settings?.addListener(_onSettings);
     _applyKeepScreenOn();
   }
@@ -117,19 +123,20 @@ class _ReaderPageState extends State<ReaderPage> {
     if (_fullscreen) setState(() => _barsShown = !_barsShown);
   }
 
-  Future<void> _open() async {
+  Future<void> _open([String? password]) async {
     OpenResult result;
     PdfEngine engine;
     try {
       engine = await widget.engine;
-      result = await engine.open(widget.source);
+      if (!mounted) return;
+      result = await engine.open(widget.source, password: password);
     } on Object catch (error) {
       debugPrint('Doxa: cannot open ${widget.title}: $error');
       if (mounted) setState(() => _failure = _Failure.open);
       return;
     }
     if (!mounted) {
-      if (result is DocumentOpened) unawaited(engine.close(result.handle));
+      if (result is DocumentOpened) await engine.close(result.handle);
       return;
     }
     setState(() {
@@ -152,12 +159,50 @@ class _ReaderPageState extends State<ReaderPage> {
           _controller = controller;
           _search = SearchSession(controller);
           _selection = TextSelectionController(controller);
-        case PasswordRequired() || WrongPassword():
+        case PasswordRequired():
           _failure = _Failure.password;
-        case OpenFailed():
-          _failure = _Failure.open;
+        case WrongPassword():
+          _failure = _Failure.wrongPassword;
+        case OpenFailed(:final reason):
+          _failure = switch (reason) {
+            OpenFailure.file => _Failure.unreadable,
+            OpenFailure.format => _Failure.format,
+            _ => _Failure.open,
+          };
       }
     });
+  }
+
+  Future<void> _askForPassword() async {
+    final navigator = Navigator.of(context);
+    final route = ModalRoute.of(context)!;
+    _promptPending = true;
+    final password = await showDialog<String>(
+      context: context,
+      builder: (_) =>
+          _PasswordDialog(wrong: _failure == _Failure.wrongPassword),
+    );
+    if (!mounted) return;
+    _promptPending = false;
+    if (password == null) {
+      if (route.isFirst) {
+        setState(() => _failure = _Failure.cancelled);
+      } else {
+        navigator.removeRoute(route);
+      }
+      return;
+    }
+    setState(() => _failure = null);
+    _opening = _open(password);
+  }
+
+  Future<void> _closeSource(ReaderController? controller) async {
+    try {
+      await _opening;
+      if (controller != null) await _engine?.close(controller.document);
+    } finally {
+      await widget.releaseSource?.call();
+    }
   }
 
   @override
@@ -165,10 +210,12 @@ class _ReaderPageState extends State<ReaderPage> {
     _search?.dispose();
     _selection?.dispose();
     final controller = _controller;
-    if (controller != null) {
-      controller.dispose();
-      unawaited(_engine?.close(controller.document));
-    }
+    controller?.dispose();
+    unawaited(
+      _closeSource(controller).catchError((Object error) {
+        debugPrint('Doxa: cannot close ${widget.title}: $error');
+      }),
+    );
     _probe?.dispose();
     widget.settings?.removeListener(_onSettings);
     if (_keptScreenOn) unawaited(widget.keepScreenOn(false));
@@ -228,6 +275,17 @@ class _ReaderPageState extends State<ReaderPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    if (ModalRoute.isCurrentOf(context) == true &&
+        (_failure == _Failure.password || _failure == _Failure.wrongPassword) &&
+        !_promptPending) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted &&
+            !_promptPending &&
+            ModalRoute.of(context)?.isCurrent == true) {
+          unawaited(_askForPassword());
+        }
+      });
+    }
     final controller = _controller;
     final settings = widget.settings?.value;
     final colorMode = settings?.colorMode ?? _localColorMode;
@@ -334,7 +392,11 @@ class _ReaderPageState extends State<ReaderPage> {
               ),
           ],
         ),
-        (_, _Failure.password) => _Message(l10n.readerPasswordNeeded),
+        (_, _Failure.password || _Failure.wrongPassword) =>
+          const SizedBox.shrink(),
+        (_, _Failure.cancelled) => _Message(l10n.readerPasswordNeeded),
+        (_, _Failure.unreadable) => _Message(l10n.fileUnreadable),
+        (_, _Failure.format) => _Message(l10n.fileNotPdf),
         (_, _Failure.open) => _Message(l10n.readerOpenFailed),
         _ => Center(
           child: Semantics(
@@ -1033,4 +1095,53 @@ class _SelectionBarLayout extends SingleChildLayoutDelegate {
   @override
   bool shouldRelayout(_SelectionBarLayout old) =>
       old.selection != selection || old.padding != padding;
+}
+
+class _PasswordDialog extends StatefulWidget {
+  const _PasswordDialog({required this.wrong});
+
+  final bool wrong;
+
+  @override
+  State<_PasswordDialog> createState() => _PasswordDialogState();
+}
+
+class _PasswordDialogState extends State<_PasswordDialog> {
+  final _password = TextEditingController();
+
+  @override
+  void dispose() {
+    _password.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.of(context).pop(_password.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l10n.readerPasswordNeeded),
+      content: TextField(
+        controller: _password,
+        autofocus: true,
+        obscureText: true,
+        autocorrect: false,
+        enableSuggestions: false,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _submit(),
+        decoration: InputDecoration(
+          labelText: l10n.pdfPassword,
+          errorText: widget.wrong ? l10n.pdfWrongPassword : null,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(onPressed: _submit, child: Text(l10n.unlockPdf)),
+      ],
+    );
+  }
 }
