@@ -29,7 +29,7 @@ reverse as [ADRs](adr/).
 | [0005](adr/0005-rendering-pipeline-and-foreign-annotations.md) | Rendering pipeline and the foreign-annotation layer | Accepted |
 | [0006](adr/0006-ink-rendering-in-flutter.md) | Ink rendering in pure Flutter (no native front-buffer path) | Accepted |
 | [0008](adr/0008-annotation-save-strategy.md) | Annotation save strategy (full save, AP-less markup, object-based ink AP) | Accepted |
-| [0009](adr/0009-offline-dictionary.md) | Built-in offline dictionary (StarDict, user-imported) | Proposed |
+| [0009](adr/0009-offline-dictionary.md) | Built-in offline dictionary (StarDict, user-imported) | Accepted |
 
 New ADRs start from [the template](adr/0000-template.md).
 

@@ -135,7 +135,7 @@ ADR-level decisions, releases/store/signing, the Code of Conduct contact (#10), 
 Well-specified, pure Dart tasks for coding agents. **One task per PR**, titled `<type>(<package>): … (T-xx)`, on a branch `feat/<topic>`.
 Tasks run in order; each says what it depends on. The maintainer ticks them in "Completed agent tasks" after the merge.
 
-**T-11..T-15 implement `packages/doxa_dict` (FR-TEXT-008..010, [ADR-0009](docs/adr/0009-offline-dictionary.md)). Start only once ADR-0009 is `Accepted`.**
+**T-11..T-15 implement `packages/doxa_dict` (FR-TEXT-008..010, [ADR-0009](docs/adr/0009-offline-dictionary.md)). ADR-0009 is accepted; start with T-11.**
 Rules for all of them: pure Dart (no Flutter imports; add a dependency-rule test like `doxa_core`'s), **no new dependencies** (`dart:io` zlib is enough),
 SPDX headers, `dart test` from the package dir, small fixtures under `test/fixtures/` produced by a committed generator, and malformed-input tests
 (truncated files, wrong sizes, bad UTF-8) that must throw a typed `DictionaryFormatException`, never crash or hang.
