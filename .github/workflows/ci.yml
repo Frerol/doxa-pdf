@@ -67,7 +67,9 @@ jobs:
       - name: Fetch Android PDFium
         run: tools/fetch_pdfium.sh android
       - name: Install the pinned Android SDK and NDK
-        run: sdkmanager 'platforms;android-36' 'ndk;28.2.13676358'
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            'platforms;android-36' 'ndk;28.2.13676358'
       - name: Build debug APK
         working-directory: app
         run: flutter build apk --debug
