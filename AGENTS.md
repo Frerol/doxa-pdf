@@ -72,7 +72,7 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
 - Dependencies must be GPL-3.0-compatible. **Ask before adding any dependency.** No Google ML Kit or other proprietary SDKs.
 - **Never name the commercial PDF reader that inspired Doxa** anywhere (code, docs, commits, issues, PRs). Write "a commercial PDF reader".
   The UI should resemble the leading commercial mobile readers in **layout and flows**, with an original identity (`docs/plan/05-ux-design.md` §8).
-- Significant decisions need an ADR (`docs/adr/0000-template.md`). The next free numbers are 0007 (OCR) and 0009+.
+- Significant decisions need an ADR (`docs/adr/0000-template.md`). The next free numbers are 0007 (OCR) and 0010+.
 - Do not edit generated files by hand (`pdfium_bindings.g.dart`, `messages.g.*`, `app/lib/l10n/gen/`), `tools/pdfium.lock`, accepted ADRs, or `LICENSE`.
 
 **Flutter 3.50**
@@ -124,11 +124,51 @@ Scope: `docs/plan/11-mvp.md` §3 v0.1 and `08-roadmap.md` M1. Suggested order (e
 3. **Opening files:** SAF picker and "Open with" intents through `doxa_platform` (pigeon; see `spike/annot-write:spikes/saf_lab` for the Kotlin side),
    then recents with progress, library folders and tabs.
 4. Navigation panels (outline, thumbnails), search, night/sepia, and pt-BR + en strings.
+5. **Offline dictionary** (FR-TEXT-008..010, ADR-0009): `packages/doxa_dict` first (tasks T-11..T-15 in §11), then import/settings and the lookup popup in `app/`.
 Before coding a slice, write its issue (if missing) and keep the UI **familiar and original** (§7).
 
 ## 10. When to stop and ask the maintainer
 Anything that needs the physical tablet (S Pen feel, visual checks), UI/UX choices not covered by `05-ux-design.md`, new dependencies, licensing questions,
 ADR-level decisions, releases/store/signing, the Code of Conduct contact (#10), or any destructive git operation (force-push to shared branches, history rewrites, deleting branches you did not create).
+
+## 11. Task queue for agents
+Well-specified, pure Dart tasks for coding agents. **One task per PR**, titled `<type>(<package>): … (T-xx)`, on a branch `feat/<topic>`.
+Tasks run in order; each says what it depends on. The maintainer ticks them in "Completed agent tasks" after the merge.
+
+**T-11..T-15 implement `packages/doxa_dict` (FR-TEXT-008..010, [ADR-0009](docs/adr/0009-offline-dictionary.md)). Start only once ADR-0009 is `Accepted`.**
+Rules for all of them: pure Dart (no Flutter imports; add a dependency-rule test like `doxa_core`'s), **no new dependencies** (`dart:io` zlib is enough),
+SPDX headers, `dart test` from the package dir, small fixtures under `test/fixtures/` produced by a committed generator, and malformed-input tests
+(truncated files, wrong sizes, bad UTF-8) that must throw a typed `DictionaryFormatException`, never crash or hang.
+
+### T-11 · Package scaffold and `.ifo` parser
+Create `packages/doxa_dict` (workspace member, `analysis_options.yaml` like the other packages) and `StarDictInfo.parse(String text)`:
+the first line must be `StarDict's dict ifo file`; read `version` (`2.4.2` or `3.0.0`), `bookname`, `wordcount`, `idxfilesize` (required),
+and `synwordcount`, `idxoffsetbits` (32 or 64, only valid for 3.0.0, default 32), `sametypesequence`, `author`, `description`, `lang` (optional).
+Unknown keys are kept in a map. Tests for every key, defaults and each error.
+
+### T-12 · `.idx` and `.syn` index (depends on T-11)
+Parse `.idx` entries (UTF-8 headword terminated by `\0`, then a big-endian offset of `idxoffsetbits` bits and a 32-bit size), checking `wordcount`
+and `idxfilesize`. Parse `.syn` (headword `\0`, then a 32-bit big-endian index into `.idx`). Implement StarDict's headword order
+(ASCII case-insensitive comparison, ties broken by a byte-wise comparison) and binary search over it.
+Tests: exact hits, case-only differences, first/last entries, duplicates, synonyms, 64-bit offsets.
+
+### T-13 · `.dict` and dictzip reader (depends on T-11)
+Random-access reads of `(offset, size)` from a plain `.dict` and from dictzip `.dict.dz`: parse the gzip `FEXTRA` `RA` subfield
+(version, chunk length, chunk count, compressed chunk sizes), inflate only the chunks the range needs (`ZLibDecoder(raw: true)`), with a small LRU of chunks.
+Split an entry into fields using `sametypesequence` (the last field has no terminator), or the per-field type bytes when it is absent.
+Tests: ranges inside one chunk, across chunks, at the end of the file; plain and dictzip give identical bytes.
+
+### T-14 · `Dictionary` facade and lookup normalization (depends on T-12, T-13)
+`Dictionary.open(Directory dir)` finds and validates the `.ifo`/`.idx`/`.dict[.dz]`/`.syn` set and exposes `info`.
+`lookup(String query) → List<DictionaryEntry>` (headword + raw fields) per FR-TEXT-010: trim surrounding punctuation and whitespace, exact match,
+then case-folded, then diacritic-folded ("ação" ↔ "acao"), then synonyms; `suggest(String query, {int limit = 10})` returns close headwords
+(shared prefix). Everything synchronous and isolate-friendly (plain arguments, no closures over state), so the app can run it with `Isolate.run`.
+
+### T-15 · Safe definition text (depends on T-13)
+Convert a field to a small immutable rich-text model (`DefinitionBlock`/`DefinitionSpan`: paragraph, list item, line break, bold, italic).
+Types `m`, `t`, `y` are plain text (newlines → line breaks). `h` (HTML) and `x` (XDXF) keep only `p`, `br`, `b`/`strong`, `i`/`em`, `ul`/`ol`/`li`
+(XDXF `k`, `b`, `i`, `c`, `ex` mapped sensibly) and drop everything else, including scripts, styles, images and links, while keeping their text.
+Decode HTML entities. Never fetch anything. Tests with hostile input (`<script>`, unclosed tags, deep nesting).
 
 ## Completed agent tasks
 T-01..T-10 (PRs #19–#28): PDF dates, annotation UUIDs, geometry, page transforms, study palette, pressure curve, arc smoothing, resampling/RDP,

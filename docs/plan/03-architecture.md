@@ -24,13 +24,14 @@ doxa-pdf/
 │   ├── doxa_engine/           # Engine interface + PDFium implementation (FFI, worker isolate, appearance-stream writer)
 │   ├── pdfium_ffi/            # ffigen-generated bindings + native library loading/bundling
 │   ├── doxa_ink/              # Stroke model, smoothing, pressure → outline geometry, hit testing, erasing
+│   ├── doxa_dict/             # Pure Dart offline dictionaries: StarDict parsing, index, lookup (proposed, ADR-0009)
 │   └── doxa_platform/         # Plugin: SAF/file access, intents, file associations, low-latency ink surface (Android)
 ├── tools/                     # Scripts: fetch/verify PDFium, test corpus, release helpers
 ├── test_corpus/               # Small, license-cleared PDFs used in tests (large corpus fetched on demand)
 └── docs/
 ```
 
-Dependency rule: `app → doxa_engine, doxa_ink, doxa_platform → doxa_core`. `doxa_core` depends on nothing Flutter-specific,
+Dependency rule: `app → doxa_engine, doxa_ink, doxa_platform → doxa_core`; `app → doxa_dict` (pure Dart, depends on nothing in the workspace). `doxa_core` depends on nothing Flutter-specific,
 so it stays testable with plain `dart test`.
 
 ## 3. Layered view

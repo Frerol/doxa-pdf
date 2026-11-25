@@ -21,7 +21,7 @@ Goal: prove the risky parts before building features.
 Exit: a spike report for each with go/no-go; ADRs recorded; [risks](09-risks.md) updated.
 
 ## M1 — v0.1 Reader (Android)
-FILE-001..004, 006, 007 · VIEW-001..014 · TEXT-001, 002, 004 · BOOK-002 · SET-001, 002.
+FILE-001..004, 006, 007 · VIEW-001..014 · TEXT-001, 002, 004, 008..010 · BOOK-002 · SET-001, 002.
 Exit: open and read large textbooks and articles on the reference tablet within the performance budgets.
 
 ## M2 — v0.2 Study core: markup + pen ★
@@ -52,3 +52,5 @@ FILE-005 · MARK-012 · SET-004, 005 · accessibility audit · store listings (G
 4. Study extras: read-aloud, reading ruler, flashcards from highlights.
 5. Broader editing (content editing, encryption/compression via qpdf), each starting with an ADR.
 6. iOS/macOS builds.
+7. After all three platforms are complete: EPUB reading with highlights and comments (FR-LIB-001, 002), OPDS catalogs (FR-LIB-003),
+   KoSync progress sync (FR-LIB-004) and cloud storage accounts (FR-LIB-005).

@@ -50,6 +50,9 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-TEXT-005 | Selection follows reading order across columns and continues across a page boundary. | M | M2 |
 | FR-TEXT-006 | Selection context actions: highlight, underline, strikeout, copy, search, share, define/translate via OS. | M | M2 |
 | FR-TEXT-007 | Clear feedback when a page has no text layer (scanned) and markup is unavailable; later points to OCR. | M | M2 |
+| FR-TEXT-008 | Look up the selected word or short phrase in built-in **offline dictionaries**: a popup shows the definitions of every enabled dictionary, with no network access ([ADR-0009](../adr/0009-offline-dictionary.md)). | M | M1 |
+| FR-TEXT-009 | Import dictionaries in StarDict format (`.ifo` + `.idx` + `.dict`/`.dict.dz`, optional `.syn`) from a file, folder or `.zip`; list, enable/disable, reorder and remove them. | M | M1 |
+| FR-TEXT-010 | Lookup tolerates real text: trims surrounding punctuation, falls back to case- and diacritic-insensitive matches, follows synonym entries, and suggests close headwords when nothing matches. | S | M1 |
 
 ### 1.4 Text markup (MARK), Tier 1
 | ID | Requirement | Pri | MS |
@@ -142,6 +145,16 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-UTIL-006 | Sync annotations through a user-chosen folder/WebDAV, with conflict handling. | C | post-1.0 |
 | FR-UTIL-007 | Read-aloud (OS TTS) following the text. | C | post-1.0 |
 
+### 1.12 E-books, catalogs & cloud (LIB), post-1.0
+Planned after the Android, Linux and Windows apps are complete. Each area starts with an ADR; the order is decided then.
+| ID | Requirement | Pri | MS |
+|---|---|---|---|
+| FR-LIB-001 | Open and read reflowable **EPUB** 2/3: pagination or scroll, font size and theme, table of contents, remembered position. Needs a GPL-compatible EPUB engine (ADR). | S | post-1.0 |
+| FR-LIB-002 | EPUB **text highlights** (palette colours) and **comments** attached to them, shown in the review panel and exported to Markdown. EPUB has no standard annotation layer, so the storage format needs an ADR (the PDF rule "annotations live in the file" does not apply directly). | S | post-1.0 |
+| FR-LIB-003 | **OPDS** catalogs (1.2 and 2.0): add catalogs by URL, browse and search, HTTP authentication, and download PDF/EPUB files into a library folder. | C | post-1.0 |
+| FR-LIB-004 | **KoSync**: sync reading progress with a user-configured KOReader sync server (register, log in, push and pull progress per document, matched by the protocol's document hash). Implemented from the protocol, without copying AGPL code. | C | post-1.0 |
+| FR-LIB-005 | **Cloud storage** accounts (Google Drive, OneDrive, Dropbox): browse, open and save annotations back, with conflict detection; through public REST APIs, never proprietary SDKs. | C | post-1.0 |
+
 ## 2. Non-functional requirements
 
 ### 2.1 Performance (PERF)
@@ -187,7 +200,7 @@ Reference devices are defined in [QA §4](06-quality-assurance.md#4-performance-
 ### 2.5 Security & privacy (SEC)
 | ID | Requirement |
 |---|---|
-| NFR-SEC-001 | No telemetry, analytics or network access by default. The only network use is user-initiated: opening links, plus future sync. |
+| NFR-SEC-001 | No telemetry, analytics or network access by default. The only network use is user-initiated: opening links, plus future sync, catalogs (OPDS) and cloud accounts. |
 | NFR-SEC-002 | JavaScript in PDFs is disabled. Launch actions and embedded files never execute automatically. |
 | NFR-SEC-003 | Keep PDFium current (tracked by Dependabot or a custom workflow); security patches released within 14 days of an upstream fix. |
 | NFR-SEC-004 | Request only the minimum permissions: Android uses SAF with no broad storage permission (except an optional "All files" flavor outside Play). |

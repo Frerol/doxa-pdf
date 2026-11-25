@@ -1,6 +1,6 @@
 # 11 — MVP Definition
 
-Agreed with the maintainer on 2026-11-24. The MVP is **Android-only** and is shipped as a series of **public beta releases on
+Agreed with the maintainer on 2026-11-24 (offline dictionary added to v0.1 the same day). The MVP is **Android-only** and is shipped as a series of **public beta releases on
 GitHub** (no stores yet). Each beta is usable on its own, and the MVP is complete at **v0.4**.
 
 ## 1. Target
@@ -30,7 +30,7 @@ GitHub** (no stores yet). Each beta is usable on its own, and the MVP is complet
 | Files | System picker, "Open with" intents, recents (thumbnail + progress), **library folders**, **tabs** for several open documents, password-protected PDFs |
 | Reading | All four layouts: **continuous vertical, single page, two pages side by side, horizontal**. Zoom, fit width/page, remembered position, fullscreen |
 | Navigation | **Outline**, **thumbnails**, go to page, links + back/forward |
-| Search & text | **Full-text search** (diacritic-insensitive), text selection + copy |
+| Search & text | **Full-text search** (diacritic-insensitive), text selection + copy, **offline dictionary** for the selected word (StarDict dictionaries imported by the user, [ADR-0009](../adr/0009-offline-dictionary.md)) |
 | Comfort | **Night and sepia** modes, light/dark theme, pt-BR + en |
 
 ### v0.2 — Study core: markup + pen ★ (the point where the maintainer starts studying with Doxa daily)
@@ -58,7 +58,7 @@ GitHub** (no stores yet). Each beta is usable on its own, and the MVP is complet
 
 ## 4. Explicitly not in the MVP
 Desktop builds (Linux is the next milestone), store publishing, strikeout creation, favorites, annotation sync between devices,
-page organization, forms/signatures, Acrobat-style editing.
+page organization, forms/signatures, Acrobat-style editing, EPUB, OPDS, KoSync and cloud storage accounts.
 
 ## 5. MVP exit criteria
 1. The maintainer studies a full textbook chapter and a scientific article on the reference tablet using only Doxa PDF: highlighting, handwriting, notes, review and export.

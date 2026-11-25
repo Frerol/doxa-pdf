@@ -44,7 +44,7 @@ Doxa PDF is an **original implementation**:
 **Tier 1, the core.** These define the product and get the most engineering and polish:
 1. **Text markup**: highlight, underline, strikeout, squiggly. Precise text selection, a one-tap color palette, and a "sticky tool" mode for highlighting many passages in a row.
 2. **Pen annotation**: pressure-sensitive ink, highlighter pen, eraser (whole stroke and partial), lasso select/move/recolor, stylus-only mode with palm rejection, very low latency.
-3. **Comfortable reading**: smooth scroll and zoom, layouts, night/sepia modes, remembered position, outline, search.
+3. **Comfortable reading**: smooth scroll and zoom, layouts, night/sepia modes, remembered position, outline, search, offline dictionary lookup.
 
 **Tier 2, study support:**
 - Sticky notes, notes attached to highlights, text boxes, simple shapes/arrows.
@@ -53,6 +53,7 @@ Doxa PDF is an **original implementation**:
 - Tabs, recents, favorites, "Open with" integration.
 
 **Promoted to the MVP:** OCR. Scanned study material is common, and OCR makes it searchable and highlightable.
+An **offline dictionary** (look up the selected word) is also in the MVP, from v0.1 ([ADR-0009](../adr/0009-offline-dictionary.md)).
 
 **Tier 3, document utilities (after v1.0 unless cheap):**
 - Page organization: rotate, delete, reorder, extract, merge, split.
@@ -70,6 +71,8 @@ Windows installer/winget.
 ### Planned after v1.0 (see [roadmap](08-roadmap.md))
 - Page organization, form filling, signatures, images → PDF, camera scanning.
 - Sync of annotations between devices through user-owned storage (folder sync, WebDAV/Nextcloud).
+- Once the Android, Linux and Windows apps are complete: **EPUB** reading with highlights and comments, **OPDS** catalogs,
+  **KoSync** reading-progress sync, and **cloud storage** accounts (Google Drive, OneDrive, Dropbox). See [requirements §1.12](02-requirements.md#112-e-books-catalogs--cloud-lib-post-10).
 - Study extras: read-aloud (TTS), focus/reading-ruler mode, flashcards generated from highlights.
 - iOS and macOS builds (Flutter allows it; not a v1 commitment).
 
