@@ -256,6 +256,19 @@ void main() {
       expect(controller.currentPage, 0);
     });
 
+    testWidgets('an edge tap turns before the double-tap timeout', (
+      tester,
+    ) async {
+      await show(tester, const ReaderOptions(mode: ReaderMode.singlePage));
+      await tester.tapAt(const Offset(780, 300));
+      // The 220 ms turn ends before the 300 ms double-tap timeout would.
+      for (var i = 0; i < 25; i++) {
+        await tester.pump(const Duration(milliseconds: 10));
+      }
+      expect(controller.currentPage, 1);
+      await settle(tester);
+    });
+
     testWidgets('two quick edge taps turn two pages, not zoom', (tester) async {
       await show(tester, const ReaderOptions(mode: ReaderMode.singlePage));
       await tester.tapAt(const Offset(780, 300));
