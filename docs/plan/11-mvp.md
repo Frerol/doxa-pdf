@@ -28,10 +28,10 @@ GitHub** (no stores yet). Each beta is usable on its own, and the MVP is complet
 | Area | Included |
 |---|---|
 | Files | System picker, "Open with" intents, recents (thumbnail + progress), **library folders**, **favorites**, rename/move/delete, **tabs** for several open documents, password-protected PDFs |
-| Reading | All four layouts: **continuous vertical, single page, two pages side by side, horizontal**. Zoom, fit width/page, remembered position, fullscreen. Paged layouts: **tap zones** to turn pages, keep zoom when turning, **right-to-left** page order |
+| Reading | All four layouts: **continuous vertical, single page, two pages side by side, horizontal**. Zoom, fit width/page, fullscreen. Remember page and zoom per document. Save layout, cover page, tap zones and keep zoom as global defaults. **Right-to-left** page order is per document |
 | Navigation | **Outline**, **thumbnails**, go to page, links + back/forward |
 | Search & text | **Full-text search** (diacritic-insensitive), text selection + copy, **offline dictionary** for the selected word or short phrase (StarDict dictionaries imported by the user, [ADR-0009](../adr/0009-offline-dictionary.md)) |
-| Comfort | **Night, sepia and custom colour** modes, light/dark theme, pt-BR + en |
+| Comfort | Global **night, sepia and custom colour** modes, light/dark theme, pt-BR + en |
 
 ### v0.2 — Study core: markup + pen ★ (the point where the maintainer starts studying with Doxa daily)
 | Area | Included |

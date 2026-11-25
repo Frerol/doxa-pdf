@@ -7,8 +7,10 @@ import 'dart:io';
 import 'package:material_ui/material_ui.dart';
 
 import '../reader/color_mode.dart';
+import '../reader/reader_geometry.dart';
 
-/// App-wide settings (FR-SET-001, FR-SET-002, FR-VIEW-005, FR-VIEW-013).
+/// App-wide settings (FR-SET-001, FR-SET-002, FR-VIEW-005, FR-VIEW-006,
+/// FR-VIEW-013).
 final class AppSettings {
   const AppSettings({
     this.themeMode = ThemeMode.system,
@@ -18,6 +20,10 @@ final class AppSettings {
     this.customBackground = defaultCustomBackground,
     this.customText = defaultCustomText,
     this.keepScreenOn = false,
+    this.readerMode = ReaderMode.continuous,
+    this.coverPage = true,
+    this.tapZones = true,
+    this.keepZoomOnTurn = false,
   });
 
   final ThemeMode themeMode;
@@ -36,6 +42,13 @@ final class AppSettings {
   /// Keep the screen on while a document is open.
   final bool keepScreenOn;
 
+  /// Layout defaults every document opens with (FR-VIEW-006); right to
+  /// left is per document (FR-VIEW-019) and not kept here.
+  final ReaderMode readerMode;
+  final bool coverPage;
+  final bool tapZones;
+  final bool keepZoomOnTurn;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     bool? dynamicColor,
@@ -44,6 +57,10 @@ final class AppSettings {
     Color? customBackground,
     Color? customText,
     bool? keepScreenOn,
+    ReaderMode? readerMode,
+    bool? coverPage,
+    bool? tapZones,
+    bool? keepZoomOnTurn,
   }) => AppSettings(
     themeMode: themeMode ?? this.themeMode,
     dynamicColor: dynamicColor ?? this.dynamicColor,
@@ -52,6 +69,10 @@ final class AppSettings {
     customBackground: customBackground ?? this.customBackground,
     customText: customText ?? this.customText,
     keepScreenOn: keepScreenOn ?? this.keepScreenOn,
+    readerMode: readerMode ?? this.readerMode,
+    coverPage: coverPage ?? this.coverPage,
+    tapZones: tapZones ?? this.tapZones,
+    keepZoomOnTurn: keepZoomOnTurn ?? this.keepZoomOnTurn,
   );
 
   Map<String, Object?> toJson() => {
@@ -62,6 +83,10 @@ final class AppSettings {
     'customBackground': customBackground.toARGB32(),
     'customText': customText.toARGB32(),
     'keepScreenOn': keepScreenOn,
+    'readerMode': readerMode.name,
+    'coverPage': coverPage,
+    'tapZones': tapZones,
+    'keepZoomOnTurn': keepZoomOnTurn,
   };
 
   /// Reads settings written by [toJson]; unknown or broken values fall back
@@ -94,6 +119,10 @@ final class AppSettings {
       ),
       customText: Color(pick('customText', defaults.customText.toARGB32())),
       keepScreenOn: pick('keepScreenOn', defaults.keepScreenOn),
+      readerMode: named(ReaderMode.values, 'readerMode', defaults.readerMode),
+      coverPage: pick('coverPage', defaults.coverPage),
+      tapZones: pick('tapZones', defaults.tapZones),
+      keepZoomOnTurn: pick('keepZoomOnTurn', defaults.keepZoomOnTurn),
     );
   }
 }

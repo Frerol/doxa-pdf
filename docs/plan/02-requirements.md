@@ -31,8 +31,8 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-VIEW-002 | Continuous vertical scroll; single-page (paged) mode; horizontal paging. | M | M1 |
 | FR-VIEW-003 | Two-page (facing) layout, with an optional cover page. | M | M1 |
 | FR-VIEW-004 | Pinch/ctrl+wheel zoom, double-tap smart zoom, fit width/page, zoom presets. | M | M1 |
-| FR-VIEW-005 | Night mode (inverted, image-aware where possible) and sepia mode; follows the app theme or is set per document. | M | M1 |
-| FR-VIEW-006 | Remember page, zoom and layout per document and restore them on reopen. | M | M1 |
+| FR-VIEW-005 | Page colour mode applies to every document and can be changed in Settings or View options. Includes night mode (inverted, image-aware where possible) and sepia. | M | M1 |
+| FR-VIEW-006 | Remember page and zoom per document and restore them on reopen. Save layout, cover page, tap zones and keep zoom as global defaults when changed. | M | M1 |
 | FR-VIEW-007 | Outline (table of contents) panel with navigation. | M | M1 |
 | FR-VIEW-008 | Page thumbnails panel/grid with navigation. | M | M1 |
 | FR-VIEW-009 | Go to page; page slider/scrubber with a page label preview. | M | M1 |
@@ -45,7 +45,7 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-VIEW-016 | Custom colour mode: the user picks the page background and text colours, alongside night and sepia (same pipeline as FR-VIEW-005). | M | M1 |
 | FR-VIEW-017 | Tap zones in paged layouts: tapping near the left/right (or top/bottom) edge turns the page; can be turned off. | M | M1 |
 | FR-VIEW-018 | Keep the zoom level and horizontal offset when turning pages in paged layouts (setting). | M | M1 |
-| FR-VIEW-019 | Right-to-left page progression for paged and two-page layouts (per document, for RTL books). | M | M1 |
+| FR-VIEW-019 | Right-to-left page order for paged layouts is set per document. | M | M1 |
 | FR-VIEW-020 | Reflow reading mode: page text re-laid out in one column with adjustable font size. | C | post-1.0 |
 | FR-VIEW-021 | Show and hide optional content layers (OCG). | C | post-1.0 |
 | FR-VIEW-022 | Capture a rectangular page region as an image (copy or share). | C | post-1.0 |
