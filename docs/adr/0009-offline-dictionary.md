@@ -1,6 +1,6 @@
 # ADR-0009 — Built-in offline dictionary
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-24
 
 ## Context

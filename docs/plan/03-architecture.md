@@ -24,7 +24,7 @@ doxa-pdf/
 │   ├── doxa_engine/           # Engine interface + PDFium implementation (FFI, worker isolate, appearance-stream writer)
 │   ├── pdfium_ffi/            # ffigen-generated bindings + native library loading/bundling
 │   ├── doxa_ink/              # Stroke model, smoothing, pressure → outline geometry, hit testing, erasing
-│   ├── doxa_dict/             # Pure Dart offline dictionaries: StarDict parsing, index, lookup (proposed, ADR-0009)
+│   ├── doxa_dict/             # Pure Dart offline dictionaries: StarDict parsing, index, lookup (ADR-0009)
 │   └── doxa_platform/         # Plugin: SAF/file access, intents, file associations, low-latency ink surface (Android)
 ├── tools/                     # Scripts: fetch/verify PDFium, test corpus, release helpers
 ├── test_corpus/               # Small, license-cleared PDFs used in tests (large corpus fetched on demand)
