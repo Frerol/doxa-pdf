@@ -1,3 +1,14 @@
+<p align="center">
+  <img src="assets/brand/banner.png" alt="Doxa PDF: the free PDF reader for studying" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://github.com/Frerol/doxa-pdf/actions/workflows/ci.yml"><img src="https://github.com/Frerol/doxa-pdf/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-7048E8" alt="License: GPL-3.0-or-later"></a>
+  <img src="https://img.shields.io/badge/platforms-Android%20%C2%B7%20Linux%20%C2%B7%20Windows-2BAE66" alt="Platforms: Android, Linux, Windows">
+  <img src="https://img.shields.io/badge/status-M0%20foundations-F08C00" alt="Status: M0 foundations">
+</p>
+
 # Doxa PDF
 
 **Doxa PDF** is a free and open-source PDF reader for **studying**, on **Android, Windows and Linux**.
@@ -5,7 +16,8 @@ It is built around two things: **marking up text** (highlight, underline, strike
 the page with a pen** (low-latency, pressure-sensitive ink with palm rejection). Everything is stored as
 standard PDF annotations, so your notes open in any reader. It runs offline, has no telemetry, no ads and no paywall.
 
-> **Status: planning.** No application code exists yet. The engineering plan lives in [`docs/`](docs/README.md).
+> **Status: M0, foundations and spikes.** The monorepo, PDFium bindings, CI and the rendering, ink and annotation-writing spikes are done;
+> OCR is being evaluated. Next is the **Android MVP**, shipped as public betas v0.1–v0.4 ([MVP](docs/plan/11-mvp.md)). The engineering plan lives in [`docs/`](docs/README.md).
 
 ## Goals
 
@@ -18,14 +30,15 @@ standard PDF annotations, so your notes open in any reader. It runs offline, has
 
 | Area | Highlights |
 |---|---|
-| Read | Continuous/single/two-page layouts, smooth zoom, tabs, outline, thumbnails, full-text search, night/sepia modes, resume where you stopped |
+| Read | Continuous/single/two-page/horizontal layouts, smooth zoom, tabs, outline, thumbnails, full-text search, offline dictionary, night/sepia/custom colours, resume where you stopped |
 | Mark up text | Highlight, underline, strikeout, squiggly with a quick color palette; notes attached to highlights |
 | Pen | Pressure-sensitive ink, highlighter pen, stroke and pixel eraser, lasso select/move, stylus-only mode with palm rejection, undo/redo |
-| Notes | Sticky notes, text boxes, shapes, blank note pages inserted between pages |
+| Notes | Sticky notes, text boxes, shapes, stamps, blank note pages inserted between pages |
+| Scans & pages | On-device OCR for scanned pages, page organization (rotate, reorder, insert, merge, split), printing |
 | Review | Annotation panel filtered by color/type/page, jump to annotation, export to Markdown |
 | Platform | File associations, "Open with", recents and favorites, light/dark themes, i18n, accessibility |
 
-Page organization (merge, split, reorder) and form filling are secondary features planned after the core study experience.
+Form filling, signatures, EPUB, OPDS, KoSync and cloud accounts come after v1.0.
 See the [requirements](docs/plan/02-requirements.md) and [roadmap](docs/plan/08-roadmap.md).
 
 ## Documentation

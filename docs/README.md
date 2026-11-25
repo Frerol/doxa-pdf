@@ -1,3 +1,5 @@
+<img src="../assets/brand/doxa-glyph.svg" alt="" width="72" align="right">
+
 # Doxa PDF — Engineering Plan
 
 This folder holds the software engineering plan for Doxa PDF. Treat it as a living document:
