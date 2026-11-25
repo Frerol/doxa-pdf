@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
 import '../reader/reader_page.dart';
+import '../settings/app_settings.dart';
 
 /// The app's own folder in shared storage on Android, where
 /// `adb push file.pdf <dir>` works without any permission.
@@ -20,7 +21,11 @@ class DevDocuments extends StatefulWidget {
     super.key,
     required this.engine,
     required this.directory,
+    this.settings,
   });
+
+  /// App settings the reader opens with.
+  final SettingsController? settings;
 
   /// Starts or returns the app's engine.
   final Future<PdfEngine> Function() engine;
@@ -95,6 +100,7 @@ class _DevDocumentsState extends State<DevDocuments> {
                         engine: widget.engine(),
                         source: FileSource(file.path),
                         title: file.uri.pathSegments.last,
+                        settings: widget.settings,
                       ),
                     ),
                   ),

@@ -2,17 +2,24 @@
 
 package io.github.frerol.doxapdf.doxa_platform
 
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.view.WindowManager
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 
 /** DoxaPlatformPlugin */
 class DoxaPlatformPlugin :
     FlutterPlugin,
+    ActivityAware,
     DoxaPlatformPluginApi {
     private var context: Context? = null
+    private var activity: Activity? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
@@ -37,6 +44,40 @@ class DoxaPlatformPlugin :
         } catch (e: SecurityException) {
             false
         }
+    }
+
+    override fun getAccentColor(): Long? {
+        val ctx = context ?: return null
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
+        return ctx.getColor(android.R.color.system_accent1_500).toLong() and 0xFFFFFFFFL
+    }
+
+    override fun setKeepScreenOn(keepOn: Boolean) {
+        val window = activity?.window ?: return
+        if (keepOn) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    override fun getDataDirectory(): String =
+        context?.filesDir?.absolutePath ?: throw IllegalStateException("Not attached")
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        activity = null
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivity() {
+        activity = null
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {

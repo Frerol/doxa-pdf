@@ -19,6 +19,17 @@ class MockDoxaPlatformPlatform
     opened.add(uri);
     return true;
   }
+
+  bool? keepScreenOn;
+
+  @override
+  Future<int?> getAccentColor() async => 0xFF336699;
+
+  @override
+  Future<void> setKeepScreenOn(bool keepOn) async => keepScreenOn = keepOn;
+
+  @override
+  Future<String> getDataDirectory() async => '/data/doxa';
 }
 
 void main() {
@@ -55,5 +66,16 @@ void main() {
       expect(await plugin.openUri(refused), isFalse, reason: refused);
     }
     expect(fakePlatform.opened, hasLength(3));
+  });
+
+  test('accent colour, keep screen on and data directory', () async {
+    final fakePlatform = MockDoxaPlatformPlatform();
+    DoxaPlatformPlatform.instance = fakePlatform;
+    final plugin = DoxaPlatform();
+
+    expect(await plugin.getAccentColor(), 0xFF336699);
+    await plugin.setKeepScreenOn(true);
+    expect(fakePlatform.keepScreenOn, isTrue);
+    expect(await plugin.getDataDirectory(), '/data/doxa');
   });
 }

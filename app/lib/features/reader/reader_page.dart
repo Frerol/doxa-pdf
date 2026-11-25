@@ -9,6 +9,9 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import '../settings/app_settings.dart';
+import '../settings/settings_page.dart';
+import 'color_mode.dart';
 import 'frame_probe.dart';
 import 'navigation_panel.dart';
 import 'reader_controller.dart';
@@ -22,6 +25,9 @@ typedef UriOpener = Future<bool> Function(String uri);
 
 Future<bool> _openWithPlatform(String uri) => DoxaPlatform().openUri(uri);
 
+Future<void> _keepScreenOnWithPlatform(bool keepOn) =>
+    DoxaPlatform().setKeepScreenOn(keepOn);
+
 /// Opens a document and shows it in the reader (issues #47, #48, #52).
 class ReaderPage extends StatefulWidget {
   const ReaderPage({
@@ -31,6 +37,8 @@ class ReaderPage extends StatefulWidget {
     required this.title,
     this.decoder = decodeBitmap,
     this.openUri = _openWithPlatform,
+    this.settings,
+    this.keepScreenOn = _keepScreenOnWithPlatform,
   });
 
   final Future<PdfEngine> engine;
@@ -38,6 +46,12 @@ class ReaderPage extends StatefulWidget {
   final String title;
   final BitmapDecoder decoder;
   final UriOpener openUri;
+
+  /// App settings: the page colours and screen option documents open with.
+  final SettingsController? settings;
+
+  /// Keeps the screen on or lets it sleep (FR-VIEW-013); injectable.
+  final Future<void> Function(bool keepOn) keepScreenOn;
 
   @override
   State<ReaderPage> createState() => _ReaderPageState();
@@ -51,6 +65,16 @@ class _ReaderPageState extends State<ReaderPage> {
   SearchSession? _search;
   TextSelectionController? _selection;
   bool _searchOpen = false;
+
+  /// Page colours of this document (FR-VIEW-005, FR-VIEW-016).
+  late PageColorMode _colorMode =
+      widget.settings?.value.colorMode ?? PageColorMode.normal;
+
+  /// Full screen (FR-VIEW-012): toolbars and system bars hidden; a tap in
+  /// the middle of the page shows the toolbars until the next tap.
+  bool _fullscreen = false;
+  bool _barsShown = true;
+  bool _keptScreenOn = false;
   _Failure? _failure;
   final FrameProbe? _probe = kReleaseMode ? null : FrameProbe();
 
@@ -58,6 +82,33 @@ class _ReaderPageState extends State<ReaderPage> {
   void initState() {
     super.initState();
     unawaited(_open());
+    widget.settings?.addListener(_applyKeepScreenOn);
+    _applyKeepScreenOn();
+  }
+
+  /// Follows the keep-screen-on setting while the document is open.
+  void _applyKeepScreenOn() {
+    final on = widget.settings?.value.keepScreenOn ?? false;
+    if (on == _keptScreenOn) return;
+    _keptScreenOn = on;
+    unawaited(widget.keepScreenOn(on));
+  }
+
+  void _setFullscreen(bool on) {
+    setState(() {
+      _fullscreen = on;
+      _barsShown = !on;
+    });
+    unawaited(
+      SystemChrome.setEnabledSystemUIMode(
+        on ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
+      ),
+    );
+  }
+
+  /// A tap on the page away from links and edge zones.
+  void _onPageTap() {
+    if (_fullscreen) setState(() => _barsShown = !_barsShown);
   }
 
   Future<void> _open() async {
@@ -106,6 +157,11 @@ class _ReaderPageState extends State<ReaderPage> {
       unawaited(_engine?.close(controller.document));
     }
     _probe?.dispose();
+    widget.settings?.removeListener(_applyKeepScreenOn);
+    if (_keptScreenOn) unawaited(widget.keepScreenOn(false));
+    if (_fullscreen) {
+      unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
+    }
     super.dispose();
   }
 
@@ -160,7 +216,13 @@ class _ReaderPageState extends State<ReaderPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final controller = _controller;
+    final settings = widget.settings?.value;
+    final showBars = !_fullscreen || _barsShown || _searchOpen;
     final body = Scaffold(
+      // In full screen the page keeps its size while the bars come and go:
+      // the bars are drawn over it instead of resizing it.
+      extendBodyBehindAppBar: _fullscreen,
+      extendBody: _fullscreen,
       drawer: controller == null || controller.info.pageCount == 0
           ? null
           : NavigationPanel(
@@ -170,7 +232,9 @@ class _ReaderPageState extends State<ReaderPage> {
                 unawaited(_follow(target));
               },
             ),
-      appBar: _searchOpen && _search != null
+      appBar: !showBars
+          ? null
+          : _searchOpen && _search != null
           ? _SearchBar(
               session: _search!,
               onClose: () => setState(() {
@@ -208,12 +272,20 @@ class _ReaderPageState extends State<ReaderPage> {
                   IconButton(
                     icon: const Icon(Icons.chrome_reader_mode_outlined),
                     tooltip: l10n.viewOptions,
-                    onPressed: () => showViewOptions(context, controller),
+                    onPressed: () => showViewOptions(
+                      context,
+                      controller,
+                      colorMode: _colorMode,
+                      onColorMode: (mode) => setState(() => _colorMode = mode),
+                      fullscreen: _fullscreen,
+                      onFullscreen: _setFullscreen,
+                    ),
                   ),
                 ],
               ],
             ),
-      bottomNavigationBar: controller == null || controller.info.pageCount < 2
+      bottomNavigationBar:
+          !showBars || controller == null || controller.info.pageCount < 2
           ? null
           : _PageScrubber(controller: controller),
       body: switch ((controller, _failure)) {
@@ -224,7 +296,19 @@ class _ReaderPageState extends State<ReaderPage> {
                 controller: c,
                 probe: _probe,
                 onLink: _follow,
+                onTap: _onPageTap,
                 selection: _selection,
+                colorFilter: pageColorFilter(
+                  _colorMode,
+                  background:
+                      settings?.customBackground ?? defaultCustomBackground,
+                  text: settings?.customText ?? defaultCustomText,
+                ),
+                sheetColor: sheetColor(
+                  _colorMode,
+                  background:
+                      settings?.customBackground ?? defaultCustomBackground,
+                ),
               ),
             ),
             if (_selection case final selection?)
@@ -510,17 +594,37 @@ class _ZoomMenu extends StatelessWidget {
 /// pages turn (FR-VIEW-002, FR-VIEW-003, FR-VIEW-017..019).
 Future<void> showViewOptions(
   BuildContext context,
-  ReaderController controller,
-) => showModalBottomSheet<void>(
+  ReaderController controller, {
+  PageColorMode colorMode = PageColorMode.normal,
+  ValueChanged<PageColorMode>? onColorMode,
+  bool fullscreen = false,
+  ValueChanged<bool>? onFullscreen,
+}) => showModalBottomSheet<void>(
   context: context,
   showDragHandle: true,
   isScrollControlled: true,
-  builder: (context) => _ViewOptions(controller: controller),
+  builder: (context) => _ViewOptions(
+    controller: controller,
+    colorMode: colorMode,
+    onColorMode: onColorMode,
+    fullscreen: fullscreen,
+    onFullscreen: onFullscreen,
+  ),
 );
 
 class _ViewOptions extends StatefulWidget {
-  const _ViewOptions({required this.controller});
+  const _ViewOptions({
+    required this.controller,
+    required this.colorMode,
+    required this.onColorMode,
+    required this.fullscreen,
+    required this.onFullscreen,
+  });
   final ReaderController controller;
+  final PageColorMode colorMode;
+  final ValueChanged<PageColorMode>? onColorMode;
+  final bool fullscreen;
+  final ValueChanged<bool>? onFullscreen;
 
   @override
   State<_ViewOptions> createState() => _ViewOptionsState();
@@ -528,6 +632,8 @@ class _ViewOptions extends StatefulWidget {
 
 class _ViewOptionsState extends State<_ViewOptions> {
   ReaderOptions get _options => widget.controller.options;
+  late PageColorMode _colorMode = widget.colorMode;
+  late bool _fullscreen = widget.fullscreen;
 
   void _set(ReaderOptions options) =>
       setState(() => widget.controller.setOptions(options));
@@ -555,6 +661,31 @@ class _ViewOptionsState extends State<_ViewOptions> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
+            if (widget.onColorMode case final onColorMode?) ...[
+              ListTile(title: Text(l10n.viewPageColors)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: PageColorModeSelector(
+                  mode: _colorMode,
+                  onChanged: (mode) {
+                    setState(() => _colorMode = mode);
+                    onColorMode(mode);
+                  },
+                ),
+              ),
+            ],
+            if (widget.onFullscreen case final onFullscreen?)
+              SwitchListTile(
+                secondary: const Icon(Icons.fullscreen),
+                title: Text(l10n.viewFullscreen),
+                subtitle: Text(l10n.viewFullscreenHint),
+                value: _fullscreen,
+                onChanged: (on) {
+                  setState(() => _fullscreen = on);
+                  onFullscreen(on);
+                },
+              ),
+            const Divider(),
             RadioGroup<ReaderMode>(
               groupValue: mode,
               onChanged: (value) {

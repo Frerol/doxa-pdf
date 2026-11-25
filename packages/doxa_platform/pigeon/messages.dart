@@ -30,4 +30,14 @@ abstract class DoxaPlatformPluginApi {
   /// Opens a web or mail link in another app (FR-VIEW-010). Returns false
   /// when no app can open it. Callers confirm with the user first.
   bool openUri(String uri);
+
+  /// The system accent colour (ARGB) for dynamic colour on Android 12+
+  /// (FR-SET-001), or null where there is none.
+  int? getAccentColor();
+
+  /// Keeps the screen on while reading (FR-VIEW-013).
+  void setKeepScreenOn(bool keepOn);
+
+  /// The app's private data directory, for settings and the database.
+  String getDataDirectory();
 }

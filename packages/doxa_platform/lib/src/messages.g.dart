@@ -112,4 +112,63 @@ class DoxaPlatformPluginApi {
     );
     return pigeonVar_replyValue! as bool;
   }
+
+  /// The system accent colour (ARGB) for dynamic colour on Android 12+
+  /// (FR-SET-001), or null where there is none.
+  Future<int?> getAccentColor() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.getAccentColor$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as int?;
+  }
+
+  /// Keeps the screen on while reading (FR-VIEW-013).
+  Future<void> setKeepScreenOn(bool keepOn) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.setKeepScreenOn$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[keepOn],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  /// The app's private data directory, for settings and the database.
+  Future<String> getDataDirectory() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.getDataDirectory$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as String;
+  }
 }

@@ -49,6 +49,7 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-VIEW-020 | Reflow reading mode: page text re-laid out in one column with adjustable font size. | C | post-1.0 |
 | FR-VIEW-021 | Show and hide optional content layers (OCG). | C | post-1.0 |
 | FR-VIEW-022 | Capture a rectangular page region as an image (copy or share). | C | post-1.0 |
+| FR-VIEW-023 | Page colour modes (FR-VIEW-005, FR-VIEW-016) tint only the page content (text, background, images), never annotations: they keep their own colours. In dark modes, where text is light, highlights and other light annotation colours switch to darker, saturated variants drawn behind the text, so the text stays legible (a light highlight under light text, or multiply on a dark page, would hide it). Foreign annotations, which PDFium draws into the tiles, need their own layer for this (ADR-0005 update). | M | M2 |
 
 ### 1.3 Search & text (TEXT)
 | ID | Requirement | Pri | MS |
