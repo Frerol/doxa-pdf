@@ -1,6 +1,6 @@
 # 11 — MVP Definition
 
-Agreed with the maintainer on 2026-11-24 (offline dictionary added to v0.1 the same day). The MVP is **Android-only** and is shipped as a series of **public beta releases on
+Agreed with the maintainer on 2026-11-24 (offline dictionary and the feature review below added the same day). The MVP is **Android-only** and is shipped as a series of **public beta releases on
 GitHub** (no stores yet). Each beta is usable on its own, and the MVP is complete at **v0.4**.
 
 ## 1. Target
@@ -27,18 +27,18 @@ GitHub** (no stores yet). Each beta is usable on its own, and the MVP is complet
 ### v0.1 — Reader
 | Area | Included |
 |---|---|
-| Files | System picker, "Open with" intents, recents (thumbnail + progress), **library folders**, **tabs** for several open documents, password-protected PDFs |
-| Reading | All four layouts: **continuous vertical, single page, two pages side by side, horizontal**. Zoom, fit width/page, remembered position, fullscreen |
+| Files | System picker, "Open with" intents, recents (thumbnail + progress), **library folders**, **favorites**, rename/move/delete, **tabs** for several open documents, password-protected PDFs |
+| Reading | All four layouts: **continuous vertical, single page, two pages side by side, horizontal**. Zoom, fit width/page, remembered position, fullscreen. Paged layouts: **tap zones** to turn pages, keep zoom when turning, **right-to-left** page order |
 | Navigation | **Outline**, **thumbnails**, go to page, links + back/forward |
 | Search & text | **Full-text search** (diacritic-insensitive), text selection + copy, **offline dictionary** for the selected word or short phrase (StarDict dictionaries imported by the user, [ADR-0009](../adr/0009-offline-dictionary.md)) |
-| Comfort | **Night and sepia** modes, light/dark theme, pt-BR + en |
+| Comfort | **Night, sepia and custom colour** modes, light/dark theme, pt-BR + en |
 
 ### v0.2 — Study core: markup + pen ★ (the point where the maintainer starts studying with Doxa daily)
 | Area | Included |
 |---|---|
-| Text markup | **Highlight, underline, squiggly** (strikeout creation deferred; existing strikeouts are still displayed and editable), color palette, sticky tool, edit/recolor/delete, correct selection order in two-column articles |
+| Text markup | **Highlight, underline, squiggly** (strikeout creation deferred; existing strikeouts are still displayed and editable), color palette, sticky tool, edit/recolor/delete, correct selection order in two-column articles, **text-snapping pen and highlighter** (a freehand stroke over text becomes a text markup) |
 | Scanned pages | **Area highlight** (rectangle) and the highlighter pen, until OCR arrives in v0.4 |
-| Pen | **Pressure-sensitive** pen, **highlighter pen**, **pen presets**, S Pen side button and eraser mapping |
+| Pen | **Pressure-sensitive** pen, **highlighter pen**, **style presets for every tool**, free colour picker, S Pen side button and eraser mapping |
 | Eraser | **Whole-stroke and partial** erasers |
 | Selection | **Lasso**: move, resize, recolor, delete |
 | Safety | Undo/redo, **autosave into the original file** with atomic write + crash-recovery journal |
@@ -46,19 +46,22 @@ GitHub** (no stores yet). Each beta is usable on its own, and the MVP is complet
 ### v0.3 — Notes & review
 | Area | Included |
 |---|---|
-| Notes | **Notes attached to highlights**, **sticky notes**, **text boxes**, **blank/ruled/grid note pages** inserted between pages |
+| Notes | **Notes attached to highlights**, **sticky notes**, **text boxes** (with font choice), **blank/ruled/grid note pages** inserted between pages |
 | Drawing extras | **Shapes** (line, arrow, rectangle, ellipse), **shape recognition** (hold at the end of a stroke), **stamps** (✓ ✗ ? ! and custom text) |
-| Review | **Annotations panel** (filter by color/type/page, jump to item), **color labels** ("Definition", "Exam"…), **bookmarks**, **Markdown export** of highlights and notes |
+| Review | **Annotations panel** (filter by color/type/page, jump to item), **color labels** ("Definition", "Exam"…), **bookmarks**, **outline editing**, **Markdown export** of highlights and notes |
+| Output | **Print** (with annotations) |
 
-### v0.4 — OCR → MVP complete
+### v0.4 — OCR + pages → MVP complete
 | Area | Included |
 |---|---|
 | OCR | On-device **Tesseract** OCR (pt + en models, more downloadable) adds an invisible text layer to scanned pages. Runs per page or for the whole document in the background and can be cancelled. Afterwards those pages support search, selection and text markup |
+| Pages | **Page organization**: rotate, delete, reorder, duplicate, insert (blank, image, another PDF), extract, merge, split, crop, edit page labels |
 | Hardening | Performance pass on large textbooks, beta feedback fixes, interop sweep |
 
 ## 4. Explicitly not in the MVP
-Desktop builds (Linux is the next milestone), store publishing, strikeout creation, favorites, annotation sync between devices,
-page organization, forms/signatures, Acrobat-style editing, EPUB, OPDS, KoSync and cloud storage accounts.
+Desktop builds (Linux is the next milestone), store publishing, strikeout creation, annotation sync between devices,
+forms/signatures, Acrobat-style editing, EPUB, OPDS, KoSync and cloud storage accounts, and the other post-1.0 items in
+[requirements](02-requirements.md) (reflow, read-aloud, in-app translation, measurement, redaction, scanning…).
 
 ## 5. MVP exit criteria
 1. The maintainer studies a full textbook chapter and a scientific article on the reference tablet using only Doxa PDF: highlighting, handwriting, notes, review and export.

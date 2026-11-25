@@ -54,9 +54,9 @@ Doxa PDF is an **original implementation**:
 
 **Promoted to the MVP:** OCR. Scanned study material is common, and OCR makes it searchable and highlightable.
 An **offline dictionary** (look up the selected word) is also in the MVP, from v0.1 ([ADR-0009](../adr/0009-offline-dictionary.md)).
+**Page organization** and **printing** were promoted to the MVP after a review of a commercial PDF reader's features (2026-11-24); see [11 — MVP](11-mvp.md).
 
 **Tier 3, document utilities (after v1.0 unless cheap):**
-- Page organization: rotate, delete, reorder, extract, merge, split.
 - AcroForm filling, handwritten signatures.
 - Images → PDF, camera scanning.
 
@@ -69,11 +69,11 @@ Portuguese), accessibility, and distribution through GitHub Releases, F-Droid, G
 Windows installer/winget.
 
 ### Planned after v1.0 (see [roadmap](08-roadmap.md))
-- Page organization, form filling, signatures, images → PDF, camera scanning.
+- Form filling, signatures, images → PDF, camera scanning, redaction, compressed and password-protected copies.
 - Sync of annotations between devices through user-owned storage (folder sync, WebDAV/Nextcloud).
 - Once the Android, Linux and Windows apps are complete: **EPUB** reading with highlights and comments, **OPDS** catalogs,
   **KoSync** reading-progress sync, and **cloud storage** accounts (Google Drive, OneDrive, Dropbox). See [requirements §1.12](02-requirements.md#112-e-books-catalogs--cloud-lib-post-10).
-- Study extras: read-aloud (TTS), focus/reading-ruler mode, flashcards generated from highlights.
+- Study extras: read-aloud (TTS), focus/reading-ruler mode, flashcards generated from highlights, reflow, in-app translation, handwriting to text.
 - iOS and macOS builds (Flutter allows it; not a v1 commitment).
 
 ### Not planned for now (may enter scope later)
@@ -87,6 +87,7 @@ and PDFium already exposes page-object editing APIs.
 
 ### Permanent non-goals
 - Telemetry, ads, in-app purchases, mandatory accounts.
+- AI features (summaries, chat with the document) and PDF comparison (maintainer decision, 2026-11-24).
 
 ## 7. Success criteria
 
