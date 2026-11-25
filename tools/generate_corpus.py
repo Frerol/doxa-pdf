@@ -35,6 +35,11 @@ def write_pdf(path, content, pages):
             f"{options} >>"
         ).encode("ascii"))
 
+    serialize(path, objects)
+
+
+def serialize(path, objects, info=None):
+    """Write objects 1..n (object 1 is the catalog) with a classic xref."""
     pdf = bytearray(b"%PDF-1.7\n")
     offsets = []
     for number, obj in enumerate(objects, start=1):
@@ -46,10 +51,87 @@ def write_pdf(path, content, pages):
     for offset in offsets:
         pdf.extend(f"{offset:010d} 00000 n \n".encode("ascii"))
     pdf.extend((
-        f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\n"
+        f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R"
+        + (f" /Info {info} 0 R" if info else "")
+        + " >>\n"
         f"startxref\n{xref}\n%%EOF\n"
     ).encode("ascii"))
     path.write_bytes(pdf)
+
+
+def write_navigation_pdf(path):
+    """Outline, page labels and internal, URI and remote links (FR-VIEW-007..011, 014)."""
+    page_count = 6
+    page_ids = [5 + 2 * i for i in range(page_count)]
+    content_ids = [6 + 2 * i for i in range(page_count)]
+    labels = ["i", "ii", "1", "2", "3", "A-1"]
+    next_id = 5 + 2 * page_count
+    outline_root, preface, chapter, section, site = range(next_id, next_id + 5)
+    link_goto, link_uri, link_remote = range(next_id + 5, next_id + 8)
+
+    def ref(number):
+        return f"{number} 0 R"
+
+    objects = {
+        1: (
+            "<< /Type /Catalog /Pages 2 0 R /PageMode /UseOutlines "
+            f"/Outlines {ref(outline_root)} /PageLabels << /Nums [0 << /S /r >> "
+            "2 << /S /D >> 5 << /S /D /P (A-) >>] >> >>"
+        ),
+        2: (
+            f"<< /Type /Pages /Kids [{' '.join(ref(i) for i in page_ids)}] "
+            f"/Count {page_count} >>"
+        ),
+        3: "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        4: "<< /Title (Navigation fixture) /Author (Doxa PDF) >>",
+    }
+    for i, (page, content) in enumerate(zip(page_ids, content_ids)):
+        annots = ""
+        if i == 2:
+            annots = f"/Annots [{ref(link_goto)} {ref(link_uri)} {ref(link_remote)}] "
+        objects[page] = (
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+            f"/Resources << /Font << /F1 3 0 R >> >> /Contents {ref(content)} {annots}>>"
+        )
+        objects[content] = stream(text_block(72, 700, [
+            f"Page {labels[i]}",
+            "Navigation fixture for Doxa PDF.",
+        ])).decode("ascii")
+    objects[outline_root] = (
+        f"<< /Type /Outlines /First {ref(preface)} /Last {ref(site)} /Count 4 >>"
+    )
+    objects[preface] = (
+        f"<< /Title (Preface) /Parent {ref(outline_root)} /Next {ref(chapter)} "
+        f"/Dest [{ref(page_ids[0])} /XYZ 72 720 0] >>"
+    )
+    objects[chapter] = (
+        f"<< /Title (Chapter 1) /Parent {ref(outline_root)} /Prev {ref(preface)} "
+        f"/Next {ref(site)} /First {ref(section)} /Last {ref(section)} /Count 1 "
+        f"/Dest [{ref(page_ids[2])} /Fit] >>"
+    )
+    objects[section] = (
+        f"<< /Title (Section 1.1) /Parent {ref(chapter)} "
+        f"/A << /S /GoTo /D [{ref(page_ids[3])} /XYZ 72 400 2] >> >>"
+    )
+    objects[site] = (
+        f"<< /Title (Project site) /Parent {ref(outline_root)} /Prev {ref(chapter)} "
+        "/A << /S /URI /URI (https://example.org/doxa) >> >>"
+    )
+    objects[link_goto] = (
+        "<< /Type /Annot /Subtype /Link /Rect [72 600 200 620] /Border [0 0 0] "
+        f"/Dest [{ref(page_ids[5])} /XYZ 0 792 0] >>"
+    )
+    objects[link_uri] = (
+        "<< /Type /Annot /Subtype /Link /Rect [72 560 200 580] /Border [0 0 0] "
+        "/A << /S /URI /URI (https://example.org/) >> >>"
+    )
+    objects[link_remote] = (
+        "<< /Type /Annot /Subtype /Link /Rect [72 520 200 540] /Border [0 0 0] "
+        "/A << /S /GoToR /F (other.pdf) /D [0 /Fit] >> >>"
+    )
+    serialize(
+        path, [objects[n].encode("ascii") for n in range(1, len(objects) + 1)], info=4,
+    )
 
 
 def main():
@@ -82,6 +164,7 @@ def main():
     ])
     write_pdf(CORPUS / "two-column-article.pdf", article, [""])
     write_pdf(CORPUS / "many-pages.pdf", sample, [""] * 1001)
+    write_navigation_pdf(CORPUS / "navigation.pdf")
 
     markup = (
         '<span font_family="Noto Sans Hebrew">שלום עולם</span>\n\n'
