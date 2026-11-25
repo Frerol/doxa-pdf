@@ -43,6 +43,17 @@ class FakeDoxaPlatformPluginApi implements DoxaPlatformPluginApi {
     return true;
   }
 
+  bool? keepScreenOn;
+
+  @override
+  Future<int?> getAccentColor() async => 0xFF336699;
+
+  @override
+  Future<void> setKeepScreenOn(bool keepOn) async => keepScreenOn = keepOn;
+
+  @override
+  Future<String> getDataDirectory() async => '/data/doxa';
+
   @override
   // ignore: non_constant_identifier_names
   BinaryMessenger? get pigeonVar_binaryMessenger => null;

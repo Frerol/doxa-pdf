@@ -65,6 +65,15 @@ interface DoxaPlatformPluginApi {
    * when no app can open it. Callers confirm with the user first.
    */
   fun openUri(uri: String): Boolean
+  /**
+   * The system accent colour (ARGB) for dynamic colour on Android 12+
+   * (FR-SET-001), or null where there is none.
+   */
+  fun getAccentColor(): Long?
+  /** Keeps the screen on while reading (FR-VIEW-013). */
+  fun setKeepScreenOn(keepOn: Boolean)
+  /** The app's private data directory, for settings and the database. */
+  fun getDataDirectory(): String
 
   companion object {
     /** The codec used by DoxaPlatformPluginApi. */
@@ -98,6 +107,54 @@ interface DoxaPlatformPluginApi {
             val uriArg = args[0] as String
             val wrapped: List<Any?> = try {
               listOf(api.openUri(uriArg))
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.getAccentColor$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getAccentColor())
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.setKeepScreenOn$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val keepOnArg = args[0] as Boolean
+            val wrapped: List<Any?> = try {
+              api.setKeepScreenOn(keepOnArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.getDataDirectory$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getDataDirectory())
             } catch (exception: Throwable) {
               MessagesPigeonUtils.wrapError(exception)
             }

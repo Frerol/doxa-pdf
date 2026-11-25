@@ -37,6 +37,9 @@ class ReaderView extends StatefulWidget {
     this.probe,
     this.onLink,
     this.selection,
+    this.onTap,
+    this.colorFilter,
+    this.sheetColor = const Color(0xFFFFFFFF),
   });
 
   final ReaderController controller;
@@ -46,6 +49,15 @@ class ReaderView extends StatefulWidget {
 
   /// Text selection (FR-TEXT-004); none when null.
   final TextSelectionController? selection;
+
+  /// Called for a tap away from links, edge zones and the selection.
+  final VoidCallback? onTap;
+
+  /// Tints rendered pages (FR-VIEW-005, FR-VIEW-016); none when null.
+  final ColorFilter? colorFilter;
+
+  /// Colour of a page sheet while its images load.
+  final Color sheetColor;
 
   /// Records frame timings of each interaction (profile builds).
   final FrameProbe? probe;
@@ -260,9 +272,15 @@ class _ReaderViewState extends State<ReaderView>
       return;
     }
     final onLink = widget.onLink;
-    if (onLink == null) return;
-    final target = await _controller.linkAt(details.localPosition);
-    if (target != null && mounted) onLink(target);
+    final target = onLink == null
+        ? null
+        : await _controller.linkAt(details.localPosition);
+    if (!mounted) return;
+    if (target != null) {
+      onLink!(target);
+    } else {
+      widget.onTap?.call();
+    }
   }
 
   void _onDoubleTap(Size size) {
@@ -349,6 +367,8 @@ class _ReaderViewState extends State<ReaderView>
                     ),
                   },
                   handleColor: colors.primary,
+                  colorFilter: widget.colorFilter,
+                  sheetColor: widget.sheetColor,
                 ),
               ),
             ),
@@ -369,7 +389,12 @@ class ReaderPainter extends CustomPainter {
     this.selection,
     this.highlightColors = const {},
     this.handleColor = const Color(0xFF3F51B5),
+    this.colorFilter,
+    this.sheetColor = const Color(0xFFFFFFFF),
   }) : super(repaint: controller.repaint);
+
+  final ColorFilter? colorFilter;
+  final Color sheetColor;
 
   final TextSelectionController? selection;
   final Map<HighlightLayer, Color> highlightColors;
@@ -392,8 +417,10 @@ class ReaderPainter extends CustomPainter {
       ..save()
       ..scale(controller.zoom)
       ..translate(-offset.dx, -offset.dy);
-    final sheet = Paint()..color = const Color(0xFFFFFFFF);
-    final image = Paint()..filterQuality = FilterQuality.low;
+    final sheet = Paint()..color = sheetColor;
+    final image = Paint()
+      ..filterQuality = FilterQuality.low
+      ..colorFilter = colorFilter;
     var blank = false;
     for (final page in layout.pagesIn(visible)) {
       final rect = layout.pageRect(page);
@@ -449,5 +476,7 @@ class ReaderPainter extends CustomPainter {
       oldDelegate.background != background ||
       oldDelegate.selection != selection ||
       oldDelegate.handleColor != handleColor ||
+      oldDelegate.colorFilter != colorFilter ||
+      oldDelegate.sheetColor != sheetColor ||
       !mapEquals(oldDelegate.highlightColors, highlightColors);
 }

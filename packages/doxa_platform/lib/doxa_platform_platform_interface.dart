@@ -33,4 +33,16 @@ abstract class DoxaPlatformPlatform extends PlatformInterface {
   Future<bool> openUri(String uri) {
     throw UnimplementedError('openUri() has not been implemented.');
   }
+
+  Future<int?> getAccentColor() {
+    throw UnimplementedError('getAccentColor() has not been implemented.');
+  }
+
+  Future<void> setKeepScreenOn(bool keepOn) {
+    throw UnimplementedError('setKeepScreenOn() has not been implemented.');
+  }
+
+  Future<String> getDataDirectory() {
+    throw UnimplementedError('getDataDirectory() has not been implemented.');
+  }
 }

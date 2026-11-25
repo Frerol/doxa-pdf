@@ -25,7 +25,7 @@ FILE-001..007, 011 · VIEW-001..014, 016..019 · TEXT-001, 002, 004, 008..010, 0
 Exit: open and read large textbooks and articles on the reference tablet within the performance budgets.
 
 ## M2 — v0.2 Study core: markup + pen ★
-MARK-001..005, 008..010, 013 · INK-001..009, 011, 012 · TEXT-005..007 · NOTE-002 · ANNO-001, 002, 006, 009 · SAVE-001..005 · FILE-010 · SET-003.
+MARK-001..005, 008..010, 013 · INK-001..009, 011, 012 · TEXT-005..007 · VIEW-023 · NOTE-002 · ANNO-001, 002, 006, 009 · SAVE-001..005 · FILE-010 · SET-003.
 Exit: a student can highlight and handwrite through a whole chapter with the S Pen, without data loss; annotations interoperate with all [interop targets](11-mvp.md#1-target).
 
 ## M3 — v0.3 Notes & review

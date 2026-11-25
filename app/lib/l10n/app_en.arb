@@ -279,5 +279,89 @@
         "type": "int"
       }
     }
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Title of the settings screen and its button."
+  },
+  "settingsAppearance": "Appearance",
+  "@settingsAppearance": {
+    "description": "Settings section: theme and colours."
+  },
+  "themeSystem": "System",
+  "@themeSystem": {
+    "description": "Theme follows the system light or dark mode."
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Light theme."
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Dark theme."
+  },
+  "settingsDynamicColor": "Colours from the wallpaper",
+  "@settingsDynamicColor": {
+    "description": "Use the system accent colour (Material You)."
+  },
+  "settingsDynamicColorHint": "On Android 12 and later",
+  "@settingsDynamicColorHint": {
+    "description": "Where dynamic colour works."
+  },
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {
+    "description": "Settings section: app language."
+  },
+  "languageSystem": "System language",
+  "@languageSystem": {
+    "description": "Follow the language of the device."
+  },
+  "settingsReading": "Reading",
+  "@settingsReading": {
+    "description": "Settings section: page colours and screen."
+  },
+  "settingsPageColors": "Page colours for new documents",
+  "@settingsPageColors": {
+    "description": "Default page colour mode."
+  },
+  "settingsCustomBackground": "Page colour",
+  "@settingsCustomBackground": {
+    "description": "Custom mode: the colour of the page background."
+  },
+  "settingsCustomText": "Text colour",
+  "@settingsCustomText": {
+    "description": "Custom mode: the colour of the text."
+  },
+  "settingsKeepScreenOn": "Keep the screen on while reading",
+  "@settingsKeepScreenOn": {
+    "description": "Stops the screen from turning off while a document is open."
+  },
+  "colorNormal": "Normal",
+  "@colorNormal": {
+    "description": "Page colours as in the PDF."
+  },
+  "colorNight": "Night",
+  "@colorNight": {
+    "description": "Dark pages with light text."
+  },
+  "colorSepia": "Sepia",
+  "@colorSepia": {
+    "description": "Warm paper-coloured pages."
+  },
+  "colorCustom": "Custom",
+  "@colorCustom": {
+    "description": "Page and text colours chosen by the user."
+  },
+  "viewPageColors": "Page colours",
+  "@viewPageColors": {
+    "description": "View options section: colour mode of this document."
+  },
+  "viewFullscreen": "Full screen",
+  "@viewFullscreen": {
+    "description": "View option: hide the toolbars and system bars."
+  },
+  "viewFullscreenHint": "Tap the middle of the page to show the toolbars",
+  "@viewFullscreenHint": {
+    "description": "How to get the toolbars back in full screen."
   }
 }

@@ -21,4 +21,13 @@ class PigeonDoxaPlatform extends DoxaPlatformPlatform {
 
   @override
   Future<bool> openUri(String uri) => _hostApi.openUri(uri);
+
+  @override
+  Future<int?> getAccentColor() => _hostApi.getAccentColor();
+
+  @override
+  Future<void> setKeepScreenOn(bool keepOn) => _hostApi.setKeepScreenOn(keepOn);
+
+  @override
+  Future<String> getDataDirectory() => _hostApi.getDataDirectory();
 }

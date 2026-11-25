@@ -23,4 +23,28 @@ class DoxaPlatform {
     }
     return DoxaPlatformPlatform.instance.openUri(parsed.toString());
   }
+
+  /// The system accent colour (ARGB) for dynamic colour (FR-SET-001), or
+  /// null before Android 12 and where the platform has none.
+  Future<int?> getAccentColor() async {
+    try {
+      return await DoxaPlatformPlatform.instance.getAccentColor();
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Keeps the screen on while [keepOn] (FR-VIEW-013). Does nothing where
+  /// the platform cannot.
+  Future<void> setKeepScreenOn(bool keepOn) async {
+    try {
+      await DoxaPlatformPlatform.instance.setKeepScreenOn(keepOn);
+    } on Object {
+      // Not supported here.
+    }
+  }
+
+  /// The app's private data directory.
+  Future<String> getDataDirectory() =>
+      DoxaPlatformPlatform.instance.getDataDirectory();
 }
