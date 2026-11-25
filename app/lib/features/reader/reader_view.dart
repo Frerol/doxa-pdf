@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:doxa_engine/doxa_engine.dart';
+import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
@@ -10,6 +12,7 @@ import 'package:material_ui/material_ui.dart';
 import 'frame_probe.dart';
 import 'reader_controller.dart';
 import 'reader_geometry.dart';
+import 'text_selection.dart';
 
 /// Width of each edge tap zone, as a fraction of the view width.
 const tapZoneFraction = 0.2;
@@ -33,12 +36,16 @@ class ReaderView extends StatefulWidget {
     required this.controller,
     this.probe,
     this.onLink,
+    this.selection,
   });
 
   final ReaderController controller;
 
   /// Called with the target of a tapped link (FR-VIEW-010).
   final void Function(LinkTarget target)? onLink;
+
+  /// Text selection (FR-TEXT-004); none when null.
+  final TextSelectionController? selection;
 
   /// Records frame timings of each interaction (profile builds).
   final FrameProbe? probe;
@@ -95,7 +102,29 @@ class _ReaderViewState extends State<ReaderView>
     super.dispose();
   }
 
+  /// Which selection handle a one-finger drag moves, if any.
+  bool? _draggingStartHandle;
+
+  /// The selection handle within reach of [point]: true for the start one.
+  bool? _handleAt(Offset point) {
+    final handles = widget.selection?.handles();
+    if (handles == null) return null;
+    final (start, end) = handles;
+    const reach = 32.0;
+    final toStart = (point - start).distance, toEnd = (point - end).distance;
+    if (toStart > reach && toEnd > reach) return null;
+    return toStart <= toEnd;
+  }
+
   void _onScaleStart(ScaleStartDetails details) {
+    final handle = details.pointerCount == 1
+        ? _handleAt(details.localFocalPoint)
+        : null;
+    _draggingStartHandle = handle;
+    if (handle != null) {
+      widget.selection?.beginHandleDrag(start: handle);
+      return;
+    }
     _ticker.stop();
     _turn.stop();
     _startSpread = _controller.currentSpread;
@@ -107,6 +136,14 @@ class _ReaderViewState extends State<ReaderView>
   }
 
   void _onScaleUpdate(ScaleUpdateDetails details) {
+    final handle = _draggingStartHandle;
+    if (handle != null) {
+      widget.selection?.moveHandle(
+        start: handle,
+        screenPoint: details.localFocalPoint,
+      );
+      return;
+    }
     if (details.pointerCount != _pointers) {
       // A finger was added or lifted: restart from here without a jump.
       _pointers = details.pointerCount;
@@ -127,6 +164,10 @@ class _ReaderViewState extends State<ReaderView>
   }
 
   void _onScaleEnd(ScaleEndDetails details) {
+    if (_draggingStartHandle != null) {
+      _draggingStartHandle = null;
+      return;
+    }
     // The recognizer also ends the gesture when a finger is added or lifted;
     // only the last finger lifting ends the interaction.
     if (details.pointerCount > 0) return;
@@ -207,6 +248,12 @@ class _ReaderViewState extends State<ReaderView>
   }
 
   Future<void> _onTapUp(TapUpDetails details, Size size) async {
+    // A tap outside the text first clears the selection.
+    final selection = widget.selection;
+    if (selection != null && selection.hasSelection) {
+      selection.clear();
+      return;
+    }
     final left = _edgeAt(details.localPosition, size);
     if (left != null) {
       _turnTowards(left: left);
@@ -272,6 +319,20 @@ class _ReaderViewState extends State<ReaderView>
             onTapUp: (details) => _onTapUp(details, size),
             onDoubleTapDown: (details) => _doubleTapAt = details.localPosition,
             onDoubleTap: () => _onDoubleTap(size),
+            onLongPressStart: widget.selection == null
+                ? null
+                : (details) {
+                    _ticker.stop();
+                    _turn.stop();
+                    unawaited(
+                      widget.selection!.selectWordAt(details.localPosition),
+                    );
+                  },
+            onLongPressMoveUpdate: widget.selection == null
+                ? null
+                : (details) => unawaited(
+                    widget.selection!.extendTo(details.localPosition),
+                  ),
             child: RepaintBoundary(
               child: CustomPaint(
                 size: size,
@@ -279,6 +340,15 @@ class _ReaderViewState extends State<ReaderView>
                   _controller,
                   background: colors.surfaceContainerHighest,
                   probe: widget.probe,
+                  selection: widget.selection,
+                  highlightColors: {
+                    HighlightLayer.searchHits: const Color(0x66FFD54F),
+                    HighlightLayer.currentHit: const Color(0x99FF9800),
+                    HighlightLayer.selection: colors.primary.withValues(
+                      alpha: 0.3,
+                    ),
+                  },
+                  handleColor: colors.primary,
                 ),
               ),
             ),
@@ -292,8 +362,18 @@ class _ReaderViewState extends State<ReaderView>
 /// Paints the visible pages: a white sheet, the preview, then the tiles of
 /// the current zoom bucket on top.
 class ReaderPainter extends CustomPainter {
-  ReaderPainter(this.controller, {required this.background, this.probe})
-    : super(repaint: controller.repaint);
+  ReaderPainter(
+    this.controller, {
+    required this.background,
+    this.probe,
+    this.selection,
+    this.highlightColors = const {},
+    this.handleColor = const Color(0xFF3F51B5),
+  }) : super(repaint: controller.repaint);
+
+  final TextSelectionController? selection;
+  final Map<HighlightLayer, Color> highlightColors;
+  final Color handleColor;
 
   final ReaderController controller;
   final Color background;
@@ -331,7 +411,26 @@ class ReaderPainter extends CustomPainter {
         }
       }
     }
+    for (final page in layout.pagesIn(visible)) {
+      for (final MapEntry(key: layer, value: color)
+          in highlightColors.entries) {
+        final paint = Paint()..color = color;
+        for (final rect in controller.highlights(layer, page)) {
+          final target = controller.documentRect(page, rect);
+          if (target != null) canvas.drawRect(target, paint);
+        }
+      }
+    }
     canvas.restore();
+    final handles = selection?.handles();
+    if (handles != null) {
+      final paint = Paint()..color = handleColor;
+      for (final point in [handles.$1, handles.$2]) {
+        canvas
+          ..drawCircle(point + const Offset(0, 8), 8, paint)
+          ..drawRect(Rect.fromLTWH(point.dx - 1, point.dy - 16, 2, 16), paint);
+      }
+    }
     probe?.painted(blank: blank);
   }
 
@@ -347,5 +446,8 @@ class ReaderPainter extends CustomPainter {
   @override
   bool shouldRepaint(ReaderPainter oldDelegate) =>
       oldDelegate.controller != controller ||
-      oldDelegate.background != background;
+      oldDelegate.background != background ||
+      oldDelegate.selection != selection ||
+      oldDelegate.handleColor != handleColor ||
+      !mapEquals(oldDelegate.highlightColors, highlightColors);
 }

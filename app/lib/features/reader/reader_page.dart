@@ -14,6 +14,8 @@ import 'navigation_panel.dart';
 import 'reader_controller.dart';
 import 'reader_geometry.dart';
 import 'reader_view.dart';
+import 'search_session.dart';
+import 'text_selection.dart';
 
 /// Opens external links in another app; injectable for tests.
 typedef UriOpener = Future<bool> Function(String uri);
@@ -46,6 +48,9 @@ enum _Failure { password, open }
 class _ReaderPageState extends State<ReaderPage> {
   PdfEngine? _engine;
   ReaderController? _controller;
+  SearchSession? _search;
+  TextSelectionController? _selection;
+  bool _searchOpen = false;
   _Failure? _failure;
   final FrameProbe? _probe = kReleaseMode ? null : FrameProbe();
 
@@ -74,12 +79,15 @@ class _ReaderPageState extends State<ReaderPage> {
       _engine = engine;
       switch (result) {
         case DocumentOpened(:final handle, :final info):
-          _controller = ReaderController(
+          final controller = ReaderController(
             engine: engine,
             document: handle,
             info: info,
             decoder: widget.decoder,
           );
+          _controller = controller;
+          _search = SearchSession(controller);
+          _selection = TextSelectionController(controller);
         case PasswordRequired() || WrongPassword():
           _failure = _Failure.password;
         case OpenFailed():
@@ -90,6 +98,8 @@ class _ReaderPageState extends State<ReaderPage> {
 
   @override
   void dispose() {
+    _search?.dispose();
+    _selection?.dispose();
     final controller = _controller;
     if (controller != null) {
       controller.dispose();
@@ -160,42 +170,71 @@ class _ReaderPageState extends State<ReaderPage> {
                 unawaited(_follow(target));
               },
             ),
-      appBar: AppBar(
-        // The contents button opens the drawer; no extra menu button.
-        automaticallyImplyLeading: false,
-        leading: Navigator.of(context).canPop() ? const BackButton() : null,
-        title: Text(widget.title, overflow: TextOverflow.ellipsis),
-        actions: [
-          if (controller != null && controller.info.pageCount > 0) ...[
-            Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.toc),
-                tooltip: l10n.navigationPanel,
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
+      appBar: _searchOpen && _search != null
+          ? _SearchBar(
+              session: _search!,
+              onClose: () => setState(() {
+                _search!.close();
+                _searchOpen = false;
+              }),
+            )
+          : AppBar(
+              // The contents button opens the drawer; no extra menu button.
+              automaticallyImplyLeading: false,
+              leading: Navigator.of(context).canPop()
+                  ? const BackButton()
+                  : null,
+              title: Text(widget.title, overflow: TextOverflow.ellipsis),
+              actions: [
+                if (controller != null && controller.info.pageCount > 0) ...[
+                  Builder(
+                    builder: (context) => IconButton(
+                      icon: const Icon(Icons.toc),
+                      tooltip: l10n.navigationPanel,
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                    ),
+                  ),
+                  _HistoryButtons(controller: controller),
+                  _PageIndicator(
+                    controller: controller,
+                    onPressed: () => _goToPage(controller),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    tooltip: l10n.searchTooltip,
+                    onPressed: () => setState(() => _searchOpen = true),
+                  ),
+                  _ZoomMenu(controller: controller),
+                  IconButton(
+                    icon: const Icon(Icons.chrome_reader_mode_outlined),
+                    tooltip: l10n.viewOptions,
+                    onPressed: () => showViewOptions(context, controller),
+                  ),
+                ],
+              ],
             ),
-            _HistoryButtons(controller: controller),
-            _PageIndicator(
-              controller: controller,
-              onPressed: () => _goToPage(controller),
-            ),
-            _ZoomMenu(controller: controller),
-            IconButton(
-              icon: const Icon(Icons.chrome_reader_mode_outlined),
-              tooltip: l10n.viewOptions,
-              onPressed: () => showViewOptions(context, controller),
-            ),
-          ],
-        ],
-      ),
       bottomNavigationBar: controller == null || controller.info.pageCount < 2
           ? null
           : _PageScrubber(controller: controller),
       body: switch ((controller, _failure)) {
-        (final ReaderController c, _) => ReaderView(
-          controller: c,
-          probe: _probe,
-          onLink: _follow,
+        (final ReaderController c, _) => Stack(
+          children: [
+            Positioned.fill(
+              child: ReaderView(
+                controller: c,
+                probe: _probe,
+                onLink: _follow,
+                selection: _selection,
+              ),
+            ),
+            if (_selection case final selection?)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 16,
+                child: _SelectionBar(selection: selection),
+              ),
+          ],
         ),
         (_, _Failure.password) => _Message(l10n.readerPasswordNeeded),
         (_, _Failure.open) => _Message(l10n.readerOpenFailed),
@@ -208,14 +247,22 @@ class _ReaderPageState extends State<ReaderPage> {
       },
     );
     if (controller == null) return body;
-    // The system back gesture first walks back through link jumps
-    // (FR-VIEW-011), then leaves the document.
+    // The system back gesture first closes search, then walks back through
+    // link jumps (FR-VIEW-011), then leaves the document.
     return ValueListenableBuilder(
       valueListenable: controller.history,
       builder: (context, _, child) => PopScope(
-        canPop: !controller.canGoBack,
+        canPop: !_searchOpen && !controller.canGoBack,
         onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) controller.goBack();
+          if (didPop) return;
+          if (_searchOpen) {
+            setState(() {
+              _search?.close();
+              _searchOpen = false;
+            });
+          } else {
+            controller.goBack();
+          }
         },
         child: child!,
       ),
@@ -556,6 +603,189 @@ class _ViewOptionsState extends State<_ViewOptions> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The search bar (FR-TEXT-001, FR-TEXT-002): query, options, result count
+/// and next/previous.
+class _SearchBar extends StatefulWidget implements PreferredSizeWidget {
+  const _SearchBar({required this.session, required this.onClose});
+  final SearchSession session;
+  final VoidCallback onClose;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  State<_SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends State<_SearchBar> {
+  final _text = TextEditingController();
+  bool _matchCase = false;
+  bool _wholeWord = false;
+  bool _ignoreDiacritics = true;
+
+  SearchQuery get _query => SearchQuery(
+    _text.text,
+    matchCase: _matchCase,
+    wholeWord: _wholeWord,
+    ignoreDiacritics: _ignoreDiacritics,
+  );
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  String _statusText(AppLocalizations l10n, SearchStatus status) {
+    if (status.count == 0) {
+      return status.searching ? l10n.searchSearching : l10n.searchNoResults;
+    }
+    // Before a hit on or after the start page arrives, only count.
+    final count = status.current < 0
+        ? l10n.searchResults(status.count)
+        : l10n.searchCount(status.current + 1, status.count);
+    return status.searching ? '$count…' : count;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final session = widget.session;
+    return AppBar(
+      automaticallyImplyLeading: false,
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        tooltip: l10n.searchClose,
+        onPressed: widget.onClose,
+      ),
+      title: TextField(
+        controller: _text,
+        autofocus: true,
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          hintText: l10n.searchHint,
+          border: InputBorder.none,
+        ),
+        onChanged: (_) => session.update(_query),
+        onSubmitted: (_) {
+          // Enter steps through the hits of this query, or starts it now.
+          if (session.isStale(_query)) {
+            session.start(_query);
+          } else {
+            session.next();
+          }
+        },
+      ),
+      actions: [
+        ValueListenableBuilder(
+          valueListenable: session.status,
+          builder: (context, status, _) => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (status.active)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(_statusText(l10n, status)),
+                ),
+              IconButton(
+                icon: const Icon(Icons.keyboard_arrow_up),
+                tooltip: l10n.searchPrevious,
+                onPressed: status.count == 0 ? null : session.previous,
+              ),
+              IconButton(
+                icon: const Icon(Icons.keyboard_arrow_down),
+                tooltip: l10n.searchNext,
+                onPressed: status.count == 0 ? null : session.next,
+              ),
+            ],
+          ),
+        ),
+        PopupMenuButton<int>(
+          icon: const Icon(Icons.tune),
+          tooltip: l10n.searchOptions,
+          onSelected: (option) {
+            setState(() {
+              switch (option) {
+                case 0:
+                  _matchCase = !_matchCase;
+                case 1:
+                  _wholeWord = !_wholeWord;
+                case 2:
+                  _ignoreDiacritics = !_ignoreDiacritics;
+              }
+            });
+            session.start(_query);
+          },
+          itemBuilder: (context) => [
+            CheckedPopupMenuItem(
+              value: 0,
+              checked: _matchCase,
+              child: Text(l10n.searchMatchCase),
+            ),
+            CheckedPopupMenuItem(
+              value: 1,
+              checked: _wholeWord,
+              child: Text(l10n.searchWholeWord),
+            ),
+            CheckedPopupMenuItem(
+              value: 2,
+              checked: _ignoreDiacritics,
+              child: Text(l10n.searchIgnoreDiacritics),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Actions for selected text (FR-TEXT-004); M2 adds markup here.
+class _SelectionBar extends StatelessWidget {
+  const _SelectionBar({required this.selection});
+  final TextSelectionController selection;
+
+  Future<void> _copy(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    await Clipboard.setData(ClipboardData(text: selection.text));
+    selection.clear();
+    messenger.showSnackBar(SnackBar(content: Text(l10n.selectionCopied)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return ValueListenableBuilder(
+      valueListenable: selection.selection,
+      builder: (context, selected, _) {
+        if (selected == null) return const SizedBox.shrink();
+        return Center(
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(24),
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextButton.icon(
+                  icon: const Icon(Icons.copy),
+                  label: Text(l10n.selectionCopy),
+                  onPressed: () => _copy(context),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  tooltip: l10n.selectionClose,
+                  onPressed: selection.clear,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

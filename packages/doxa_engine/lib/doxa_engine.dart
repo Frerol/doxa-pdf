@@ -8,3 +8,4 @@ library;
 export 'src/api/pdf_engine.dart';
 export 'src/api/types.dart';
 export 'src/engine/pdfium_engine.dart' show PdfiumEngine;
+export 'src/text/text_search.dart' show lineRects;
