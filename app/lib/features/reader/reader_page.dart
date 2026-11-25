@@ -9,6 +9,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'frame_probe.dart';
 import 'reader_controller.dart';
+import 'reader_geometry.dart';
 import 'reader_view.dart';
 
 /// Opens a document and shows it in the continuous reader (issue #47).
@@ -95,7 +96,16 @@ class _ReaderPageState extends State<ReaderPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title, overflow: TextOverflow.ellipsis),
-        actions: [if (controller != null) _ZoomMenu(controller: controller)],
+        actions: [
+          if (controller != null) ...[
+            _ZoomMenu(controller: controller),
+            IconButton(
+              icon: const Icon(Icons.chrome_reader_mode_outlined),
+              tooltip: l10n.viewOptions,
+              onPressed: () => showViewOptions(context, controller),
+            ),
+          ],
+        ],
       ),
       body: switch ((controller, _failure)) {
         (final ReaderController c, _) => ReaderView(
@@ -155,6 +165,107 @@ class _ZoomMenu extends StatelessWidget {
             child: Text(l10n.readerZoomFactor(factor)),
           ),
       ],
+    );
+  }
+}
+
+/// View options (docs/plan/05-ux-design.md §2): the page layout and how
+/// pages turn (FR-VIEW-002, FR-VIEW-003, FR-VIEW-017..019).
+Future<void> showViewOptions(
+  BuildContext context,
+  ReaderController controller,
+) => showModalBottomSheet<void>(
+  context: context,
+  showDragHandle: true,
+  isScrollControlled: true,
+  builder: (context) => _ViewOptions(controller: controller),
+);
+
+class _ViewOptions extends StatefulWidget {
+  const _ViewOptions({required this.controller});
+  final ReaderController controller;
+
+  @override
+  State<_ViewOptions> createState() => _ViewOptionsState();
+}
+
+class _ViewOptionsState extends State<_ViewOptions> {
+  ReaderOptions get _options => widget.controller.options;
+
+  void _set(ReaderOptions options) =>
+      setState(() => widget.controller.setOptions(options));
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final mode = _options.mode;
+    final modes = [
+      (ReaderMode.continuous, Icons.view_day_outlined, l10n.layoutContinuous),
+      (ReaderMode.singlePage, Icons.crop_portrait, l10n.layoutSinglePage),
+      (ReaderMode.twoPages, Icons.menu_book_outlined, l10n.layoutTwoPages),
+      (ReaderMode.horizontal, Icons.view_week_outlined, l10n.layoutHorizontal),
+    ];
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              child: Text(
+                l10n.viewOptions,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            RadioGroup<ReaderMode>(
+              groupValue: mode,
+              onChanged: (value) {
+                if (value != null) _set(_options.copyWith(mode: value));
+              },
+              child: Column(
+                children: [
+                  for (final (value, icon, label) in modes)
+                    RadioListTile<ReaderMode>(
+                      value: value,
+                      secondary: Icon(icon),
+                      title: Text(label),
+                    ),
+                ],
+              ),
+            ),
+            const Divider(),
+            SwitchListTile(
+              title: Text(l10n.optionCoverPage),
+              value: _options.coverPage,
+              onChanged: mode == ReaderMode.twoPages
+                  ? (value) => _set(_options.copyWith(coverPage: value))
+                  : null,
+            ),
+            SwitchListTile(
+              title: Text(l10n.optionRightToLeft),
+              value: _options.rightToLeft,
+              onChanged: mode == ReaderMode.continuous
+                  ? null
+                  : (value) => _set(_options.copyWith(rightToLeft: value)),
+            ),
+            SwitchListTile(
+              title: Text(l10n.optionTapZones),
+              value: _options.tapZones,
+              onChanged: _options.paged
+                  ? (value) => _set(_options.copyWith(tapZones: value))
+                  : null,
+            ),
+            SwitchListTile(
+              title: Text(l10n.optionKeepZoom),
+              value: _options.keepZoomOnTurn,
+              onChanged: _options.paged
+                  ? (value) => _set(_options.copyWith(keepZoomOnTurn: value))
+                  : null,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -113,7 +113,7 @@ void main() {
     expect(controller.offset, Offset.zero);
     controller.panBy(const Offset(0, -1e6));
     final layout = controller.layout!;
-    expect(controller.offset.dy, layout.totalHeight - viewSize.height);
+    expect(controller.offset.dy, layout.contentSize.height - viewSize.height);
     // Zoomed out, the pages are centred horizontally.
     controller.zoomTo(0.5);
     expect(controller.offset.dx, -200);
