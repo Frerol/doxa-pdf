@@ -12,5 +12,14 @@
   "readerZoomFactor": "{factor}×",
   "devDocumentsTitle": "PDFs na pasta do app (desenvolvedor)",
   "devDocumentsRefresh": "Atualizar",
-  "devDocumentsEmpty": "Copie PDFs para {path} com adb push e atualize."
+  "devDocumentsEmpty": "Copie PDFs para {path} com adb push e atualize.",
+  "viewOptions": "Opções de visualização",
+  "layoutContinuous": "Contínuo",
+  "layoutSinglePage": "Página única",
+  "layoutTwoPages": "Duas páginas",
+  "layoutHorizontal": "Horizontal",
+  "optionCoverPage": "Mostrar a capa sozinha",
+  "optionRightToLeft": "Páginas da direita para a esquerda",
+  "optionTapZones": "Tocar nas bordas para virar a página",
+  "optionKeepZoom": "Manter o zoom ao virar a página"
 }

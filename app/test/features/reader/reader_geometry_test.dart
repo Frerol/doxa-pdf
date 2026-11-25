@@ -35,14 +35,24 @@ void main() {
     });
 
     test('finds pages by position', () {
-      expect(layout.pageAt(-50), 0);
-      expect(layout.pageAt(0), 0);
-      expect(layout.pageAt(780), 0); // In the gap after page 0.
-      expect(layout.pageAt(790), 1);
-      expect(layout.pageAt(1e9), 2);
-      expect(layout.pagesIn(700, 800).toList(), [0, 1]);
-      expect(layout.pagesIn(778, 784).toList(), isEmpty);
-      expect(layout.pagesIn(-100, 1e9).toList(), [0, 1, 2]);
+      expect(layout.pageAtY(-50), 0);
+      expect(layout.pageAtY(0), 0);
+      expect(layout.pageAtY(780), 0); // In the gap after page 0.
+      expect(layout.pageAtY(790), 1);
+      expect(layout.pageAtY(1e9), 2);
+      expect(layout.pagesIn(const Rect.fromLTRB(0, 700, 600, 800)).toList(), [
+        0,
+        1,
+      ]);
+      expect(
+        layout.pagesIn(const Rect.fromLTRB(0, 778, 600, 784)).toList(),
+        isEmpty,
+      );
+      expect(layout.pagesIn(const Rect.fromLTRB(0, -100, 600, 1e9)).toList(), [
+        0,
+        1,
+        2,
+      ]);
     });
 
     test('lays out a thousand pages quickly', () {
@@ -52,10 +62,10 @@ void main() {
       );
       final watch = Stopwatch()..start();
       for (var i = 0; i < 10000; i++) {
-        big.pagesIn(i * 100.0, i * 100.0 + 1200).length;
+        big.pagesIn(Rect.fromLTWH(0, i * 100.0, 800, 1200)).length;
       }
       expect(watch.elapsed, lessThan(const Duration(seconds: 1)));
-      expect(big.pageAt(big.pageRect(4321).top + 1), 4321);
+      expect(big.pageAtY(big.pageRect(4321).top + 1), 4321);
     });
   });
 

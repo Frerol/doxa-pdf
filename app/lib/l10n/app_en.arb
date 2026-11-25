@@ -61,5 +61,41 @@
         "type": "String"
       }
     }
+  },
+  "viewOptions": "View options",
+  "@viewOptions": {
+    "description": "Title and tooltip of the sheet that chooses the page layout."
+  },
+  "layoutContinuous": "Continuous",
+  "@layoutContinuous": {
+    "description": "Page layout: pages one below the other, scrolled vertically."
+  },
+  "layoutSinglePage": "Single page",
+  "@layoutSinglePage": {
+    "description": "Page layout: one page per screen, turned like a book."
+  },
+  "layoutTwoPages": "Two pages",
+  "@layoutTwoPages": {
+    "description": "Page layout: two pages side by side per screen."
+  },
+  "layoutHorizontal": "Horizontal",
+  "@layoutHorizontal": {
+    "description": "Page layout: pages side by side, scrolled horizontally."
+  },
+  "optionCoverPage": "Show the cover on its own",
+  "@optionCoverPage": {
+    "description": "Two-page layout option: the first page stands alone."
+  },
+  "optionRightToLeft": "Right-to-left pages",
+  "@optionRightToLeft": {
+    "description": "Pages progress from right to left, for right-to-left books."
+  },
+  "optionTapZones": "Tap the edges to turn pages",
+  "@optionTapZones": {
+    "description": "Tapping near the left or right edge turns the page."
+  },
+  "optionKeepZoom": "Keep zoom when turning pages",
+  "@optionKeepZoom": {
+    "description": "Turning a page keeps the zoom level and position."
   }
 }
