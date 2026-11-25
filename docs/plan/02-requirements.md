@@ -14,12 +14,15 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-FILE-002 | Register as a PDF handler: "Open with" / intents (A), file associations (W, L via `.desktop` MIME). | M | M1 |
 | FR-FILE-003 | Open password-protected PDFs, prompting for the password. | M | M1 |
 | FR-FILE-004 | Recent files list with thumbnail, last page and progress; remove entries from the list. | M | M1 |
-| FR-FILE-005 | Favorites/pinned documents. | S | M7 |
+| FR-FILE-005 | Favorites/pinned documents. | M | M1 |
 | FR-FILE-006 | Built-in browser for user-chosen folders ("library folders") with sorting and search by name. | M | M1 |
 | FR-FILE-007 | Open several documents as tabs (desktop and tablets); a document switcher on phones. | M | M1 |
 | FR-FILE-008 | Detect when the file was changed or removed externally and offer to reload. | M | M3 |
 | FR-FILE-009 | Open from drag-and-drop (W, L) and from the command line (`doxa-pdf file.pdf`). | S | M5 |
 | FR-FILE-010 | Handle files that cannot be written back (read-only, content URIs without write permission) by offering "Save a copy". | M | M2 |
+| FR-FILE-011 | Rename, move and delete documents from the library and recents (through SAF on Android), with confirmation for deletion. | M | M1 |
+| FR-FILE-012 | Filter the library by file type and open the folder that contains the current document. | C | post-1.0 |
+| FR-FILE-013 | Home-screen widget with recent documents (A). | C | post-1.0 |
 
 ### 1.2 Reading (VIEW)
 | ID | Requirement | Pri | MS |
@@ -39,6 +42,13 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-VIEW-013 | Keep screen on while reading (A, setting). | M | M1 |
 | FR-VIEW-014 | Respect PDF page labels (roman numerals and so on) in all page UIs. | M | M1 |
 | FR-VIEW-015 | Reading ruler/focus mode that dims everything except the current lines. | C | post-1.0 |
+| FR-VIEW-016 | Custom colour mode: the user picks the page background and text colours, alongside night and sepia (same pipeline as FR-VIEW-005). | M | M1 |
+| FR-VIEW-017 | Tap zones in paged layouts: tapping near the left/right (or top/bottom) edge turns the page; can be turned off. | M | M1 |
+| FR-VIEW-018 | Keep the zoom level and horizontal offset when turning pages in paged layouts (setting). | M | M1 |
+| FR-VIEW-019 | Right-to-left page progression for paged and two-page layouts (per document, for RTL books). | M | M1 |
+| FR-VIEW-020 | Reflow reading mode: page text re-laid out in one column with adjustable font size. | C | post-1.0 |
+| FR-VIEW-021 | Show and hide optional content layers (OCG). | C | post-1.0 |
+| FR-VIEW-022 | Capture a rectangular page region as an image (copy or share). | C | post-1.0 |
 
 ### 1.3 Search & text (TEXT)
 | ID | Requirement | Pri | MS |
@@ -50,6 +60,10 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-TEXT-005 | Selection follows reading order across columns and continues across a page boundary. | M | M2 |
 | FR-TEXT-006 | Selection context actions: highlight, underline, strikeout, copy, search, share, define/translate via OS. | M | M2 |
 | FR-TEXT-007 | Clear feedback when a page has no text layer (scanned) and markup is unavailable; later points to OCR. | M | M2 |
+| FR-TEXT-008 | Look up the selected word or short phrase in built-in **offline dictionaries**: a popup shows the definitions of every enabled dictionary, with no network access ([ADR-0009](../adr/0009-offline-dictionary.md)). | M | M1 |
+| FR-TEXT-009 | Import dictionaries in StarDict format (`.ifo` + `.idx`/`.idx.gz` + `.dict`/`.dict.dz`, optional `.syn`) from a file, folder or `.zip`; list, enable/disable, reorder and remove them. | M | M1 |
+| FR-TEXT-010 | Lookup tolerates real text: trims surrounding punctuation, falls back to case- and diacritic-insensitive matches, follows synonym entries, and suggests close headwords when nothing matches. | S | M1 |
+| FR-TEXT-011 | In-app translation of the selection or the whole document. Needs an ADR (online service vs. free offline models; never a proprietary SDK). Until then, FR-TEXT-006 hands off to an OS translator. | C | post-1.0 |
 
 ### 1.4 Text markup (MARK), Tier 1
 | ID | Requirement | Pri | MS |
@@ -66,6 +80,7 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-MARK-010 | Store the selected text in the annotation (`/Contents` or a private key) for review and export. | M | M2 |
 | FR-MARK-011 | Color labels: name palette colors (e.g. "Definition", "Exam"); labels are used for filtering and in exports. | M | M3 |
 | FR-MARK-012 | Create StrikeOut annotations from a text selection. | S | M7 |
+| FR-MARK-013 | Text-snapping pen and highlighter: a freehand stroke drawn over text (stylus or finger) is converted into a real text markup (highlight, underline or strikeout) on the glyphs it covers; strokes elsewhere stay ink. Can be toggled per tool. | M | M2 |
 
 ### 1.5 Pen & ink (INK), Tier 1
 | ID | Requirement | Pri | MS |
@@ -83,6 +98,7 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-INK-011 | Group strokes drawn within a short window into one Ink annotation to keep files lean. | M | M2 |
 | FR-INK-012 | A stroke belongs to the page it starts on and is clipped to it; the view never scrolls or zooms while a stroke is in progress. | M | M2 |
 | FR-INK-013 | Zoomed-in writing area ("magnifier box" that auto-advances) for neat handwriting. | C | post-1.0 |
+| FR-INK-014 | Convert handwriting to typed text (offline, with a free recognition model; needs an ADR). | C | post-1.0 |
 
 ### 1.6 Notes & shapes (NOTE), Tier 2
 | ID | Requirement | Pri | MS |
@@ -93,6 +109,11 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-NOTE-004 | Shapes: line, arrow, rectangle, ellipse, with stroke and fill options. | M | M3 |
 | FR-NOTE-005 | Insert blank, ruled, grid or dotted **note pages** after the current page, sized like it. | M | M3 |
 | FR-NOTE-006 | Stamps (✓, ✗, ?, !, "Important", "Review"), plus custom text stamps. | M | M3 |
+| FR-NOTE-007 | Font choice for text boxes (bundled free fonts plus system fonts), with a fallback when a font is missing. | M | M3 |
+| FR-NOTE-008 | Image annotations: insert a picture or camera photo on a page. | C | post-1.0 |
+| FR-NOTE-009 | Sound annotations (record and play audio) and file attachment annotations. | C | post-1.0 |
+| FR-NOTE-010 | Create and edit links (to a page or a URL). | C | post-1.0 |
+| FR-NOTE-011 | Measurement tools: ruler, distance, perimeter and area with a calibrated scale. | C | post-1.0 |
 
 ### 1.7 Annotation management (ANNO)
 | ID | Requirement | Pri | MS |
@@ -105,6 +126,8 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-ANNO-006 | Author name setting stored in `/T` (default empty or the OS user name, user confirms). | M | M2 |
 | FR-ANNO-007 | Flatten annotations into page content when exporting a copy. | C | post-1.0 |
 | FR-ANNO-008 | Lock an annotation against accidental edits. | M | M3 |
+| FR-ANNO-009 | Style presets for every annotation tool (not only pens) and a free colour picker with favourite colours, in addition to the study palette. | M | M2 |
+| FR-ANNO-010 | Delete or flatten all (or the filtered) annotations at once, and export the annotation summary as a PDF. | C | post-1.0 |
 
 ### 1.8 Saving & data safety (SAVE)
 | ID | Requirement | Pri | MS |
@@ -115,12 +138,14 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-SAVE-004 | Use incremental save when possible (fast, keeps existing signatures valid). Needs Doxa's own incremental writer, because PDFium's incremental save is unusable ([ADR-0008](../adr/0008-annotation-save-strategy.md)). | S | post-1.0 |
 | FR-SAVE-005 | "Save a copy as…" and share/export. | M | M2 |
 | FR-SAVE-006 | Optional backup of the original before the first modification. | M | M3 |
+| FR-SAVE-007 | Print through the OS print service (Android print framework), with annotations, page range and copies. | M | M3 |
 
 ### 1.9 Bookmarks & progress (BOOK)
 | ID | Requirement | Pri | MS |
 |---|---|---|---|
 | FR-BOOK-001 | User bookmarks on pages, with a name, listed in a panel. Stored in the app database and optionally written as outline entries. | M | M3 |
 | FR-BOOK-002 | Reading progress per document (percentage, last read date), shown in recents. | M | M1 |
+| FR-BOOK-003 | Edit the document outline: add, rename, move and delete entries (written to the PDF). PDFium has no outline write API, so this needs an ADR (R19). | M | M3 |
 
 ### 1.10 Settings & personalization (SET)
 | ID | Requirement | Pri | MS |
@@ -130,17 +155,32 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-SET-003 | Default tool behaviors (sticky tool, autosave, stylus-only auto-detect, pressure curve). | M | M2 |
 | FR-SET-004 | Customizable keyboard shortcuts (desktop). | C | M7 |
 | FR-SET-005 | Reset settings, plus import/export of settings and pen presets. | C | M7 |
+| FR-SET-006 | Customizable annotation toolbar: choose and order favourite tools, one or two rows. | C | post-1.0 |
 
 ### 1.11 Tier 3, post-1.0 document utilities (UTIL)
 | ID | Requirement | Pri | MS |
 |---|---|---|---|
 | FR-UTIL-001 | OCR scanned pages to add an invisible text layer (Tesseract), enabling search and markup. | M | M4 |
-| FR-UTIL-002 | Page organization: rotate, delete, reorder, extract, merge, split. | S | post-1.0 |
+| FR-UTIL-002 | Page organization: rotate, delete, reorder, duplicate, insert (blank page, image or pages of another PDF), extract, merge, split, crop, and edit page labels. Annotations move with their pages. Page-label writing has no PDFium API (R19). | M | M4 |
 | FR-UTIL-003 | Fill AcroForm fields; save filled values. | C | post-1.0 |
 | FR-UTIL-004 | Handwritten signature saved for reuse and placed as a stamp. | C | post-1.0 |
 | FR-UTIL-005 | Images → PDF; camera document scan with edge detection (A). | C | post-1.0 |
 | FR-UTIL-006 | Sync annotations through a user-chosen folder/WebDAV, with conflict handling. | C | post-1.0 |
-| FR-UTIL-007 | Read-aloud (OS TTS) following the text. | C | post-1.0 |
+| FR-UTIL-007 | Read-aloud (OS TTS) following the text, with language and speech-rate settings. | C | post-1.0 |
+| FR-UTIL-008 | Create fillable form fields. | C | post-1.0 |
+| FR-UTIL-009 | New PDF: blank, from a web page, or combined from several documents and images. | C | post-1.0 |
+| FR-UTIL-010 | Redaction: permanently remove selected text, images and areas (not just cover them). | C | post-1.0 |
+| FR-UTIL-011 | Save a compressed copy or a password-protected copy. | C | post-1.0 |
+
+### 1.12 E-books, catalogs & cloud (LIB), post-1.0
+Planned after the Android, Linux and Windows apps are complete. Each area starts with an ADR; the order is decided then.
+| ID | Requirement | Pri | MS |
+|---|---|---|---|
+| FR-LIB-001 | Open and read reflowable **EPUB** 2/3: pagination or scroll, font size and theme, table of contents, remembered position. Needs a GPL-compatible EPUB engine (ADR). | S | post-1.0 |
+| FR-LIB-002 | EPUB **text highlights** (palette colours) and **comments** attached to them, shown in the review panel and exported to Markdown. EPUB has no standard annotation layer, so the storage format needs an ADR (the PDF rule "annotations live in the file" does not apply directly). | S | post-1.0 |
+| FR-LIB-003 | **OPDS** catalogs (1.2 and 2.0): add catalogs by URL, browse and search, HTTP authentication, and download PDF/EPUB files into a library folder. | C | post-1.0 |
+| FR-LIB-004 | **KoSync**: sync reading progress with a user-configured KOReader sync server (register, log in, push and pull progress per document, matched by the protocol's document hash). Implemented from the protocol, without copying AGPL code. | C | post-1.0 |
+| FR-LIB-005 | **Cloud storage** accounts (Google Drive, OneDrive, Dropbox): browse, open and save annotations back, with conflict detection; through public REST APIs, never proprietary SDKs. | C | post-1.0 |
 
 ## 2. Non-functional requirements
 
@@ -187,7 +227,7 @@ Reference devices are defined in [QA §4](06-quality-assurance.md#4-performance-
 ### 2.5 Security & privacy (SEC)
 | ID | Requirement |
 |---|---|
-| NFR-SEC-001 | No telemetry, analytics or network access by default. The only network use is user-initiated: opening links, plus future sync. |
+| NFR-SEC-001 | No telemetry, analytics or network access by default. The only network use is user-initiated: opening links, plus future sync, catalogs (OPDS) and cloud accounts. |
 | NFR-SEC-002 | JavaScript in PDFs is disabled. Launch actions and embedded files never execute automatically. |
 | NFR-SEC-003 | Keep PDFium current (tracked by Dependabot or a custom workflow); security patches released within 14 days of an upstream fix. |
 | NFR-SEC-004 | Request only the minimum permissions: Android uses SAF with no broad storage permission (except an optional "All files" flavor outside Play). |

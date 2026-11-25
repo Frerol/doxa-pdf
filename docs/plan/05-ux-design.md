@@ -42,6 +42,7 @@ flowchart LR
 |---|---|---|---|
 | Scroll/zoom | Drag / pinch | Drag (if stylus-only off) | Wheel / Ctrl+wheel |
 | Select text | Long-press, then handles | Long-press or side button | Click-drag |
+| Look up a word | Select it → **Dictionary** (popup; bottom sheet on phones) | Same | Select → Dictionary (context menu) |
 | Highlight (tool active) | Drag over text | Drag over text | Drag |
 | Write | Pen tool | Always writes in stylus-only mode | Pen tool + drag |
 | Erase | Eraser tool | Eraser tip / side button | Eraser tool, or `E` |
