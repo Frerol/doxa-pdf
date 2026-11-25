@@ -32,9 +32,10 @@ Flutter + Dart FFI to PDFium (no V8/XFA), monorepo with pub workspaces (`app/`, 
 - Annotations are stored in the PDF itself (no sidecar format), with our own appearance streams. Unknown keys of foreign annotations must be preserved.
 - All PDFium calls run in the single engine isolate. PDFium is not thread-safe.
 - Rendering (ADR-0005): one engine isolate with priority + generation cancellation; 360 px previews + 512 px tiles at power-of-two zoom buckets; two PDFium instances per file (read-only render instance with Doxa annots hidden in memory and `FPDF_ANNOT` on; editing instance never rendered with annots).
+- OCR (ADR-0007): Tesseract4Android in a Kotlin worker behind `doxa_platform`; `tessdata_fast` `por+eng` shipped as assets, other languages downloaded only on request; invisible text written in the engine isolate into the editing instance.
 - Saving (ADR-0008): PDFium full save → temp → verify → atomic replace; never `FPDF_INCREMENTAL`; markup without `/AP`; ink AP via `FPDFAnnot_AppendObject` called after all setters (`SetBorder` deletes the AP); never render the editing doc with `FPDF_ANNOT`.
 - UI should strongly resemble the leading commercial mobile PDF readers in layout/flows, with an original identity (`docs/plan/05-ux-design.md` §8).
-- Ink (ADR-0006): pure Flutter, raw `Listener`, live stroke as vectors, committed ink in tiles (never replay all vectors per frame), no smoothing by default (never One-Euro), pan/zoom via repaint not rebuild. S Pen side button = `kPrimaryStylusButton`.
+- Ink (ADR-0006): pure Flutter, raw `Listener`, live stroke as vectors, committed ink in tiles (never replay all vectors per frame), no smoothing by default (never One-Euro), pan/zoom via repaint not rebuild, and stylus pointers never reach pan/zoom recognizers. S Pen side button = `kPrimaryStylusButton`.
 - Current target: the Android-only MVP (betas v0.1–v0.4) in `docs/plan/11-mvp.md`. Reference device: Samsung Galaxy Tab S10 FE + S Pen (Android 16), minSdk 29. Desktop comes after (Linux first).
 
 ## Agents

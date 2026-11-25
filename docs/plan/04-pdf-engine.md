@@ -37,7 +37,7 @@ The proposed default is (b), with pdfrx as reference code, because annotations-o
 | Insert note pages (M3) | `FPDFPage_New` + page objects for ruling/grid | — |
 | Page organization (post-1.0) | `FPDF_ImportPages`, `FPDFPage_SetRotation`, `FPDFPage_Delete`, `FPDF_MovePages` | — |
 | Forms (post-1.0) | `FPDFDOC_InitFormFillEnvironment`, `FORM_*` | — |
-| OCR text layer (post-1.0) | Invisible text via `FPDFPageObj_NewTextObj` (render mode 3) | Tesseract runs separately |
+| OCR text layer (v0.4) | Invisible text objects (`FPDFPageObj_CreateTextObj`, render mode 3) fitted to each word box | Tesseract4Android runs in a Kotlin worker ([ADR-0007](../adr/0007-ocr-integration.md), [Spike D](../spikes/D-ocr.md)) |
 | Encryption / compression (post-1.0) | Not supported for writing | Add qpdf (Apache-2.0) behind the same engine interface |
 | Content editing (future) | `FPDFPage_*`/`FPDFPageObj_*`/`FPDFText_*` object APIs | Feasible for objects; text reflow is hard. Revisit via ADR |
 
