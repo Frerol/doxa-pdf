@@ -141,34 +141,53 @@ SPDX headers, `dart test` from the package dir, small fixtures under `test/fixtu
 (truncated files, wrong sizes, bad UTF-8) that must throw a typed `DictionaryFormatException`, never crash or hang.
 
 ### T-11 · Package scaffold and `.ifo` parser
-Create `packages/doxa_dict` (workspace member, `analysis_options.yaml` like the other packages) and `StarDictInfo.parse(String text)`:
-the first line must be `StarDict's dict ifo file`; read `version` (`2.4.2` or `3.0.0`), `bookname`, `wordcount`, `idxfilesize` (required),
-and `synwordcount`, `idxoffsetbits` (32 or 64, only valid for 3.0.0, default 32), `sametypesequence`, `author`, `description`, `lang` (optional).
-Unknown keys are kept in a map. Tests for every key, defaults and each error.
+Create `packages/doxa_dict` (workspace member, `analysis_options.yaml` like the other packages) and `StarDictInfo.parse(List<int> bytes)`:
+- Decode strictly as UTF-8 (bad bytes → `DictionaryFormatException`). Accept LF, CRLF and CR line endings and skip blank lines.
+- The first line must be `StarDict's dict ifo file`, and the first key after it must be `version` (`2.4.2` or `3.0.0`). Split each line at the **first** `=`.
+- Required: `bookname`, `wordcount`, `idxfilesize`. Optional: `synwordcount`, `idxoffsetbits` (32 or 64; only valid with `3.0.0`; default 32),
+  `sametypesequence`, `author`, `email`, `website`, `description`, `date`, `dicttype`. Every other key (for example `lang`) goes to an `extra` map.
+- Tests for every key, defaults, line endings and each error.
 
 ### T-12 · `.idx` and `.syn` index (depends on T-11)
-Parse `.idx` entries (UTF-8 headword terminated by `\0`, then a big-endian offset of `idxoffsetbits` bits and a 32-bit size), checking `wordcount`
-and `idxfilesize`. Parse `.syn` (headword `\0`, then a 32-bit big-endian index into `.idx`). Implement StarDict's headword order
-(ASCII case-insensitive comparison, ties broken by a byte-wise comparison) and binary search over it.
-Tests: exact hits, case-only differences, first/last entries, duplicates, synonyms, 64-bit offsets.
+- `.idx` (or gzip-compressed `.idx.gz`, decompressed with a size bound): entries are a UTF-8 headword ending in `\0`, an unsigned big-endian offset
+  of `idxoffsetbits` bits and an unsigned big-endian 32-bit size. `idxfilesize` is compared with the **decompressed** byte count and the entry count with `wordcount`.
+- `.syn`: a UTF-8 alias ending in `\0` and an unsigned big-endian 32-bit **zero-based ordinal** into `.idx`. If `.syn` exists, `synwordcount` is required
+  and must match; ordinals out of range are errors. Duplicate aliases pointing to different entries are all kept.
+- Both files must be sorted in StarDict order: `g_ascii_strcasecmp`, ties broken by a byte-wise `strcmp`. Validate the order on load and binary-search over it.
+- Tests: exact hits, case-only differences, first/last entries, duplicate headwords, synonyms, 64-bit offsets, `.idx.gz`, unsorted and truncated files.
 
 ### T-13 · `.dict` and dictzip reader (depends on T-11)
-Random-access reads of `(offset, size)` from a plain `.dict` and from dictzip `.dict.dz`: parse the gzip `FEXTRA` `RA` subfield
-(version, chunk length, chunk count, compressed chunk sizes), inflate only the chunks the range needs (`ZLibDecoder(raw: true)`), with a small LRU of chunks.
-Split an entry into fields using `sametypesequence` (the last field has no terminator), or the per-field type bytes when it is absent.
-Tests: ranges inside one chunk, across chunks, at the end of the file; plain and dictzip give identical bytes.
+- Random-access reads of `(offset, size)` from a plain `.dict` and from dictzip `.dict.dz`.
+- Dictzip layout: inside the gzip `FEXTRA` field, the `RA` subfield has a little-endian 16-bit length, then unsigned little-endian 16-bit values for
+  version (`1`), the nominal uncompressed chunk length, the chunk count, and each compressed chunk size. Compressed data starts after the **full** gzip header
+  (`FEXTRA`, `FNAME`, `FCOMMENT`, `FHCRC`). Validate the table against the file size, inflate only the chunks a range needs with `ZLibDecoder(raw: true)`,
+  check each inflated length (the last chunk may be shorter), and keep a small LRU of chunks.
+- Field framing: lowercase types are text ending in `\0`; uppercase types are binary, prefixed by an unsigned big-endian 32-bit length.
+  Without `sametypesequence`, each field starts with its type byte. With it, type bytes are omitted and the **last** field takes the remaining bytes of the
+  entry, with neither its `\0` nor its length prefix.
+- Fixtures: a dictzip file made by a committed generator that reproduces `dictzip` (one gzip member, `Z_FULL_FLUSH` at each chunk boundary; Python's `zlib` is fine),
+  plus mixed text/binary entries in both framings. Tests: ranges inside one chunk, across chunks, at the end of the file; plain and dictzip give identical bytes.
 
 ### T-14 · `Dictionary` facade and lookup normalization (depends on T-12, T-13)
-`Dictionary.open(Directory dir)` finds and validates the `.ifo`/`.idx`/`.dict[.dz]`/`.syn` set and exposes `info`.
-`lookup(String query) → List<DictionaryEntry>` (headword + raw fields) per FR-TEXT-010: trim surrounding punctuation and whitespace, exact match,
-then case-folded, then diacritic-folded ("ação" ↔ "acao"), then synonyms; `suggest(String query, {int limit = 10})` returns close headwords
-(shared prefix). Everything synchronous and isolate-friendly (plain arguments, no closures over state), so the app can run it with `Isolate.run`.
+- `Dictionary.open(File ifo)` loads the companion files sharing the `.ifo` basename (`.idx` before `.idx.gz`, `.dict` before `.dict.dz`, optional `.syn`)
+  and exposes `info`. `Dictionary.findAll(Directory dir)` lists every valid `.ifo` set in a directory tree and reports the invalid ones with their error.
+- `lookup(String query) → List<DictionaryEntry>` (headword, ordinal, raw fields) per FR-TEXT-010. Trim surrounding whitespace and punctuation, then try, in order,
+  stopping at the first level that has results: (1) exact headword, (2) case-folded, (3) case- and diacritic-folded. At each level, direct `.idx` hits and `.syn`
+  aliases are merged, deduplicated by ordinal and returned in `.idx` order.
+- Folding uses a **secondary normalized index** built lazily on the first folded lookup (normalized key → ordinals), not a scan per query. Case folding is
+  `toLowerCase()`; diacritic folding removes combining marks U+0300–U+036F after decomposing Latin-1 Supplement and Latin Extended-A letters with a small built-in table
+  (no new dependencies). Composed and decomposed "ação" must both find "acao" and vice versa.
+- `suggest(String query, {int limit = 10})` returns headwords with the longest shared normalized prefix, in `.idx` order.
+- Everything synchronous and isolate-friendly (plain arguments, no closures over state), so the app can run it with `Isolate.run`.
 
 ### T-15 · Safe definition text (depends on T-13)
 Convert a field to a small immutable rich-text model (`DefinitionBlock`/`DefinitionSpan`: paragraph, list item, line break, bold, italic).
-Types `m`, `t`, `y` are plain text (newlines → line breaks). `h` (HTML) and `x` (XDXF) keep only `p`, `br`, `b`/`strong`, `i`/`em`, `ul`/`ol`/`li`
-(XDXF `k`, `b`, `i`, `c`, `ex` mapped sensibly) and drop everything else, including scripts, styles, images and links, while keeping their text.
-Decode HTML entities. Never fetch anything. Tests with hostile input (`<script>`, unclosed tags, deep nesting).
+- `m`, `t`, `y`: plain text (newlines → line breaks). `g` (Pango markup): tags stripped to plain text.
+- `h` (HTML): keep `p`, `br`, `b`/`strong`, `i`/`em`, `ul`/`ol`/`li`. Discard `script` and `style` **with their content**; keep the visible text of links and every other tag.
+- `x` (XDXF): `k` → bold paragraph, `b` → bold, `i` and `ex` → italic, `abr` → italic, `c`, `kref`, `dtrn`, `co` → plain text, `blockquote` → paragraph; other tags keep their text.
+- Entities: the five XML ones, decimal and hex numeric references, and `nbsp`, `ndash`, `mdash`, `hellip`, `laquo`, `raquo`, `copy`; unknown entities stay literal.
+- Other types (binary, unknown) are skipped and counted as `unsupportedFields`, so the entry still shows its supported fields. Never fetch anything.
+- Tests with hostile input (`<script>`, unclosed tags, deep nesting, huge entities), and separately: script/style bodies dropped, link text kept.
 
 ## Completed agent tasks
 T-01..T-10 (PRs #19–#28): PDF dates, annotation UUIDs, geometry, page transforms, study palette, pressure curve, arc smoothing, resampling/RDP,

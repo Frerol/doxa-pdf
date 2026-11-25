@@ -51,7 +51,7 @@ Android-only and desktop specifics land in M5 (Linux) and M6 (Windows). See [11 
 | FR-TEXT-006 | Selection context actions: highlight, underline, strikeout, copy, search, share, define/translate via OS. | M | M2 |
 | FR-TEXT-007 | Clear feedback when a page has no text layer (scanned) and markup is unavailable; later points to OCR. | M | M2 |
 | FR-TEXT-008 | Look up the selected word or short phrase in built-in **offline dictionaries**: a popup shows the definitions of every enabled dictionary, with no network access ([ADR-0009](../adr/0009-offline-dictionary.md)). | M | M1 |
-| FR-TEXT-009 | Import dictionaries in StarDict format (`.ifo` + `.idx` + `.dict`/`.dict.dz`, optional `.syn`) from a file, folder or `.zip`; list, enable/disable, reorder and remove them. | M | M1 |
+| FR-TEXT-009 | Import dictionaries in StarDict format (`.ifo` + `.idx`/`.idx.gz` + `.dict`/`.dict.dz`, optional `.syn`) from a file, folder or `.zip`; list, enable/disable, reorder and remove them. | M | M1 |
 | FR-TEXT-010 | Lookup tolerates real text: trims surrounding punctuation, falls back to case- and diacritic-insensitive matches, follows synonym entries, and suggests close headwords when nothing matches. | S | M1 |
 
 ### 1.4 Text markup (MARK), Tier 1

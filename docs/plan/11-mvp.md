@@ -30,7 +30,7 @@ GitHub** (no stores yet). Each beta is usable on its own, and the MVP is complet
 | Files | System picker, "Open with" intents, recents (thumbnail + progress), **library folders**, **tabs** for several open documents, password-protected PDFs |
 | Reading | All four layouts: **continuous vertical, single page, two pages side by side, horizontal**. Zoom, fit width/page, remembered position, fullscreen |
 | Navigation | **Outline**, **thumbnails**, go to page, links + back/forward |
-| Search & text | **Full-text search** (diacritic-insensitive), text selection + copy, **offline dictionary** for the selected word (StarDict dictionaries imported by the user, [ADR-0009](../adr/0009-offline-dictionary.md)) |
+| Search & text | **Full-text search** (diacritic-insensitive), text selection + copy, **offline dictionary** for the selected word or short phrase (StarDict dictionaries imported by the user, [ADR-0009](../adr/0009-offline-dictionary.md)) |
 | Comfort | **Night and sepia** modes, light/dark theme, pt-BR + en |
 
 ### v0.2 — Study core: markup + pen ★ (the point where the maintainer starts studying with Doxa daily)

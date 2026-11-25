@@ -15,7 +15,7 @@ Forces:
 - Dependencies must be GPL-3.0-compatible, and new dependencies need the maintainer's approval.
 
 ## Decision
-1. **Format: StarDict.** Doxa reads StarDict dictionaries (`.ifo` + `.idx` + `.dict` or dictzip `.dict.dz`, optional `.syn`).
+1. **Format: StarDict.** Doxa reads StarDict dictionaries (`.ifo` + `.idx` or `.idx.gz` + `.dict` or dictzip `.dict.dz`, optional `.syn`).
    It is the de-facto open format of offline readers and dictionary apps, and free dictionaries (Wiktionary-derived, FreeDict and others) are
    widely available in it. Other formats can be added later behind the same interface.
 2. **User-imported, never bundled.** The user imports a dictionary (file, folder or `.zip`) through the system picker. Doxa copies it into app
@@ -23,12 +23,14 @@ Forces:
 3. **A new pure Dart package, `packages/doxa_dict`**: parsing, index, lookup and normalization, with no Flutter imports and no new dependencies
    (dictzip chunks are inflated with `dart:io`'s zlib). It is tested with small generated fixtures.
 4. **Lookup** runs off the UI isolate and never on the engine isolate. It binary-searches the `.idx` headwords (StarDict ordering) and
-   reads definitions on demand. Normalization: trim surrounding punctuation, try the exact form, then case-folded and diacritic-folded
-   forms, then `.syn` synonyms, then close headwords as suggestions.
+   reads definitions on demand. Normalization: trim surrounding punctuation, then try the exact form, the case-folded form and the
+   case- and diacritic-folded form, stopping at the first that matches; `.syn` aliases are merged into each step. Close headwords are offered
+   as suggestions when nothing matches. Folded forms use a secondary normalized index built lazily, because folded keys are scattered in StarDict order.
 5. **UI:** "Dictionary" in the text-selection actions (a single word or a short phrase). A popup on tablets (a bottom sheet on phones)
-   shows the results grouped by dictionary in the user's order, with "Copy" and "Look up in another app" (FR-TEXT-006).
-6. **Definitions are displayed, never executed.** Plain-text types (`m`, `t`, `y`) are shown as text. HTML (`h`) and XDXF (`x`) are reduced to a
-   safe subset (paragraphs, bold, italic, lists, line breaks). No scripts, no remote resources, no network.
+   shows the results grouped by dictionary in the user's order, with "Copy". "Look up in another app" arrives in v0.2 with the other selection actions (FR-TEXT-006).
+6. **Definitions are displayed, never executed.** Plain-text types (`m`, `t`, `y`) are shown as text, and Pango markup (`g`) is stripped to text.
+   HTML (`h`) and XDXF (`x`) are reduced to a safe subset (paragraphs, bold, italic, lists, line breaks). Binary and unknown types are skipped,
+   so an entry still shows its supported fields. No scripts, no remote resources, no network.
 
 ## Consequences
 - v0.1 grows by one feature slice (package + import + settings + popup). It builds on text selection (FR-TEXT-004), which v0.1 already has.
