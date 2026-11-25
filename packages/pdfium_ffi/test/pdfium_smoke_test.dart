@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'dart:ffi';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
@@ -92,5 +93,106 @@ void main() {
 
     expect(doc, nullptr);
     expect(pdfium.FPDF_GetLastError(), FPDF_ERR_FORMAT);
+  });
+
+  Pointer<fpdf_document_t__> openCorpus(String name, {String? password}) {
+    final rootFile = File('test_corpus/$name');
+    final file = rootFile.existsSync()
+        ? rootFile
+        : File('../../test_corpus/$name');
+    final doc = using((arena) {
+      final nativePath = file.absolute.path.toNativeUtf8(allocator: arena);
+      final nativePassword = password?.toNativeUtf8(allocator: arena);
+      return pdfium.FPDF_LoadDocument(
+        nativePath.cast(),
+        nativePassword?.cast() ?? nullptr,
+      );
+    });
+    expect(
+      doc,
+      isNot(nullptr),
+      reason: '$name: error ${pdfium.FPDF_GetLastError()}',
+    );
+    addTearDown(() => pdfium.FPDF_CloseDocument(doc));
+    return doc;
+  }
+
+  Pointer<fpdf_page_t__> loadCorpusPage(
+    Pointer<fpdf_document_t__> doc, [
+    int index = 0,
+  ]) {
+    final page = pdfium.FPDF_LoadPage(doc, index);
+    expect(page, isNot(nullptr));
+    addTearDown(() => pdfium.FPDF_ClosePage(page));
+    return page;
+  }
+
+  test('corpus includes rotated pages and a fractional offset CropBox', () {
+    final rotated = openCorpus('rotated-pages.pdf');
+    expect(pdfium.FPDF_GetPageCount(rotated), 4);
+    for (var index = 0; index < 4; index++) {
+      expect(
+        pdfium.FPDFPage_GetRotation(loadCorpusPage(rotated, index)),
+        index,
+      );
+    }
+
+    final cropped = loadCorpusPage(openCorpus('offset-cropbox.pdf'));
+    final box = calloc<Float>(4);
+    addTearDown(() => calloc.free(box));
+    expect(
+      pdfium.FPDFPage_GetCropBox(cropped, box, box + 1, box + 2, box + 3),
+      1,
+    );
+    expect(box.asTypedList(4), [37.5, 62.25, 547.75, 728.5]);
+  });
+
+  test('corpus includes an image-only scan and a 1001-page file', () {
+    final scanned = loadCorpusPage(openCorpus('scanned-300.pdf'));
+    final textPage = pdfium.FPDFText_LoadPage(scanned);
+    expect(textPage, isNot(nullptr));
+    addTearDown(() => pdfium.FPDFText_ClosePage(textPage));
+    expect(pdfium.FPDFText_CountChars(textPage), 0);
+    expect(pdfium.FPDFPage_CountObjects(scanned), 1);
+    expect(
+      pdfium.FPDFPageObj_GetType(pdfium.FPDFPage_GetObject(scanned, 0)),
+      FPDF_PAGEOBJ_IMAGE,
+    );
+    expect(pdfium.FPDF_GetPageCount(openCorpus('many-pages.pdf')), 1001);
+  });
+
+  test('corpus encrypted PDF opens with its documented password', () {
+    expect(
+      pdfium.FPDF_GetPageCount(openCorpus('encrypted.pdf', password: 'study')),
+      1,
+    );
+  });
+
+  test('corpus preserves annotation subtypes written by other PDF tools', () {
+    const annotations = {
+      'annotated-acrobat.pdf': [FPDF_ANNOT_HIGHLIGHT, FPDF_ANNOT_POPUP],
+      'annotated-okular.pdf': [FPDF_ANNOT_TEXT],
+      'annotated-pdfjs.pdf': [FPDF_ANNOT_FREETEXT],
+      'marked-up-xournalpp.pdf': <int>[],
+    };
+
+    for (final entry in annotations.entries) {
+      final page = loadCorpusPage(openCorpus(entry.key));
+      expect(
+        pdfium.FPDFPage_GetAnnotCount(page),
+        entry.value.length,
+        reason: entry.key,
+      );
+      for (var index = 0; index < entry.value.length; index++) {
+        final annotation = pdfium.FPDFPage_GetAnnot(page, index);
+        expect(annotation, isNot(nullptr), reason: entry.key);
+        addTearDown(() => pdfium.FPDFPage_CloseAnnot(annotation));
+        expect(
+          pdfium.FPDFAnnot_GetSubtype(annotation),
+          entry.value[index],
+          reason: entry.key,
+        );
+      }
+    }
   });
 }

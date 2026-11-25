@@ -1,0 +1,70 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Length 192 >>
+stream
+BT /F1 14 Tf 72 700 Td 20 TL
+(A field notebook) Tj T*
+(The morning light crossed the valley.) Tj T*
+(We drew a map and marked the river.) Tj T*
+(A reader can highlight this sentence.) Tj T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R /CropBox [37.5 62.25 547.75 728.5] >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000185 00000 n 
+0000000428 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+589
+%%EOF
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R>>>> /Contents 4 0 R /CropBox [37.5 62.25 547.75 728.5] /Annots [7 0 R]>>
+endobj
+6 0 obj
+<< /BaseFont /Helvetica /Type /Font /Subtype /Type1 /Encoding /WinAnsiEncoding>>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /FreeText /CreationDate (D:20261125000025) /Rect [72 590 280 618] /DA (/Helv 14 Tf 0.12 0.24 0.51 rg) /Contents (Check this paragraph again.) /F 4 /Border [0 0 0] /Rotate 0 /AP << /N 8 0 R>>>>
+endobj
+8 0 obj
+<< /FormType 1 /Subtype /Form /Type /XObject /BBox [72 590 280 618] /Resources << /Font << /Helv 6 0 R>>>> /Matrix [1 0 0 1 -72 -590] /Length 123>> stream
+q
+1 0 0 1 0 0 cm
+72 590 208 28 re W n
+BT
+0.12 0.24 0.51 rg
+0 Tc /Helv 14 Tf
+72 604 Td (Check this paragraph again.) Tj
+ET
+Q
+endstream
+endobj
+xref
+5 4
+0000000772 00000 n
+0000000946 00000 n
+0000001042 00000 n
+0000001275 00000 n
+trailer
+<< /Prev 589 /Size 9 /Root 1 0 R>>
+startxref
+1579
+%%EOF
