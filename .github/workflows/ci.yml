@@ -35,6 +35,54 @@ jobs:
           cache: true
       - name: Format, analyze and test the workspace
         run: tools/check.sh
+      - name: Check pub dependency licenses
+        run: |
+          python3 -B -m unittest discover -s tools -p 'test_check_dependency_licenses.py'
+          python3 tools/check_dependency_licenses.py pub
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lcov
+          path: |
+            app/coverage/lcov.info
+            packages/*/coverage/lcov.info
+          if-no-files-found: error
+
+  android:
+    name: Android debug APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Read pinned Flutter version
+        id: fvm
+        run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+      - name: Fetch Android PDFium
+        run: tools/fetch_pdfium.sh android
+      - name: Install the pinned Android SDK and NDK
+        run: sdkmanager 'platforms;android-36' 'ndk;28.2.13676358'
+      - name: Build debug APK
+        working-directory: app
+        run: flutter build apk --debug
+      - name: Resolve Gradle dependency license metadata
+        working-directory: app/android
+        run: |
+          ./gradlew --no-configuration-cache -I ../../tools/gradle_license_report.init.gradle \
+            :app:writeDependencyLicenseReport "-PlicenseReport=$RUNNER_TEMP/gradle-licenses.json"
+      - name: Check Gradle dependency licenses
+        run: python3 tools/check_dependency_licenses.py gradle "$RUNNER_TEMP/gradle-licenses.json"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-debug-apk
+          path: app/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
 
   pdfium-bindings:
     name: PDFium bindings up to date

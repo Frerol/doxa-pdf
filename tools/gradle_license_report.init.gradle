@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+import groovy.json.JsonOutput
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedArtifactResult
+import org.gradle.api.artifacts.result.UnresolvedDependencyResult
+import org.gradle.maven.MavenModule
+import org.gradle.maven.MavenPomArtifact
+
+gradle.beforeProject { project ->
+    if (project.path != ':app') {
+        return
+    }
+    project.tasks.register('writeDependencyLicenseReport') {
+        doLast {
+            def ids = ['debugCompileClasspath', 'debugRuntimeClasspath'].collectMany { name ->
+                def graph = project.configurations.getByName(name).incoming.resolutionResult
+                def unresolved = graph.allDependencies.findAll { it instanceof UnresolvedDependencyResult }
+                if (unresolved) {
+                    throw new GradleException("Unresolved dependencies in ${name}: ${unresolved}")
+                }
+                graph.allComponents*.id.findAll { it instanceof ModuleComponentIdentifier }
+            }.toSet()
+            if (ids.isEmpty()) {
+                throw new GradleException('The Android dependency graph is empty')
+            }
+            def poms = project.dependencies.createArtifactResolutionQuery()
+                .forComponents(ids)
+                .withArtifacts(MavenModule, MavenPomArtifact)
+                .execute()
+                .resolvedComponents.collectEntries { component ->
+                    def artifact = component.getArtifacts(MavenPomArtifact).find {
+                        it instanceof ResolvedArtifactResult
+                    }
+                    [(component.id): artifact?.file?.absolutePath]
+                }
+            def report = ids.sort { it.displayName }.collectEntries { id ->
+                [(id.displayName): poms[id]]
+            }
+            new File(project.property('licenseReport').toString()).text = JsonOutput.toJson(report)
+        }
+    }
+}
