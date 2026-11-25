@@ -60,6 +60,11 @@ private open class MessagesPigeonCodec : StandardMessageCodec() {
 interface DoxaPlatformPluginApi {
   /** Returns the system version of the host platform. */
   fun getPlatformVersion(): String
+  /**
+   * Opens a web or mail link in another app (FR-VIEW-010). Returns false
+   * when no app can open it. Callers confirm with the user first.
+   */
+  fun openUri(uri: String): Boolean
 
   companion object {
     /** The codec used by DoxaPlatformPluginApi. */
@@ -76,6 +81,23 @@ interface DoxaPlatformPluginApi {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
               listOf(api.getPlatformVersion())
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.openUri$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val uriArg = args[0] as String
+            val wrapped: List<Any?> = try {
+              listOf(api.openUri(uriArg))
             } catch (exception: Throwable) {
               MessagesPigeonUtils.wrapError(exception)
             }

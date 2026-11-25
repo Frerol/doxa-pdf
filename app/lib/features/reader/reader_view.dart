@@ -2,6 +2,7 @@
 
 import 'dart:ui' as ui;
 
+import 'package:doxa_engine/doxa_engine.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
@@ -27,9 +28,17 @@ const panZoomDevices = {
 /// double-tap smart zoom and mouse-wheel scrolling, painted from previews
 /// and tiles held by [controller].
 class ReaderView extends StatefulWidget {
-  const ReaderView({super.key, required this.controller, this.probe});
+  const ReaderView({
+    super.key,
+    required this.controller,
+    this.probe,
+    this.onLink,
+  });
 
   final ReaderController controller;
+
+  /// Called with the target of a tapped link (FR-VIEW-010).
+  final void Function(LinkTarget target)? onLink;
 
   /// Records frame timings of each interaction (profile builds).
   final FrameProbe? probe;
@@ -197,9 +206,16 @@ class _ReaderViewState extends State<ReaderView>
     if (target != null) _animateTo(target);
   }
 
-  void _onTapUp(TapUpDetails details, Size size) {
+  Future<void> _onTapUp(TapUpDetails details, Size size) async {
     final left = _edgeAt(details.localPosition, size);
-    if (left != null) _turnTowards(left: left);
+    if (left != null) {
+      _turnTowards(left: left);
+      return;
+    }
+    final onLink = widget.onLink;
+    if (onLink == null) return;
+    final target = await _controller.linkAt(details.localPosition);
+    if (target != null && mounted) onLink(target);
   }
 
   void _onDoubleTap(Size size) {

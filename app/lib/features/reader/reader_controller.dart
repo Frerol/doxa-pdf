@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:doxa_core/doxa_core.dart';
 import 'package:doxa_engine/doxa_engine.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -29,6 +30,9 @@ Future<ui.Image> decodeBitmap(RenderedBitmap bitmap) {
 typedef ViewState = ({double zoom, Offset offset});
 
 typedef _Anchor = ({int page, double x, double y});
+
+/// A history entry that survives relayouts: a reading point and a zoom.
+typedef _Mark = ({_Anchor anchor, double zoom});
 
 /// State of the reader (issues #47, #48): layout, viewport, the image cache
 /// and the render requests sent to the engine.
@@ -64,6 +68,17 @@ final class ReaderController {
 
   /// Bumped whenever the picture changes.
   final repaint = ValueNotifier<int>(0);
+
+  /// The page under the middle of the screen, for page indicators.
+  final page = ValueNotifier<int>(0);
+
+  /// Bumped when [canGoBack] or [canGoForward] change.
+  final history = ValueNotifier<int>(0);
+  final _back = <_Mark>[];
+  final _forward = <_Mark>[];
+
+  final _details = <int, Future<PageDetails>>{};
+  final _links = <int, Future<List<PageLink>>>{};
 
   ReaderOptions _options;
   PageLayout? _layout;
@@ -141,10 +156,10 @@ final class ReaderController {
         options.coverPage != _options.coverPage;
     _options = options;
     if (!layoutChanged || _layout == null) return;
-    final page = currentPage;
+    final current = currentPage;
     _relayout();
     _zoom = 1;
-    _showPage(page);
+    _showPage(current);
     _changed();
   }
 
@@ -275,11 +290,159 @@ final class ReaderController {
 
   /// Shows [page]: at the top of the screen in continuous mode, or its
   /// spread when paged.
-  void goToPage(int page) {
+  ///
+  /// With [record], the jump can be undone with [goBack] (FR-VIEW-011).
+  void goToPage(int page, {bool record = false}) {
     final layout = _layout;
     if (layout == null || page < 0 || page >= layout.pageCount) return;
+    if (record && page != currentPage) _record();
     _showPage(page);
     _changed();
+  }
+
+  /// The label of [page] (FR-VIEW-014), or its 1-based number when the
+  /// document has none.
+  String pageLabel(int page) => info.pageLabels[page] ?? '${page + 1}';
+
+  /// The page a user typed in "Go to page" (FR-VIEW-009): a page label
+  /// such as `iv` or `A-1` first, then a 1-based page number. Null when
+  /// nothing matches.
+  int? parsePageInput(String input) {
+    final text = input.trim();
+    if (text.isEmpty) return null;
+    final lower = text.toLowerCase();
+    for (var i = 0; i < info.pageCount; i++) {
+      if (info.pageLabels[i]?.toLowerCase() == lower) return i;
+    }
+    final number = int.tryParse(text);
+    if (number == null || number < 1 || number > info.pageCount) return null;
+    return number - 1;
+  }
+
+  /// Crop box and rotation of [page], loaded once.
+  Future<PageDetails> pageDetails(int page) =>
+      _details[page] ??= engine.pageDetails(document, page);
+
+  /// The transform from PDF user space of [page] to document units
+  /// relative to the page's top-left corner, or null for a degenerate page.
+  PageTransform? _transform(PageDetails details, Rect rect) {
+    final (viewWidth, _) = details.transform().viewSize;
+    final scale = rect.width / viewWidth;
+    if (!scale.isFinite || scale <= 0) return null;
+    return details.transform(scale: scale);
+  }
+
+  /// Maps a destination point in PDF user space to document units. A
+  /// missing coordinate means "the start of the page" along its own axis,
+  /// which a rotated page turns sideways or upside down.
+  Future<Offset> _documentPoint(int page, double? x, double? y) async {
+    final details = await pageDetails(page);
+    final rect = _layout!.pageRect(page);
+    final transform = _transform(details, rect);
+    if (transform == null) return rect.topLeft;
+    final crop = details.cropBox;
+    var (vx, vy) = transform.toView(PdfPoint(x ?? crop.left, y ?? crop.top));
+    final sideways = details.rotation == 90 || details.rotation == 270;
+    // User x runs along the view's x axis unless the page is turned.
+    if (x == null) sideways ? vy = 0 : vx = 0;
+    if (y == null) sideways ? vx = 0 : vy = 0;
+    return rect.topLeft + Offset(vx, vy);
+  }
+
+  /// The link under [screenPoint], if any (FR-VIEW-010).
+  Future<LinkTarget?> linkAt(Offset screenPoint) async {
+    final layout = _layout;
+    if (layout == null || layout.pageCount == 0) return null;
+    final point = toDocument(screenPoint);
+    final page = layout.pageAt(point);
+    final rect = layout.pageRect(page);
+    if (!rect.contains(point)) return null;
+    try {
+      final details = await pageDetails(page);
+      final links = await (_links[page] ??= engine.pageLinks(document, page));
+      final transform = _transform(details, rect);
+      if (transform == null) return null;
+      final user = transform.toUser(point.dx - rect.left, point.dy - rect.top);
+      for (final link in links) {
+        if (link.rect.contains(user)) return link.target;
+      }
+    } on PdfEngineException {
+      // A damaged page has no usable links.
+    }
+    return null;
+  }
+
+  /// Jumps to an outline entry or link target inside the document, so that
+  /// [goBack] returns here (FR-VIEW-007, FR-VIEW-010, FR-VIEW-011).
+  Future<void> goToDestination(PdfDestination destination) async {
+    final page = destination.pageIndex;
+    if (_layout == null || page < 0 || page >= info.pageCount) return;
+    Offset? point;
+    try {
+      point = await _documentPoint(page, destination.x, destination.y);
+    } on PdfEngineException {
+      point = null;
+    }
+    // The layout may have changed while the page details loaded.
+    final layout = _layout;
+    if (_disposed || layout == null) return;
+    point ??= layout.pageRect(page).topLeft;
+    _record();
+    if (layout.paged || (destination.x == null && destination.y == null)) {
+      _showPage(page);
+    } else if (layout is ContinuousLayout) {
+      _oy = point.dy;
+      if (destination.x != null && _zoom > 1) _ox = point.dx;
+    } else {
+      _ox = point.dx;
+    }
+    _changed();
+  }
+
+  bool get canGoBack => _back.isNotEmpty;
+  bool get canGoForward => _forward.isNotEmpty;
+
+  /// Returns to where the reader was before the last jump.
+  void goBack() => _travel(_back, _forward);
+
+  /// Undoes [goBack].
+  void goForward() => _travel(_forward, _back);
+
+  void _travel(List<_Mark> from, List<_Mark> to) {
+    final here = _mark();
+    if (from.isEmpty || here == null) return;
+    to.add(here);
+    final mark = from.removeLast();
+    history.value++;
+    _zoom = mark.zoom.clamp(minZoom, maxZoom);
+    _restore(mark.anchor);
+    _changed();
+  }
+
+  _Mark? _mark() {
+    final anchor = _anchor();
+    return anchor == null ? null : (anchor: anchor, zoom: _zoom);
+  }
+
+  /// Remembers the reading position before a jump.
+  void _record() {
+    final here = _mark();
+    if (here == null) return;
+    _back.add(here);
+    if (_back.length > 100) _back.removeAt(0);
+    _forward.clear();
+    history.value++;
+  }
+
+  /// The preview of [page] for the thumbnails panel (FR-VIEW-008), or null
+  /// while it renders.
+  ui.Image? thumbnail(int page) {
+    final layout = _layout;
+    if (layout == null || page < 0 || page >= layout.pageCount) return null;
+    final spec = previewFor(layout, page);
+    final image = cache.peek(spec.key);
+    if (image == null) _request(spec, RenderPriority.thumbnail);
+    return image;
   }
 
   void _showPage(int page) {
@@ -410,6 +573,7 @@ final class ReaderController {
     _clamp();
     _ensure();
     repaint.value++;
+    page.value = currentPage;
   }
 
   void _clamp() {
@@ -514,5 +678,7 @@ final class ReaderController {
     _disposed = true;
     cache.clear();
     repaint.dispose();
+    page.dispose();
+    history.dispose();
   }
 }

@@ -26,4 +26,8 @@ import 'package:pigeon/pigeon.dart';
 abstract class DoxaPlatformPluginApi {
   /// Returns the system version of the host platform.
   String getPlatformVersion();
+
+  /// Opens a web or mail link in another app (FR-VIEW-010). Returns false
+  /// when no app can open it. Callers confirm with the user first.
+  bool openUri(String uri);
 }

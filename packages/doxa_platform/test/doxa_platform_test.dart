@@ -11,6 +11,14 @@ class MockDoxaPlatformPlatform
     implements DoxaPlatformPlatform {
   @override
   Future<String?> getPlatformVersion() => Future.value('42');
+
+  final opened = <String>[];
+
+  @override
+  Future<bool> openUri(String uri) async {
+    opened.add(uri);
+    return true;
+  }
 }
 
 void main() {
@@ -26,5 +34,26 @@ void main() {
     DoxaPlatformPlatform.instance = fakePlatform;
 
     expect(await doxaPlatformPlugin.getPlatformVersion(), '42');
+  });
+
+  test('openUri passes web and mail links and refuses the rest', () async {
+    final fakePlatform = MockDoxaPlatformPlatform();
+    DoxaPlatformPlatform.instance = fakePlatform;
+    final plugin = DoxaPlatform();
+
+    expect(await plugin.openUri('https://example.org/a b'), isTrue);
+    expect(await plugin.openUri(' HTTP://example.org '), isTrue);
+    expect(await plugin.openUri('mailto:someone@example.org'), isTrue);
+    for (final refused in [
+      'file:///sdcard/secret.pdf',
+      'intent://scan/#Intent;end',
+      'javascript:alert(1)',
+      'content://media/1',
+      'not a uri at all',
+      '',
+    ]) {
+      expect(await plugin.openUri(refused), isFalse, reason: refused);
+    }
+    expect(fakePlatform.opened, hasLength(3));
   });
 }

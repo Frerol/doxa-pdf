@@ -97,5 +97,110 @@
   "optionKeepZoom": "Keep zoom when turning pages",
   "@optionKeepZoom": {
     "description": "Turning a page keeps the zoom level and position."
+  },
+  "navigationPanel": "Contents",
+  "@navigationPanel": {
+    "description": "Tooltip of the button that opens the outline and thumbnails panel."
+  },
+  "outlineTab": "Outline",
+  "@outlineTab": {
+    "description": "Panel tab with the document's table of contents."
+  },
+  "pagesTab": "Pages",
+  "@pagesTab": {
+    "description": "Panel tab with page thumbnails."
+  },
+  "outlineEmpty": "This document has no outline.",
+  "@outlineEmpty": {
+    "description": "Shown when the PDF has no table of contents."
+  },
+  "historyBack": "Back to previous position",
+  "@historyBack": {
+    "description": "Button that returns to where the reader was before a link or outline jump."
+  },
+  "historyForward": "Forward",
+  "@historyForward": {
+    "description": "Button that redoes a jump undone with back."
+  },
+  "pageOfCount": "{number} of {count}",
+  "@pageOfCount": {
+    "description": "Page indicator for a page without a label.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pageLabelOfCount": "{label} ({number} of {count})",
+  "@pageLabelOfCount": {
+    "description": "Page indicator with the PDF page label, such as a roman numeral.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "number": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goToPageTitle": "Go to page",
+  "@goToPageTitle": {
+    "description": "Title of the dialog that jumps to a page."
+  },
+  "goToPageHint": "Page label or number (1–{count})",
+  "@goToPageHint": {
+    "description": "Hint of the page field.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goToPageInvalid": "There is no page “{input}” in this document.",
+  "@goToPageInvalid": {
+    "description": "Error when the typed page does not exist.",
+    "placeholders": {
+      "input": {
+        "type": "String"
+      }
+    }
+  },
+  "goToPageAction": "Go",
+  "@goToPageAction": {
+    "description": "Button that jumps to the typed page."
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Closes a dialog without doing anything."
+  },
+  "linkOpenTitle": "Open this link in another app?",
+  "@linkOpenTitle": {
+    "description": "Confirmation before an external link from the PDF is opened."
+  },
+  "linkOpen": "Open",
+  "@linkOpen": {
+    "description": "Opens the external link."
+  },
+  "linkCopy": "Copy link",
+  "@linkCopy": {
+    "description": "Copies the external link instead of opening it."
+  },
+  "linkCopied": "Link copied.",
+  "@linkCopied": {
+    "description": "Shown after a link is copied."
+  },
+  "linkOpenFailed": "No app can open this link.",
+  "@linkOpenFailed": {
+    "description": "Shown when the link was refused or no app handles it."
+  },
+  "linkUnsupported": "This link leads outside this document and cannot be followed.",
+  "@linkUnsupported": {
+    "description": "Shown for links to other files or launch actions."
   }
 }
