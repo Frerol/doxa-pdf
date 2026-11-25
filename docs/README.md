@@ -20,6 +20,15 @@ reverse as [ADRs](adr/).
 | 10 | [Governance](plan/10-governance.md) | Workflow, conventions, licensing hygiene, community |
 | 11 | [MVP Definition](plan/11-mvp.md) | What the Android MVP betas (v0.1–v0.4) contain, and when the MVP is done |
 
+## Process standards
+
+| Standard | Covers |
+|---|---|
+| [Testing](process/testing.md) | What a test is for, what not to test, bug-fix tests, fixtures, device checks |
+| [Clean room](process/clean-room.md) | Where knowledge, code, assets and test files may come from; learning from a proprietary app |
+
+The short form of both, and the rules for coding agents, are in [AGENTS.md](../AGENTS.md).
+
 ## Architecture Decision Records
 
 | ADR | Title | Status |

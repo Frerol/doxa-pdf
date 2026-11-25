@@ -22,6 +22,8 @@ A change is done when:
 - Docs and ADRs are updated if behaviour or architecture changed.
 - A bug fix includes a regression test.
 
+What makes a test worth keeping, and how to write it, is in the [testing standard](../process/testing.md).
+
 ## 3. PDF test corpus & interoperability
 
 - MVP interop targets: **Acrobat Reader, a widely used commercial Android reader, Firefox (pdf.js), Chrome, Okular**. pdf.js, Poppler and MuPDF are automated. Acrobat and the commercial Android reader are checked manually before each beta.

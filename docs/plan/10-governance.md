@@ -20,6 +20,7 @@
 - Dependencies must be GPL-3.0-compatible (MIT, BSD, Apache-2.0, LGPL, MPL-2.0, GPL-3.0). A CI license check over pub, Gradle and native deps blocks anything else.
 - Contributions use the **DCO** (`Signed-off-by:` line), not a CLA.
 - Test corpus files need a recorded license and source.
+- Where code, assets, test files and product knowledge may come from is in the [clean-room standard](../process/clean-room.md).
 - `NOTICE`/about screen lists third-party licenses (Flutter `LicenseRegistry` + PDFium license).
 
 ## 5. Community
