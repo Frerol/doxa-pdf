@@ -40,5 +40,21 @@
   "linkCopy": "Copiar link",
   "linkCopied": "Link copiado.",
   "linkOpenFailed": "Nenhum app consegue abrir este link.",
-  "linkUnsupported": "Este link aponta para fora deste documento e não pode ser seguido."
+  "linkUnsupported": "Este link aponta para fora deste documento e não pode ser seguido.",
+  "searchTooltip": "Buscar",
+  "searchHint": "Buscar neste documento",
+  "searchClose": "Fechar busca",
+  "searchCount": "{current} de {count}",
+  "searchSearching": "Buscando…",
+  "searchNoResults": "Nenhum resultado",
+  "searchPrevious": "Resultado anterior",
+  "searchNext": "Próximo resultado",
+  "searchOptions": "Opções de busca",
+  "searchMatchCase": "Diferenciar maiúsculas",
+  "searchWholeWord": "Só palavras inteiras",
+  "searchIgnoreDiacritics": "Ignorar acentos",
+  "selectionCopy": "Copiar",
+  "selectionCopied": "Texto copiado.",
+  "selectionClose": "Limpar seleção",
+  "searchResults": "{count, plural, =1{1 resultado} other{{count} resultados}}"
 }

@@ -202,5 +202,82 @@
   "linkUnsupported": "This link leads outside this document and cannot be followed.",
   "@linkUnsupported": {
     "description": "Shown for links to other files or launch actions."
+  },
+  "searchTooltip": "Search",
+  "@searchTooltip": {
+    "description": "Button that opens full-text search."
+  },
+  "searchHint": "Search in this document",
+  "@searchHint": {
+    "description": "Hint of the search field."
+  },
+  "searchClose": "Close search",
+  "@searchClose": {
+    "description": "Closes the search bar and removes highlights."
+  },
+  "searchCount": "{current} of {count}",
+  "@searchCount": {
+    "description": "Current search result and number of results.",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchSearching": "Searching…",
+  "@searchSearching": {
+    "description": "Shown while pages are searched and nothing was found yet."
+  },
+  "searchNoResults": "No results",
+  "@searchNoResults": {
+    "description": "Shown when the search found nothing."
+  },
+  "searchPrevious": "Previous result",
+  "@searchPrevious": {
+    "description": "Goes to the previous search result."
+  },
+  "searchNext": "Next result",
+  "@searchNext": {
+    "description": "Goes to the next search result."
+  },
+  "searchOptions": "Search options",
+  "@searchOptions": {
+    "description": "Menu with match case, whole words and accents."
+  },
+  "searchMatchCase": "Match case",
+  "@searchMatchCase": {
+    "description": "Search option: upper and lower case must match."
+  },
+  "searchWholeWord": "Whole words only",
+  "@searchWholeWord": {
+    "description": "Search option: match whole words only."
+  },
+  "searchIgnoreDiacritics": "Ignore accents",
+  "@searchIgnoreDiacritics": {
+    "description": "Search option: acao finds ação."
+  },
+  "selectionCopy": "Copy",
+  "@selectionCopy": {
+    "description": "Copies the selected text."
+  },
+  "selectionCopied": "Text copied.",
+  "@selectionCopied": {
+    "description": "Shown after the selection is copied."
+  },
+  "selectionClose": "Clear selection",
+  "@selectionClose": {
+    "description": "Removes the text selection."
+  },
+  "searchResults": "{count, plural, =1{1 result} other{{count} results}}",
+  "@searchResults": {
+    "description": "Number of search results before one is selected.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

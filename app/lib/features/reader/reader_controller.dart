@@ -31,6 +31,9 @@ typedef ViewState = ({double zoom, Offset offset});
 
 typedef _Anchor = ({int page, double x, double y});
 
+/// Layers of rectangles drawn over the pages.
+enum HighlightLayer { searchHits, currentHit, selection }
+
 /// A history entry that survives relayouts: a reading point and a zoom.
 typedef _Mark = ({_Anchor anchor, double zoom});
 
@@ -78,6 +81,8 @@ final class ReaderController {
   final _forward = <_Mark>[];
 
   final _details = <int, Future<PageDetails>>{};
+  final _resolvedDetails = <int, PageDetails>{};
+  final _layers = <HighlightLayer, Map<int, List<PdfRect>>>{};
   final _links = <int, Future<List<PageLink>>>{};
 
   ReaderOptions _options;
@@ -320,8 +325,110 @@ final class ReaderController {
   }
 
   /// Crop box and rotation of [page], loaded once.
-  Future<PageDetails> pageDetails(int page) =>
-      _details[page] ??= engine.pageDetails(document, page);
+  Future<PageDetails> pageDetails(int page) => _details[page] ??= engine
+      .pageDetails(document, page)
+      .then((details) => _resolvedDetails[page] = details);
+
+  /// [rect] of [page] (PDF user space) in document units, or null until the
+  /// page's details have loaded.
+  Rect? documentRect(int page, PdfRect rect) {
+    final layout = _layout;
+    final details = _resolvedDetails[page];
+    if (layout == null || details == null || page >= layout.pageCount) {
+      return null;
+    }
+    final pageRect = layout.pageRect(page);
+    final transform = _transform(details, pageRect);
+    if (transform == null) return null;
+    final (x1, y1) = transform.toView(PdfPoint(rect.left, rect.bottom));
+    final (x2, y2) = transform.toView(PdfPoint(rect.right, rect.top));
+    return Rect.fromPoints(
+      Offset(x1, y1),
+      Offset(x2, y2),
+    ).shift(pageRect.topLeft);
+  }
+
+  /// A point in document units mapped to PDF user space of [page], or null
+  /// until the page's details have loaded.
+  PdfPoint? userPoint(int page, Offset documentPoint) {
+    final layout = _layout;
+    final details = _resolvedDetails[page];
+    if (layout == null || details == null) return null;
+    final pageRect = layout.pageRect(page);
+    final transform = _transform(details, pageRect);
+    return transform?.toUser(
+      documentPoint.dx - pageRect.left,
+      documentPoint.dy - pageRect.top,
+    );
+  }
+
+  /// Rectangles of [layer] on [page], in PDF user space.
+  List<PdfRect> highlights(HighlightLayer layer, int page) =>
+      _layers[layer]?[page] ?? const [];
+
+  /// Replaces [layer] (rectangles per page, PDF user space) and repaints
+  /// once the pages' details are known.
+  void setHighlights(HighlightLayer layer, Map<int, List<PdfRect>> rects) {
+    if (_disposed) return;
+    if (rects.isEmpty) {
+      if (_layers.remove(layer) != null) repaint.value++;
+      return;
+    }
+    _layers[layer] = rects;
+    _loadVisibleDetails();
+    repaint.value++;
+  }
+
+  /// Loads the details of visible pages that have highlights, so they can
+  /// be drawn; pages off screen load when they scroll in.
+  void _loadVisibleDetails() {
+    final layout = _layout;
+    if (layout == null || _layers.isEmpty) return;
+    for (final page in layout.pagesIn(visibleRect)) {
+      if (_resolvedDetails.containsKey(page)) continue;
+      if (!_layers.values.any((rects) => rects.containsKey(page))) continue;
+      unawaited(
+        pageDetails(page).then((_) {
+          if (!_disposed) repaint.value++;
+        }, onError: (Object _) {}),
+      );
+    }
+  }
+
+  /// Scrolls so that [rect] of [page] is on screen, keeping the zoom (search
+  /// results, FR-TEXT-001). Paged layouts show its spread.
+  Future<void> reveal(int page, PdfRect rect) async {
+    if (_layout == null || page < 0 || page >= info.pageCount) return;
+    try {
+      await pageDetails(page);
+    } on PdfEngineException {
+      // Fall back to showing the page.
+    }
+    final layout = _layout;
+    if (_disposed || layout == null) return;
+    final target = documentRect(page, rect);
+    if (layout.paged && layout.spreadOf(page) != currentSpread) {
+      final view = viewForSpread(layout.spreadOf(page), keepZoom: true);
+      _zoom = view.zoom;
+      _ox = view.offset.dx;
+      _oy = view.offset.dy;
+    }
+    if (target == null) {
+      if (!layout.paged) _showPage(page);
+      _changed();
+      return;
+    }
+    final visible = visibleRect;
+    if (!visible.deflate(8 / _zoom).contains(target.center)) {
+      if (layout is ContinuousLayout || _zoom > 1.05) {
+        _oy = target.center.dy - visible.height / 2;
+      }
+      if (layout is! ContinuousLayout || _zoom > 1.05) {
+        _ox = target.center.dx - visible.width / 2;
+      }
+    }
+    _changed();
+  }
 
   /// The transform from PDF user space of [page] to document units
   /// relative to the page's top-left corner, or null for a degenerate page.
@@ -612,6 +719,7 @@ final class ReaderController {
             visible.bottom,
           );
     final visiblePages = layout.pagesIn(visible).toList();
+    _loadVisibleDetails();
     for (final page in visiblePages) {
       _request(previewFor(layout, page), RenderPriority.visiblePreview);
     }
