@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+  <!-- Doxa PDF icon: lowercase delta in four study colours. -->
+  <defs>
+    <mask id="under" maskUnits="userSpaceOnUse" x="-50" y="-50" width="612" height="612">
+      <rect x="-50" y="-50" width="612" height="612" fill="#fff"/>
+      <path d="M318 214 C270 246 171.5 242.5 153.4 310.1" fill="none" stroke="#000" stroke-width="72"/>
+    </mask>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#F5F6FA"/>
+  <g fill="none" stroke-width="44" transform="translate(0 -16)">
+    <path d="M241.3 435.6 A100 100 0 1 0 232.6 237.5" stroke="#F08C00" mask="url(#under)"/>
+    <path d="M184 178 C198 130 250 98 300 98" stroke="#D6336C" stroke-linecap="round"/>
+    <path d="M300 98 C336 98 360 122 360 154 C360 182 342 198 318 214" stroke="#2BAE66"/>
+    <path d="M318 214 C270 246 171.5 242.5 153.4 310.1 A100 100 0 0 0 241.3 435.6" stroke="#7048E8"/>
+  </g>
+</svg>
