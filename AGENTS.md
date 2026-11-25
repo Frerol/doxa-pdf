@@ -14,8 +14,9 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 ## 2. Current status (update this section when it changes)
 - **M0 (foundations and spikes), almost done.** Done: monorepo scaffold, PDFium bindings, Spike A (rendering, ADR-0005), Spike B (ink, ADR-0006),
   Spike C (annotation writing, ADR-0008), tasks T-01..T-10 (`doxa_core` geometry/dates/IDs/page transforms/palette, `doxa_ink` pressure/smoothing/simplification/erasing),
-  #9 PDF test corpus (PR #33) and #3 full CI with Android APK and dependency license checks (PR #34).
-- **Open:** #8 Spike D (OCR), #10 Code of Conduct contact (maintainer only), #11 M0 wrap-up. Specs are in §8.
+  #9 PDF test corpus (PR #33), #3 full CI with Android APK and dependency license checks (PR #34), and #8 Spike D (OCR: GO with
+  Tesseract4Android, `docs/spikes/D-ocr.md`; ADR-0007 proposed, awaiting the maintainer's acceptance).
+- **Open:** #10 Code of Conduct contact (maintainer only), #11 M0 wrap-up. Specs are in §8.
   Branch protection on `main` is still to be enabled by the maintainer (required checks listed in PR #34).
 - **Next:** M1 = v0.1 Reader (§9).
 
@@ -73,7 +74,7 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
 - Dependencies must be GPL-3.0-compatible. **Ask before adding any dependency.** No Google ML Kit or other proprietary SDKs.
 - **Never name the commercial PDF reader that inspired Doxa** anywhere (code, docs, commits, issues, PRs). Write "a commercial PDF reader".
   The UI should resemble the leading commercial mobile readers in **layout and flows**, with an original identity (`docs/plan/05-ux-design.md` §8).
-- Significant decisions need an ADR (`docs/adr/0000-template.md`). The next free numbers are 0007 (OCR) and 0010+.
+- Significant decisions need an ADR (`docs/adr/0000-template.md`). The next free number is 0010.
 - Do not edit generated files by hand (`pdfium_bindings.g.dart`, `messages.g.*`, `app/lib/l10n/gen/`), `tools/pdfium.lock`, accepted ADRs, or `LICENSE`.
 
 **Flutter 3.50**
@@ -98,9 +99,11 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
 - Pure Flutter, raw `Listener`. Live stroke as vectors on its own layer; committed ink rasterized into tiles (never replay all vectors every frame).
 - No smoothing by default; optional arc-length smoothing (2–4 px); **never a One-Euro filter**. S Pen side button = `kPrimaryStylusButton` → eraser.
 - Pan/zoom through a `ValueNotifier` (repaint) instead of `setState` (rebuild).
+- **Stylus pointers must never reach pan/zoom recognizers** (`InteractiveViewer`, scrollables). Disabling pan after the pen's pointer-down is too late:
+  the recognizer has already joined the gesture arena and the page shifts a little under the pen (seen in Spike D's harness).
 
 ## 8. Next tasks (M0)
-Work on them in this order, one PR each. #9 (test corpus) and #3 (full CI) are done.
+Work on them in this order, one PR each. #9 (test corpus), #3 (full CI) and #8 (Spike D) are done.
 
 ### #8 · Spike D: on-device OCR (needs the tablet)
 Goal: make scanned pages searchable and highlightable (FR-UTIL-001, NFR-PERF-009: ≤ 5 s per page on the reference tablet, in the background, cancellable).
