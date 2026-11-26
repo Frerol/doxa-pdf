@@ -34,10 +34,13 @@ jobs:
           channel: stable
           cache: true
       - name: Format, analyze and test the workspace
+        env:
+          DOXA_FORBIDDEN_NAMES: ${{ secrets.DOXA_FORBIDDEN_NAMES }}
         run: tools/check.sh
-      - name: Check pub dependency licenses
+      - name: Test repository checks and check pub dependency licenses
         run: |
           python3 -B -m unittest discover -s tools -p 'test_check_dependency_licenses.py'
+          python3 -B -m unittest discover -s tools -p 'test_check_repo_rules.py'
           python3 tools/check_dependency_licenses.py pub
       - uses: actions/upload-artifact@v7
         with:

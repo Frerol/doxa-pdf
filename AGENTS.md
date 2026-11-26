@@ -71,6 +71,7 @@ flutter pub get                      # whole pub workspace, from the repo root
 tools/check.sh                       # format + analyze + all tests (with coverage); must pass before any PR
 tools/check.sh packages/doxa_dict     # fast loop while working: format + analyze + tests of the given packages only
 # CI also runs Markdown link checks, the license checks, the Android debug APK build and a bindings-up-to-date check
+python3 tools/check_repo_rules.py    # mechanical repository rules for tracked files
 python3 tools/check_dependency_licenses.py pub   # pub license check (CI also runs it, plus a Gradle check after the APK build)
 tools/fetch_corpus.sh                # large test PDFs into test_corpus/external/ (needs curl, sha256sum, Ghostscript)
 cd app && flutter build apk --debug  # Android build
@@ -93,7 +94,7 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
 
 ## 7. Rules and hard-won pitfalls
 **General**
-- English everywhere in the repo. Every source file MUST start with `// SPDX-License-Identifier: GPL-3.0-or-later`. `dart format` and `flutter analyze` MUST be clean.
+- English everywhere in the repo. Every source file MUST start with `// SPDX-License-Identifier: GPL-3.0-or-later` (checked by `tools/check_repo_rules.py`). `dart format` and `flutter analyze` MUST be clean.
 - **Tests** follow [docs/process/testing.md](docs/process/testing.md). In short: a test SHOULD guard an invariant that a plausible change could break and
   no other test catches; tests SHOULD assert behaviour and relations, not constants we chose or real time; a bug fix MUST add a test that fails without it
   (run it once with the fix reverted); you MUST NOT delete, weaken or skip a test to make a check pass.
@@ -101,13 +102,13 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
 - Dependencies MUST be GPL-3.0-compatible (no MuPDF or other AGPL code). You MUST ask before adding any dependency. No Google ML Kit or other proprietary SDKs.
 - **Clean room** follows [docs/process/clean-room.md](docs/process/clean-room.md). In short: learn behaviour, never copy code, artwork or text from proprietary
   products; an agent that writes code MUST NOT operate a proprietary app or read its install; screenshots of other apps MUST NOT be committed.
-- You MUST NOT name the commercial PDF reader that inspired Doxa anywhere (code, docs, commits, issues, PRs). Write "a commercial PDF reader".
+- You MUST NOT name the commercial PDF reader that inspired Doxa anywhere (code, docs, commits, issues, PRs). Write "a commercial PDF reader" (checked by `tools/check_repo_rules.py`).
   The UI SHOULD resemble the leading commercial mobile readers in **layout and flows**, with an original identity (`docs/plan/05-ux-design.md` §8).
 - Significant decisions need an ADR (`docs/adr/0000-template.md`). Take the next free number in `docs/adr/`.
 - Do not edit generated files by hand (`pdfium_bindings.g.dart`, `messages.g.*`, `app/lib/l10n/gen/`), `tools/pdfium.lock`, accepted ADRs, or `LICENSE`.
 
 **Flutter 3.50**
-- Import `package:material_ui/material_ui.dart`, **not** `package:flutter/material.dart` (deprecated).
+- Import `package:material_ui/material_ui.dart`, **not** `package:flutter/material.dart` (deprecated) (checked by `tools/check_repo_rules.py`).
 - Localization: use `[AppLocalizations.delegate, ...GlobalMaterialLocalizations.delegates]` (from material_ui). The gen-l10n list breaks `pt`.
   New strings go to both `app/lib/l10n/app_en.arb` and `app_pt.arb`.
 - `Isolate.run` closures must capture only sendable values: build them in a top-level function that takes plain arguments (capturing `this`/State fails).
@@ -119,7 +120,7 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
 - Rendering: one engine isolate with priority + generation cancellation; 360 px previews + 512 px tiles at power-of-two zoom buckets.
 - **Two document instances per file:** a read-only *render instance* (Doxa's own annotations hidden in memory via the Hidden flag, rendered with
   `FPDF_ANNOT`) and an *editing instance* (never rendered with `FPDF_ANNOT`; the only one saved).
-- **Saving:** `FPDF_SaveAsCopy` **full save** (flags 0) → temp file → verify → atomic replace. **Never `FPDF_INCREMENTAL`**: it bloats files and corrupts xref-stream PDFs.
+- **Saving:** `FPDF_SaveAsCopy` **full save** (flags 0) → temp file → verify → atomic replace. **Never `FPDF_INCREMENTAL`** (checked by `tools/check_repo_rules.py`): it bloats files and corrupts xref-stream PDFs.
   On Android, write back through SAF with `"wt"` and verify by reading back (SHA-256).
 - Text markup is written **without `/AP`**. Ink AP comes from page objects via `FPDFAnnot_AppendObject`, called **after every other setter**
   (`FPDFAnnot_SetBorder` deletes an existing AP, and `FPDFAnnot_SetColor` fails once an AP exists).
@@ -132,7 +133,7 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
 
 **Ink (ADR-0006)**
 - Pure Flutter, raw `Listener`. Live stroke as vectors on its own layer; committed ink rasterized into tiles (never replay all vectors every frame).
-- No smoothing by default; optional arc-length smoothing (2–4 px); **never a One-Euro filter**. S Pen side button = `kPrimaryStylusButton` → eraser.
+- No smoothing by default; optional arc-length smoothing (2–4 px); **never a One-Euro filter** (checked by `tools/check_repo_rules.py`). S Pen side button = `kPrimaryStylusButton` → eraser.
 - Pan/zoom through a `ValueNotifier` (repaint) instead of `setState` (rebuild).
 - **Stylus pointers must never reach pan/zoom recognizers** (`InteractiveViewer`, scrollables). Disabling pan after the pen's pointer-down is too late:
   the recognizer has already joined the gesture arena and the page shifts a little under the pen (seen in Spike D's harness).

@@ -44,6 +44,7 @@ test_corpus/external/
 Thumbs.db
 
 # Secrets and local config
+/.forbidden-names
 .env
 *.env
 CLAUDE.local.md
