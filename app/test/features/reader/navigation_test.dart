@@ -237,6 +237,17 @@ void main() {
     ReaderController controllerOf(WidgetTester tester) =>
         tester.widget<ReaderView>(find.byType(ReaderView)).controller;
 
+    Offset linkPoint(WidgetTester tester, double pdfY) {
+      final controller = controllerOf(tester);
+      final page = controller.layout!.pageRect(2);
+      final point = Offset(
+        page.left + page.width * (100 / 400),
+        page.top + page.height * ((600 - pdfY) / 600),
+      );
+      final origin = tester.getTopLeft(find.byType(ReaderView));
+      return origin + (point - controller.offset) * controller.zoom;
+    }
+
     testWidgets('shows the page label and goes to a typed page', (
       tester,
     ) async {
@@ -400,10 +411,7 @@ void main() {
       await tester.enterText(find.byType(TextField), '1');
       await tester.tap(find.text('Go'));
       await settle(tester);
-      // Page 2 fills the 800 px width: 2 px per pt. The web link is at
-      // PDF (100, 425): screen (200, (600 - 425) * 2) below the app bar.
-      final reader = tester.getTopLeft(find.byType(ReaderView));
-      await tester.tapAt(reader + const Offset(200, 350));
+      await tester.tapAt(linkPoint(tester, 425));
       await settle(tester);
       expect(find.text('Open this link in another app?'), findsOneWidget);
       expect(find.text('https://example.org/'), findsOneWidget);
@@ -411,7 +419,7 @@ void main() {
       await settle(tester);
       expect(opened, ['https://example.org/']);
 
-      await tester.tapAt(reader + const Offset(200, 350));
+      await tester.tapAt(linkPoint(tester, 425));
       await settle(tester);
       await tester.tap(find.text('Copy link'));
       await settle(tester);
@@ -446,8 +454,7 @@ void main() {
       await settle(tester);
       controllerOf(tester).goToPage(2);
       await settle(tester);
-      final reader = tester.getTopLeft(find.byType(ReaderView));
-      await tester.tapAt(reader + const Offset(200, 350));
+      await tester.tapAt(linkPoint(tester, 425));
       await settle(tester);
       await tester.tap(find.text('Open'));
       await settle(tester);
@@ -458,13 +465,12 @@ void main() {
       await show(tester);
       controllerOf(tester).goToPage(2);
       await settle(tester);
-      final reader = tester.getTopLeft(find.byType(ReaderView));
-      await tester.tapAt(reader + const Offset(200, 150)); // To page 7.
+      await tester.tapAt(linkPoint(tester, 525)); // To page 7.
       await settle(tester);
       expect(find.text('6 (8 of 10)'), findsOneWidget);
       controllerOf(tester).goToPage(2);
       await settle(tester);
-      await tester.tapAt(reader + const Offset(200, 550)); // Another file.
+      await tester.tapAt(linkPoint(tester, 325)); // Another file.
       await settle(tester);
       expect(
         find.text(
@@ -526,8 +532,7 @@ void main() {
         await show(tester);
         controllerOf(tester).goToPage(2);
         await settle(tester);
-        final reader = tester.getTopLeft(find.byType(ReaderView));
-        await tester.tapAt(reader + const Offset(200, 150)); // To page 7.
+        await tester.tapAt(linkPoint(tester, 525)); // To page 7.
         await settle(tester);
         expect(find.text('6 (8 of 10)'), findsOneWidget);
         expect(modes, isEmpty);

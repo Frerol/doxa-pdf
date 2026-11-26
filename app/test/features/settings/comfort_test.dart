@@ -302,14 +302,14 @@ void main() {
           mode: ReaderMode.twoPages,
           coverPage: false,
           tapZones: false,
-          keepZoomOnTurn: true,
+          keepZoomOnTurn: false,
         ),
       );
       final saved = store.json;
       expect(saved, containsPair('readerMode', 'twoPages'));
       expect(saved, containsPair('coverPage', false));
       expect(saved, containsPair('tapZones', false));
-      expect(saved, containsPair('keepZoomOnTurn', true));
+      expect(saved, containsPair('keepZoomOnTurn', false));
 
       await tester.tap(
         find.widgetWithText(SwitchListTile, 'Right-to-left pages'),
@@ -334,7 +334,7 @@ void main() {
           mode: ReaderMode.twoPages,
           coverPage: false,
           tapZones: false,
-          keepZoomOnTurn: true,
+          keepZoomOnTurn: false,
         ),
       );
       expect(view(tester).controller.layout, isA<StripLayout>());

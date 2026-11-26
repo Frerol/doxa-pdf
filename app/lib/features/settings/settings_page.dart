@@ -6,6 +6,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../dictionary/dictionaries_page.dart';
 import '../dictionary/dictionary_library.dart';
 import '../reader/color_mode.dart';
+import '../reader/reader_geometry.dart';
 import 'app_settings.dart';
 
 /// Swatches offered for the custom page colours (FR-VIEW-016).
@@ -101,6 +102,25 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
             _Header(l10n.settingsReading),
+            ListTile(title: Text(l10n.settingsFitMode)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SegmentedButton<FitMode>(
+                segments: [
+                  ButtonSegment(
+                    value: FitMode.page,
+                    label: Text(l10n.readerFitPage),
+                  ),
+                  ButtonSegment(
+                    value: FitMode.width,
+                    label: Text(l10n.readerFitWidth),
+                  ),
+                ],
+                selected: {value.fitMode},
+                onSelectionChanged: (selection) =>
+                    settings.update(value.copyWith(fitMode: selection.single)),
+              ),
+            ),
             ListTile(title: Text(l10n.settingsPageColors)),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
