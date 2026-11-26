@@ -79,9 +79,18 @@ InstallReport installStaged(String root, String staging) {
       for (final file
           in ifo.parent.listSync(followLinks: false).whereType<File>()) {
         final fileName = _name(file.path);
-        if (fileName.startsWith(prefix) || _isNote(fileName)) {
+        if (!fileName.endsWith('.fold') &&
+            (fileName.startsWith(prefix) || _isNote(fileName))) {
           _move(file, '${target.path}/$fileName');
         }
+      }
+      try {
+        // The install itself runs on a short-lived isolate.
+        Dictionary.buildFoldIndex('${target.path}/$label');
+      } on FileSystemException {
+        // The worker can retry if the derived file could not be written.
+      } on FormatException {
+        // Exact lookup remains available for sets beyond the sidecar limits.
       }
       installed.add(bytes);
       added.add(name);

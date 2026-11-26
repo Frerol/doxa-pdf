@@ -170,7 +170,9 @@ List<InstalledDictionary> _scan(String rootPath) {
     final (:ifo, :info) = sets.first;
     var size = 0;
     for (final file in folder.listSync(recursive: true, followLinks: false)) {
-      if (file is File) size += file.lengthSync();
+      if (file is File && !file.path.endsWith('.fold')) {
+        size += file.lengthSync();
+      }
     }
     found.add(
       InstalledDictionary(
@@ -294,79 +296,153 @@ void _workerMain(SendPort ready) {
   final requests = ReceivePort();
   ready.send(requests.sendPort);
   final open = <String, Dictionary>{};
-  requests.listen((message) {
+  final builds = <String, Future<void>>{};
+  var buildQueue = Future<void>.value();
+  var active = 0;
+  var wantedPaths = <String>{};
+
+  void evict() {
+    for (final path
+        in open.keys.where((p) => !wantedPaths.contains(p)).toList()) {
+      open.remove(path)!.close();
+    }
+  }
+
+  Future<void>? prepare(String ifo, Dictionary dictionary) {
+    if (dictionary.hasFoldIndex) return null;
+    return builds[ifo] ??= buildQueue = buildQueue
+        .then((_) => _buildFoldOnIsolate(ifo))
+        .then((_) {
+          open[ifo]?.refreshFoldIndex();
+        })
+        .whenComplete(() {
+          builds.remove(ifo);
+        });
+  }
+
+  requests.listen((message) async {
     final (
       SendPort reply,
       String query,
       List<({String name, String ifo})> wanted,
     ) = message as (SendPort, String, List<({String name, String ifo})>);
-    // Dictionaries no longer wanted (disabled or removed) are closed.
-    final paths = {for (final d in wanted) d.ifo};
-    for (final path in open.keys.where((p) => !paths.contains(p)).toList()) {
-      open.remove(path)!.close();
-    }
-    List<LookupGroup> readEntries(String word) => [
-      for (final (:name, :ifo) in wanted) _readEntries(open, ifo, name, word),
-    ];
-
-    final groups = readEntries(query);
-    if (groups.any((group) => group.entries.isNotEmpty)) {
-      reply.send(LookupResult(groups));
-      return;
-    }
-
-    // Score the union of the existing per-dictionary suggestions before the
-    // popup caps the chips. A tied distance leaves all suggestions as chips.
-    final suggestions = <String>{};
-    for (var i = 0; i < wanted.length; i++) {
-      if (groups[i].failed) continue;
-      try {
-        suggestions.addAll(open[wanted[i].ifo]!.suggest(query, limit: 5));
-      } on Object {
-        groups[i] = (
-          dictionary: groups[i].dictionary,
-          entries: const [],
-          failed: true,
-        );
+    wantedPaths = {for (final d in wanted) d.ifo};
+    if (active == 0) evict();
+    active++;
+    try {
+      final pending = <int, Future<void>>{};
+      final groups = <LookupGroup>[];
+      for (final (:name, :ifo) in wanted) {
+        final (group, build) = _readEntries(open, ifo, name, query, prepare);
+        if (build != null) pending[groups.length] = build;
+        groups.add(group);
       }
-    }
-    final closest = closestSuggestion(query, suggestions);
-    if (closest != null) {
-      final matches = readEntries(closest);
-      if (matches.any((group) => group.entries.isNotEmpty)) {
-        suggestions.remove(closest);
-        reply.send(
-          LookupResult(
-            matches,
-            suggestions: suggestions.toList(),
-            shownWord: closest,
-          ),
-        );
-        return;
+      // A ready match can be displayed while other dictionaries build.
+      // Before showing a miss or suggestions, resolve the pending lookups.
+      if (!groups.any((group) => group.entries.isNotEmpty)) {
+        await Future.wait(pending.values);
+        for (final i in pending.keys) {
+          final (:name, :ifo) = wanted[i];
+          groups[i] = _entries(name, () => open[ifo]!.lookup(query));
+        }
       }
+      reply.send(await _lookupResult(open, wanted, query, groups, prepare));
+    } finally {
+      if (--active == 0) evict();
     }
-    reply.send(LookupResult(groups, suggestions: suggestions.toList()));
   });
 }
 
-LookupGroup _readEntries(
+Future<void> _buildFoldOnIsolate(String ifo) async {
+  try {
+    await Isolate.run(() => Dictionary.buildFoldIndex(ifo));
+  } on Object {
+    // An unavailable cache leaves exact lookup available.
+  }
+}
+
+Future<LookupResult> _lookupResult(
+  Map<String, Dictionary> open,
+  List<({String name, String ifo})> wanted,
+  String query,
+  List<LookupGroup> groups,
+  Future<void>? Function(String, Dictionary) prepare,
+) async {
+  if (groups.any((group) => group.entries.isNotEmpty)) {
+    return LookupResult(groups);
+  }
+
+  // Score the union of the existing per-dictionary suggestions before the
+  // popup caps the chips. A tied distance leaves all suggestions as chips.
+  final suggestions = <String>{};
+  for (var i = 0; i < wanted.length; i++) {
+    if (groups[i].failed) continue;
+    try {
+      final ifo = wanted[i].ifo;
+      final dictionary = open[ifo]!;
+      final hadFold = dictionary.hasFoldIndex;
+      var words = dictionary.suggest(query, limit: 5);
+      if (hadFold && !dictionary.hasFoldIndex) {
+        await prepare(ifo, dictionary);
+        words = dictionary.suggest(query, limit: 5);
+      }
+      suggestions.addAll(words);
+    } on Object {
+      groups[i] = _failedGroup(groups[i].dictionary);
+    }
+  }
+  final closest = closestSuggestion(query, suggestions);
+  if (closest != null) {
+    final matches = [
+      for (final (:name, :ifo) in wanted)
+        _entries(name, () => open[ifo]?.lookup(closest) ?? []),
+    ];
+    if (matches.any((group) => group.entries.isNotEmpty)) {
+      suggestions.remove(closest);
+      return LookupResult(
+        matches,
+        suggestions: suggestions.toList(),
+        shownWord: closest,
+      );
+    }
+  }
+  return LookupResult(groups, suggestions: suggestions.toList());
+}
+
+(LookupGroup, Future<void>?) _readEntries(
   Map<String, Dictionary> open,
   String ifo,
   String name,
   String query,
+  Future<void>? Function(String, Dictionary) prepare,
 ) {
   try {
-    final dictionary = open[ifo] ??= Dictionary.open(File(ifo));
+    final dictionary = open[ifo] ??= Dictionary.open(
+      File(ifo),
+      scanWithoutFoldIndex: false,
+    );
+    final group = _entries(name, () => dictionary.lookup(query));
+    final build = prepare(ifo, dictionary);
+    return (group, group.failed || group.entries.isNotEmpty ? null : build);
+  } on Object {
+    return (_failedGroup(name), null);
+  }
+}
+
+LookupGroup _entries(String name, List<DictionaryEntry> Function() lookup) {
+  try {
     return (
       dictionary: name,
       entries: [
-        for (final e in dictionary.lookup(query))
+        for (final e in lookup())
           (headword: e.headword, definition: convertDefinition(e.fields)),
       ],
       failed: false,
     );
   } on Object {
-    // A damaged file must not take the other dictionaries down.
-    return (dictionary: name, entries: const [], failed: true);
+    return _failedGroup(name);
   }
 }
+
+LookupGroup _failedGroup(String name) =>
+    (dictionary: name, entries: const [], failed: true);
