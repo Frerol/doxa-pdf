@@ -3,6 +3,8 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import '../dictionary/dictionaries_page.dart';
+import '../dictionary/dictionary_library.dart';
 import '../reader/color_mode.dart';
 import 'app_settings.dart';
 
@@ -116,6 +118,21 @@ class SettingsPage extends StatelessWidget {
               onChanged: (on) =>
                   settings.update(value.copyWith(keepScreenOn: on)),
             ),
+            if (DictionaryScope.maybeOf(context) case final scope?)
+              ListTile(
+                leading: const Icon(Icons.menu_book_outlined),
+                title: Text(l10n.dictionariesTitle),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => DictionariesPage(
+                      library: scope.library,
+                      openUri: scope.openUri,
+                      onImport: scope.onImport,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

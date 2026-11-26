@@ -133,5 +133,19 @@
   "clearSelection": "Limpar seleção",
   "selectAll": "Selecionar tudo",
   "closeTab": "Fechar {name}",
-  "openTabs": "{count, plural, =1{1 aba aberta} other{{count} abas abertas}}"
+  "openTabs": "{count, plural, =1{1 aba aberta} other{{count} abas abertas}}",
+  "dictionaryAction": "Dicionário",
+  "dictionaryCopied": "Definições copiadas.",
+  "dictionaryFailed": "Não foi possível ler os dicionários.",
+  "dictionaryNotFound": "Nenhum verbete para “{query}”.",
+  "dictionarySuggestions": "Você quis dizer:",
+  "dictionaryEmptyTitle": "Nenhum dicionário ainda",
+  "dictionaryEmptyMessage": "O Doxa consulta palavras offline em dicionários que você adiciona. Baixe um gratuito na página de dicionários do Doxa e abra o arquivo baixado com o Doxa.",
+  "dictionaryGet": "Obter dicionários",
+  "dictionaryImport": "Importar arquivo",
+  "dictionariesTitle": "Dicionários",
+  "dictionaryRemove": "Remover",
+  "dictionaryRemoveTooltip": "Remover {name}",
+  "dictionaryRemoveTitle": "Remover “{name}”?",
+  "dictionaryRemoveMessage": "Os arquivos dele são apagados do Doxa. Você pode importá-lo de novo depois."
 }

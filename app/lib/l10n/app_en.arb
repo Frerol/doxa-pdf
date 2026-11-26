@@ -617,5 +617,76 @@
         "type": "int"
       }
     }
+  },
+  "dictionaryAction": "Dictionary",
+  "@dictionaryAction": {
+    "description": "Selection action that looks the selected word up in the offline dictionaries (FR-TEXT-008)."
+  },
+  "dictionaryCopied": "Definitions copied.",
+  "@dictionaryCopied": {
+    "description": "Shown after copying the lookup results."
+  },
+  "dictionaryFailed": "The dictionaries could not be read.",
+  "@dictionaryFailed": {
+    "description": "Shown when the lookup itself fails."
+  },
+  "dictionaryNotFound": "No entry for “{query}”.",
+  "@dictionaryNotFound": {
+    "description": "Shown when no enabled dictionary has the word.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionarySuggestions": "Did you mean:",
+  "@dictionarySuggestions": {
+    "description": "Introduces close headwords offered when nothing matched (FR-TEXT-010)."
+  },
+  "dictionaryEmptyTitle": "No dictionary yet",
+  "@dictionaryEmptyTitle": {
+    "description": "Title of the empty state when no dictionary is installed (FR-TEXT-012)."
+  },
+  "dictionaryEmptyMessage": "Doxa looks words up offline in dictionaries you add. Get a free one from the Doxa dictionaries page, then open the downloaded file with Doxa.",
+  "@dictionaryEmptyMessage": {
+    "description": "Explanation in the empty state (UX §9)."
+  },
+  "dictionaryGet": "Get dictionaries",
+  "@dictionaryGet": {
+    "description": "Opens the project's dictionaries page in the browser."
+  },
+  "dictionaryImport": "Import file",
+  "@dictionaryImport": {
+    "description": "Imports a StarDict dictionary with the system picker (FR-TEXT-009)."
+  },
+  "dictionariesTitle": "Dictionaries",
+  "@dictionariesTitle": {
+    "description": "Title of Settings → Dictionaries."
+  },
+  "dictionaryRemove": "Remove",
+  "@dictionaryRemove": {
+    "description": "Confirms removing a dictionary."
+  },
+  "dictionaryRemoveTooltip": "Remove {name}",
+  "@dictionaryRemoveTooltip": {
+    "description": "Tooltip of the button that removes a dictionary.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryRemoveTitle": "Remove “{name}”?",
+  "@dictionaryRemoveTitle": {
+    "description": "Title of the confirmation before removing a dictionary.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryRemoveMessage": "Its files are deleted from Doxa. You can import it again later.",
+  "@dictionaryRemoveMessage": {
+    "description": "Body of the confirmation before removing a dictionary."
   }
 }

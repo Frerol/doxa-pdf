@@ -29,6 +29,10 @@ reverse as [ADRs](adr/).
 
 The short form of both, and the rules for coding agents, are in [AGENTS.md](../AGENTS.md).
 
+## For users
+
+- [Dictionaries](dictionaries.md): the free dictionary packs for the offline lookup, and how to add them.
+
 ## Architecture Decision Records
 
 | ADR | Title | Status |
