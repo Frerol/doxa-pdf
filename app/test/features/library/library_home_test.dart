@@ -761,12 +761,89 @@ void main() {
       expect(documents.released, [2, 1]);
     });
 
-    testWidgets('a phone shows no tab row', (tester) async {
+    testWidgets('a phone switches tabs from a grid', (tester) async {
       tester.view.physicalSize = const Size(400, 800);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await openBoth(tester);
       expect(find.byType(ReaderTabRow), findsNothing);
+
+      await tester.tap(find.byTooltip('2 open tabs'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TabSwitcher), findsOneWidget);
+      await tester.tap(find.text('Calculus.pdf'));
+      await tester.pumpAndSettle();
+      expect(shownTitle(tester), 'Calculus.pdf');
+
+      await tester.tap(find.byTooltip('2 open tabs'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Close Physics.pdf'));
+      await tester.pumpAndSettle();
+      expect(find.text('Physics.pdf'), findsNothing);
+      expect(documents.released, [2]);
+    });
+
+    testWidgets('open tabs are saved for the next start', (tester) async {
+      await openBoth(tester);
+      final saved = (await tester.runAsync(library.openTabs))!;
+      expect(saved.documents.map((d) => d.displayName), [
+        'Calculus.pdf',
+        'Physics.pdf',
+      ]);
+      expect(saved.active, 1);
+    });
+
+    testWidgets('saved tabs come back after a restart, each reopened', (
+      tester,
+    ) async {
+      final first = pdf(1, 'Calculus.pdf');
+      final second = pdf(2, 'Physics.pdf');
+      documents.persisted[first.uri] = first;
+      documents.persisted[second.uri] = second;
+      final ids = <int>[];
+      for (final p in [first, second]) {
+        final doc = await library.recordOpen(
+          identity: 'id:${p.path}',
+          displayName: p.displayName,
+          uri: p.uri,
+        );
+        ids.add(doc.id);
+      }
+      await library.saveOpenTabs(ids, active: 0);
+
+      await launch(tester);
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      expect(shownTitle(tester), 'Calculus.pdf');
+      expect(find.byTooltip('Close Physics.pdf'), findsOneWidget);
+      // Only the shown tab's file was reopened.
+      expect(engine.openDocumentCount, 1);
+
+      await tester.tap(find.text('Physics.pdf'));
+      await tester.pumpAndSettle();
+      expect(shownTitle(tester), 'Physics.pdf');
+    });
+
+    testWidgets('a saved tab whose file is gone closes and says so', (
+      tester,
+    ) async {
+      final gone = pdf(1, 'Gone.pdf');
+      final doc = await library.recordOpen(
+        identity: 'id:${gone.path}',
+        displayName: gone.displayName,
+        uri: gone.uri,
+      );
+      await library.saveOpenTabs([doc.id], active: 0);
+
+      await launch(tester);
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      expect(find.byType(ReaderPage), findsNothing);
+      expect(find.textContaining('no longer be opened'), findsOneWidget);
+      final recents = (await tester.runAsync(
+        () => library.watchRecents().first,
+      ))!;
+      expect(recents.single.canReopen, isFalse);
     });
   });
 

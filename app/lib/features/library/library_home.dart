@@ -81,6 +81,9 @@ class _LibraryHomeState extends State<LibraryHome>
   final _readerTabs = ReaderTabs();
   bool _readerShown = false;
 
+  /// Until the saved tabs are back, incoming documents wait.
+  Future<void> _restoring = Future.value();
+
   late final DocumentActions? _actions = switch (widget.documentFiles) {
     final files? => DocumentActions(
       files: files,
@@ -114,7 +117,11 @@ class _LibraryHomeState extends State<LibraryHome>
     super.initState();
     _incoming = widget.pdfDocuments?.incomingPdfs.listen((_) => _onIncoming());
     _selection.addListener(() => setState(() {}));
-    WidgetsBinding.instance.addPostFrameCallback((_) => _onIncoming());
+    _readerTabs.addListener(_saveTabs);
+    // Incoming documents open after the restored tabs, as new tabs.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _restoring = _restoreTabs().whenComplete(_onIncoming),
+    );
   }
 
   @override
@@ -123,7 +130,9 @@ class _LibraryHomeState extends State<LibraryHome>
     _query.dispose();
     _thumbnailsChanged.dispose();
     _tabs.dispose();
-    _readerTabs.dispose();
+    _readerTabs
+      ..removeListener(_saveTabs)
+      ..dispose();
     _selection.dispose();
     super.dispose();
   }
@@ -138,6 +147,7 @@ class _LibraryHomeState extends State<LibraryHome>
     if (documents == null) return;
     _draining = true;
     try {
+      await _restoring;
       while (mounted && _incomingPending) {
         _incomingPending = false;
         while (mounted) {
@@ -302,40 +312,140 @@ class _LibraryHomeState extends State<LibraryHome>
       await release?.call();
       return;
     }
-    final state = record?.state;
     _readerTabs.open(
-      ReaderTab(
+      _tab(
         // The same document opened again shows its tab.
         key: identity ?? path,
         title: displayName,
+        record: record,
         source: FileSource(path),
         release: release,
-        position: state == null
-            ? null
-            : (page: state.page, x: state.x, y: state.y, zoom: state.zoom),
-        rightToLeft: state?.rightToLeft ?? false,
-        onReadingState: record == null
-            ? null
-            : (position, rightToLeft, pageCount) => unawaited(
-                library!
-                    .saveState(record!.id, (
-                      page: position.page,
-                      x: position.x,
-                      y: position.y,
-                      zoom: position.zoom,
-                      rightToLeft: rightToLeft,
-                    ), pageCount: pageCount)
-                    .catchError((Object error) {
-                      debugPrint('Doxa: cannot save reading state: $error');
-                    }),
-              ),
-        onOpened: identity == null
-            ? null
-            : (engine, document, info) =>
-                  _thumbnail(engine, document, info, identity!),
       ),
     );
     _showReader();
+  }
+
+  /// A tab for a document, with what keeps the library in step: its
+  /// reading state, its thumbnail and its place among the saved tabs.
+  ReaderTab _tab({
+    required String key,
+    required String title,
+    LibraryDocument? record,
+    DocumentSource? source,
+    Future<void> Function()? release,
+    Future<LeasedSource> Function()? reopen,
+  }) {
+    final library = widget.library;
+    final state = record?.state;
+    final identity = record?.identity;
+    return ReaderTab(
+      key: key,
+      title: title,
+      source: source,
+      release: release,
+      reopen: reopen,
+      libraryId: record?.id,
+      thumbnail: identity == null ? null : widget.thumbnails?.fileFor(identity),
+      position: state == null
+          ? null
+          : (page: state.page, x: state.x, y: state.y, zoom: state.zoom),
+      rightToLeft: state?.rightToLeft ?? false,
+      onReadingState: record == null || library == null
+          ? null
+          : (position, rightToLeft, pageCount) => unawaited(
+              library
+                  .saveState(record.id, (
+                    page: position.page,
+                    x: position.x,
+                    y: position.y,
+                    zoom: position.zoom,
+                    rightToLeft: rightToLeft,
+                  ), pageCount: pageCount)
+                  .catchError((Object error) {
+                    debugPrint('Doxa: cannot save reading state: $error');
+                  }),
+            ),
+      onOpened: identity == null
+          ? null
+          : (engine, document, info) =>
+                _thumbnail(engine, document, info, identity),
+    );
+  }
+
+  /// Saves which documents are open in tabs (FR-FILE-007), for a restart.
+  void _saveTabs() {
+    final library = widget.library;
+    if (library == null) return;
+    final tabs = _readerTabs.tabs;
+    final ids = <int>[];
+    var active = 0;
+    for (final (i, tab) in tabs.indexed) {
+      final id = tab.libraryId;
+      if (id == null) continue;
+      if (i == _readerTabs.activeIndex) active = ids.length;
+      ids.add(id);
+    }
+    unawaited(
+      library.saveOpenTabs(ids, active: active).catchError((Object error) {
+        debugPrint('Doxa: cannot save open tabs: $error');
+      }),
+    );
+  }
+
+  /// Opens the tabs that were open before the app last stopped; each
+  /// document is reopened when its tab is first shown.
+  Future<void> _restoreTabs() async {
+    final library = widget.library;
+    if (library == null) return;
+    final ({List<LibraryDocument> documents, int active}) saved;
+    try {
+      saved = await library.openTabs();
+    } on Object catch (error) {
+      debugPrint('Doxa: cannot read open tabs: $error');
+      return;
+    }
+    final tabs = [
+      for (final document in saved.documents)
+        if (_reopener(document) case final reopen?)
+          _tab(
+            key: document.identity,
+            title: document.displayName,
+            record: document,
+            reopen: reopen,
+          ),
+    ];
+    if (tabs.isEmpty || !mounted) return;
+    _readerTabs.restore(tabs, active: saved.active);
+    _showReader();
+  }
+
+  /// How to get [document]'s source again, or null when it cannot be.
+  Future<LeasedSource> Function()? _reopener(LibraryDocument document) {
+    final parsed = Uri.tryParse(document.uri ?? '');
+    if (parsed == null) return null;
+    if (parsed.scheme == 'file') {
+      return () async => (
+        source: FileSource(parsed.toFilePath()) as DocumentSource,
+        release: null,
+      );
+    }
+    final documents = widget.pdfDocuments;
+    if (documents == null) return null;
+    return () async {
+      try {
+        final pdf = await documents.openPersistedPdf(document.uri!);
+        return (
+          source: FileSource(pdf.path) as DocumentSource,
+          release: () => documents.releasePdf(pdf.leaseId),
+        );
+      } on PdfAccessException catch (error) {
+        if (error.error
+            case PdfAccessError.missing || PdfAccessError.permissionLost) {
+          await widget.library?.forgetLocation(document.id);
+        }
+        rethrow;
+      }
+    };
   }
 
   /// Shows the open tabs (FR-FILE-007), unless they are already shown.

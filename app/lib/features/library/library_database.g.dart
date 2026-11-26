@@ -1068,16 +1068,279 @@ class FoldersCompanion extends UpdateCompanion<LibraryFolderRow> {
   }
 }
 
+class $OpenTabsTable extends OpenTabs
+    with TableInfo<$OpenTabsTable, OpenTabRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OpenTabsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _documentIdMeta = const VerificationMeta(
+    'documentId',
+  );
+  @override
+  late final GeneratedColumn<int> documentId = GeneratedColumn<int>(
+    'document_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activeMeta = const VerificationMeta('active');
+  @override
+  late final GeneratedColumn<bool> active = GeneratedColumn<bool>(
+    'active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [documentId, position, active];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'open_tabs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OpenTabRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('document_id')) {
+      context.handle(
+        _documentIdMeta,
+        documentId.isAcceptableOrUnknown(data['document_id']!, _documentIdMeta),
+      );
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_positionMeta);
+    }
+    if (data.containsKey('active')) {
+      context.handle(
+        _activeMeta,
+        active.isAcceptableOrUnknown(data['active']!, _activeMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {documentId};
+  @override
+  OpenTabRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OpenTabRow(
+      documentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}document_id'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+      active: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}active'],
+      )!,
+    );
+  }
+
+  @override
+  $OpenTabsTable createAlias(String alias) {
+    return $OpenTabsTable(attachedDatabase, alias);
+  }
+}
+
+class OpenTabRow extends DataClass implements Insertable<OpenTabRow> {
+  /// The document's [Documents.id].
+  final int documentId;
+
+  /// Left to right, from 0.
+  final int position;
+
+  /// The tab that was shown.
+  final bool active;
+  const OpenTabRow({
+    required this.documentId,
+    required this.position,
+    required this.active,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['document_id'] = Variable<int>(documentId);
+    map['position'] = Variable<int>(position);
+    map['active'] = Variable<bool>(active);
+    return map;
+  }
+
+  OpenTabsCompanion toCompanion(bool nullToAbsent) {
+    return OpenTabsCompanion(
+      documentId: Value(documentId),
+      position: Value(position),
+      active: Value(active),
+    );
+  }
+
+  factory OpenTabRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OpenTabRow(
+      documentId: serializer.fromJson<int>(json['documentId']),
+      position: serializer.fromJson<int>(json['position']),
+      active: serializer.fromJson<bool>(json['active']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'documentId': serializer.toJson<int>(documentId),
+      'position': serializer.toJson<int>(position),
+      'active': serializer.toJson<bool>(active),
+    };
+  }
+
+  OpenTabRow copyWith({int? documentId, int? position, bool? active}) =>
+      OpenTabRow(
+        documentId: documentId ?? this.documentId,
+        position: position ?? this.position,
+        active: active ?? this.active,
+      );
+  OpenTabRow copyWithCompanion(OpenTabsCompanion data) {
+    return OpenTabRow(
+      documentId: data.documentId.present
+          ? data.documentId.value
+          : this.documentId,
+      position: data.position.present ? data.position.value : this.position,
+      active: data.active.present ? data.active.value : this.active,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OpenTabRow(')
+          ..write('documentId: $documentId, ')
+          ..write('position: $position, ')
+          ..write('active: $active')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(documentId, position, active);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OpenTabRow &&
+          other.documentId == this.documentId &&
+          other.position == this.position &&
+          other.active == this.active);
+}
+
+class OpenTabsCompanion extends UpdateCompanion<OpenTabRow> {
+  final Value<int> documentId;
+  final Value<int> position;
+  final Value<bool> active;
+  const OpenTabsCompanion({
+    this.documentId = const Value.absent(),
+    this.position = const Value.absent(),
+    this.active = const Value.absent(),
+  });
+  OpenTabsCompanion.insert({
+    this.documentId = const Value.absent(),
+    required int position,
+    this.active = const Value.absent(),
+  }) : position = Value(position);
+  static Insertable<OpenTabRow> custom({
+    Expression<int>? documentId,
+    Expression<int>? position,
+    Expression<bool>? active,
+  }) {
+    return RawValuesInsertable({
+      if (documentId != null) 'document_id': documentId,
+      if (position != null) 'position': position,
+      if (active != null) 'active': active,
+    });
+  }
+
+  OpenTabsCompanion copyWith({
+    Value<int>? documentId,
+    Value<int>? position,
+    Value<bool>? active,
+  }) {
+    return OpenTabsCompanion(
+      documentId: documentId ?? this.documentId,
+      position: position ?? this.position,
+      active: active ?? this.active,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (documentId.present) {
+      map['document_id'] = Variable<int>(documentId.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (active.present) {
+      map['active'] = Variable<bool>(active.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OpenTabsCompanion(')
+          ..write('documentId: $documentId, ')
+          ..write('position: $position, ')
+          ..write('active: $active')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$LibraryDatabase extends GeneratedDatabase {
   _$LibraryDatabase(QueryExecutor e) : super(e);
   $LibraryDatabaseManager get managers => $LibraryDatabaseManager(this);
   late final $DocumentsTable documents = $DocumentsTable(this);
   late final $FoldersTable folders = $FoldersTable(this);
+  late final $OpenTabsTable openTabs = $OpenTabsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [documents, folders];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    documents,
+    folders,
+    openTabs,
+  ];
 }
 
 typedef $$DocumentsTableCreateCompanionBuilder = DocumentsCompanion Function({
@@ -1623,6 +1886,171 @@ typedef $$FoldersTableProcessedTableManager =
       LibraryFolderRow,
       PrefetchHooks Function()
     >;
+typedef $$OpenTabsTableCreateCompanionBuilder = OpenTabsCompanion Function({
+  Value<int> documentId,
+  required int position,
+  Value<bool> active,
+});
+typedef $$OpenTabsTableUpdateCompanionBuilder = OpenTabsCompanion Function({
+  Value<int> documentId,
+  Value<int> position,
+  Value<bool> active,
+});
+
+class $$OpenTabsTableFilterComposer
+    extends Composer<_$LibraryDatabase, $OpenTabsTable> {
+  $$OpenTabsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get documentId => $composableBuilder(
+    column: $table.documentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OpenTabsTableOrderingComposer
+    extends Composer<_$LibraryDatabase, $OpenTabsTable> {
+  $$OpenTabsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get documentId => $composableBuilder(
+    column: $table.documentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OpenTabsTableAnnotationComposer
+    extends Composer<_$LibraryDatabase, $OpenTabsTable> {
+  $$OpenTabsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get documentId => $composableBuilder(
+    column: $table.documentId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<bool> get active =>
+      $composableBuilder(column: $table.active, builder: (column) => column);
+}
+
+class $$OpenTabsTableTableManager
+    extends
+        RootTableManager<
+          _$LibraryDatabase,
+          $OpenTabsTable,
+          OpenTabRow,
+          $$OpenTabsTableFilterComposer,
+          $$OpenTabsTableOrderingComposer,
+          $$OpenTabsTableAnnotationComposer,
+          $$OpenTabsTableCreateCompanionBuilder,
+          $$OpenTabsTableUpdateCompanionBuilder,
+          (
+            OpenTabRow,
+            BaseReferences<_$LibraryDatabase, $OpenTabsTable, OpenTabRow>,
+          ),
+          OpenTabRow,
+          PrefetchHooks Function()
+        > {
+  $$OpenTabsTableTableManager(_$LibraryDatabase db, $OpenTabsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OpenTabsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OpenTabsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OpenTabsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> documentId = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<bool> active = const Value.absent(),
+              }) => OpenTabsCompanion(
+                documentId: documentId,
+                position: position,
+                active: active,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> documentId = const Value.absent(),
+                required int position,
+                Value<bool> active = const Value.absent(),
+              }) => OpenTabsCompanion.insert(
+                documentId: documentId,
+                position: position,
+                active: active,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$OpenTabsTable, OpenTabRow>(table),
+                  BaseReferences<_$LibraryDatabase, $OpenTabsTable, OpenTabRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OpenTabsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LibraryDatabase,
+      $OpenTabsTable,
+      OpenTabRow,
+      $$OpenTabsTableFilterComposer,
+      $$OpenTabsTableOrderingComposer,
+      $$OpenTabsTableAnnotationComposer,
+      $$OpenTabsTableCreateCompanionBuilder,
+      $$OpenTabsTableUpdateCompanionBuilder,
+      (
+        OpenTabRow,
+        BaseReferences<_$LibraryDatabase, $OpenTabsTable, OpenTabRow>,
+      ),
+      OpenTabRow,
+      PrefetchHooks Function()
+    >;
 
 class $LibraryDatabaseManager {
   final _$LibraryDatabase _db;
@@ -1631,4 +2059,6 @@ class $LibraryDatabaseManager {
       $$DocumentsTableTableManager(_db, _db.documents);
   $$FoldersTableTableManager get folders =>
       $$FoldersTableTableManager(_db, _db.folders);
+  $$OpenTabsTableTableManager get openTabs =>
+      $$OpenTabsTableTableManager(_db, _db.openTabs);
 }

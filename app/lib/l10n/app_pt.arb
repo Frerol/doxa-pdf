@@ -132,5 +132,6 @@
   "selectedCount": "{count, plural, =1{1 selecionado} other{{count} selecionados}}",
   "clearSelection": "Limpar seleção",
   "selectAll": "Selecionar tudo",
-  "closeTab": "Fechar {name}"
+  "closeTab": "Fechar {name}",
+  "openTabs": "{count, plural, =1{1 aba aberta} other{{count} abas abertas}}"
 }

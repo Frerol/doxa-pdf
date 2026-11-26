@@ -9,6 +9,7 @@ import 'generated/schema.dart';
 
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
+import 'generated/schema_v3.dart' as v3;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -88,6 +89,53 @@ void main() {
           batch.insertAll(oldDb.documents, oldDocuments),
       validateItems: (newDb) async {
         expect(await newDb.select(newDb.documents).get(), expected);
+      },
+    );
+  });
+
+  // Adding the open tabs (FR-FILE-007) keeps the library as it was.
+  test('migration from v2 to v3 keeps documents and folders', () async {
+    final when = DateTime.utc(2026, 11, 26, 9).millisecondsSinceEpoch ~/ 1000;
+    final document = v2.DocumentsData(
+      id: 1,
+      identity: 'v2-a',
+      uri: 'content://provider/1',
+      displayName: 'Calculus.pdf',
+      pageCount: 504,
+      page: 311,
+      pageX: 0.25,
+      pageY: 0.5,
+      zoom: 1.5,
+      rightToLeft: 0,
+      favorite: 1,
+      inRecents: 1,
+      lastOpenedAt: when,
+    );
+    final folder = v2.LibraryFoldersData(
+      id: 1,
+      treeUri: 'content://storage/tree/books',
+      displayName: 'Books',
+      addedAt: when,
+    );
+    await verifier.testWithDataIntegrity(
+      oldVersion: 2,
+      newVersion: 3,
+      createOld: v2.DatabaseAtV2.new,
+      createNew: v3.DatabaseAtV3.new,
+      openTestedDatabase: LibraryDatabase.new,
+      createItems: (batch, oldDb) {
+        batch
+          ..insert(oldDb.documents, document)
+          ..insert(oldDb.libraryFolders, folder);
+      },
+      validateItems: (newDb) async {
+        expect(await newDb.select(newDb.documents).get(), [
+          v3.DocumentsData.fromJson(document.toJson()),
+        ]);
+        expect(await newDb.select(newDb.libraryFolders).get(), [
+          v3.LibraryFoldersData.fromJson(folder.toJson()),
+        ]);
+        expect(await newDb.select(newDb.openTabs).get(), isEmpty);
       },
     );
   });

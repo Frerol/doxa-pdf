@@ -242,6 +242,46 @@ extension LibraryFoldersRepository on LibraryRepository {
       (_db.delete(_db.folders)..where((f) => f.id.equals(id))).go();
 }
 
+/// The documents open in tabs, kept across restarts (FR-FILE-007).
+extension OpenTabsRepository on LibraryRepository {
+  /// Replaces the saved tabs with [documentIds], left to right, the one at
+  /// [active] shown.
+  Future<void> saveOpenTabs(List<int> documentIds, {required int active}) =>
+      _db.transaction(() async {
+        await _db.delete(_db.openTabs).go();
+        await _db.batch(
+          (batch) => batch.insertAll(_db.openTabs, [
+            for (final (i, id) in documentIds.indexed)
+              OpenTabsCompanion.insert(
+                documentId: Value(id),
+                position: i,
+                active: Value(i == active),
+              ),
+          ]),
+        );
+      });
+
+  /// The saved tabs, left to right, and which one was shown. Documents that
+  /// are gone or can no longer be reopened are left out.
+  Future<({List<LibraryDocument> documents, int active})> openTabs() async {
+    final query = _db.select(_db.openTabs).join([
+      innerJoin(
+        _db.documents,
+        _db.documents.id.equalsExp(_db.openTabs.documentId),
+      ),
+    ])..orderBy([OrderingTerm.asc(_db.openTabs.position)]);
+    final documents = <LibraryDocument>[];
+    var active = 0;
+    for (final row in await query.get()) {
+      final document = LibraryDocument._(row.readTable(_db.documents));
+      if (!document.canReopen) continue;
+      if (row.readTable(_db.openTabs).active) active = documents.length;
+      documents.add(document);
+    }
+    return (documents: documents, active: active);
+  }
+}
+
 /// Where the thumbnails of the library's documents are kept.
 final class ThumbnailStore {
   ThumbnailStore(this.directory);
