@@ -33,7 +33,7 @@ Move opens Doxa's own folder picker: the library folders on the same storage, th
 
 | Size class | Layout |
 |---|---|
-| **Compact** (phones) | Top app bar (a tap on the page hides it, §7) + bottom **annotation toolbar** in annotate mode. Panels open as full-screen sheets. |
+| **Compact** (phones) | Top app bar, a bottom action bar in portrait, and the annotation tools as a **second row at the top** (§7, "Phones"). Panels open as full-screen pages. |
 | **Medium** (small tablets, split screen) | Tabs row + annotation toolbar **fixed at the top**. The side panel docks on the left when it fits, otherwise it opens as a modal sheet. |
 | **Expanded** (large tablets, desktop) | Tabs row, annotation toolbar **fixed at the top**, a **side panel docked on the left** (bookmarks, contents, annotations) and a full-screen thumbnail grid (§7). |
 
@@ -107,7 +107,7 @@ maintainer keeps; this section is what the app follows.
 
 ## 7. Decisions from the MVP session (2026-11-24)
 - **No explicit annotate mode for the stylus**: the S Pen always writes. Finger tools (markup, notes, shapes) are chosen in the toolbar, and otherwise the finger only reads.
-- **Toolbar fixed at the top** on tablets. Phones use the compact bottom toolbar.
+- **Toolbar fixed at the top** on tablets. Phones also put the tools in a row at the top (changed 2026-11-26, §7 "Phones"); the bottom holds the tool's presets.
 - **Tabs on tablets** as well as desktop.
 - **Tabs (FR-FILE-007), maintainer decisions 2026-11-26:**
   - On medium and expanded widths the tab row sits **under the reader's app bar** and hides with it. Each tab has its own close button,
@@ -181,8 +181,34 @@ Each point below is the target for alpha 1 unless it names a feature that is not
 - Each row has a title, a one-line description and a trailing switch; a choice opens a small dialog with radio options.
 - Doxa's own settings content stays ours: categories and controls follow this structure, and the texts are written by us.
 
+**Phones** (compact width; observed in portrait at about 360 × 800 dp and in landscape at about 800 × 360 dp)
+- Same as above: the middle tap that hides everything, the page indicator pill, the back/forward control, double tap, no zoom buttons, and the
+  centred view-options dialog. In landscape the dialog scrolls, and its OK button stays pinned at the bottom.
+- **Default layout:** continuous vertical scrolling, with the scrubber grip on the right edge. Portrait fits the width, and landscape fits the
+  page height. When the bars hide in landscape, the page re-fits to the full height.
+- **Portrait bars:** the top bar holds back, the tool-set selector, undo, the tab counter and the overflow menu. A **bottom bar** holds four
+  actions: thumbnails, search, reading mode and the navigation list. Both hide with the middle tap.
+- **Landscape bars:** there is no bottom bar. Its actions join the top bar, and the top bar draws over the page.
+- **Tabs:** there is no tab row. A counter opens the tab grid of §7 "Tabs": two columns of cards, each with the name, a close button and the
+  current page, with long-press drag to reorder.
+- **Navigation list and thumbnails** are **full-screen pages** in both orientations, with a back arrow, the same section tabs (contents
+  first) and the same rows. Tapping an entry or a thumbnail **closes the page** and jumps. Thumbnails use 3 columns in portrait and 6 in landscape.
+- **Annotation tools:** choosing a tool set adds a **second row under the top bar**, never at the bottom. Undo moves into that row.
+  - **Portrait:** the row scrolls sideways. A selected tool replaces the bottom bar with a **preset bar**: four presets of that tool and a close button.
+  - **Landscape:** all tools fit in the row. The presets open inline in the row, next to the selected tool, and tapping the selected tool again deselects it.
+  - The chevron on the active preset opens a **style sheet**: a live preview, then colour, thickness and opacity. A bottom sheet in portrait, a
+    centred panel about half the width in landscape. The colour row opens a palette page inside the same sheet.
+  - The page indicator and the back/forward control hide while a tool is active.
+- **Text selection:** two handles and a floating menu under the selection, with copy, translate, dictionary and more, and the markup actions
+  (highlight, underline, squiggly, strikeout). The menu uses two rows in portrait and one row in landscape. A tap elsewhere clears it.
+- **Search:** the top bar becomes the search field. Previous and next sit in a pill at the bottom right (where the back/forward control is,
+  at the bottom left). A results list opens as a full-width page under the field, with section, snippet and page.
+- **Settings:** the categories are a list, and each one opens its own page.
+- **Back:** unlike the reference, system Back first clears a text selection, then leaves the active tool, and only then leaves the document.
+  The reference closes the document straight away in those states, which loses context.
+
 ### Still open
-- Toolbar placement on landscape phones.
+- (none for the reader layout)
 
 ## 8. Familiar layout and workflows
 
