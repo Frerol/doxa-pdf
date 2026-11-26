@@ -51,7 +51,7 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 | `packages/doxa_engine` | `PdfEngine` on PDFium: engine isolate, priority queue with generation cancellation, render/edit instances, text, search; `FakePdfEngine` in `testing.dart` | `dart test` (needs PDFium) |
 | `packages/pdfium_ffi` | ffigen-generated PDFium bindings + `openPdfium()` loader | `dart test` (needs PDFium) |
 | `packages/doxa_platform` | Android plugin (pigeon) | `flutter test` |
-| `tools/` | `check.sh`, `fetch_pdfium.sh`, `pdfium.lock`, `fetch_corpus.sh`, `generate_corpus.py`, dependency license checks | `python3 -m unittest` |
+| `tools/` | `check.sh`, `fetch_pdfium.sh`, `pdfium.lock`, `fetch_corpus.sh`, `generate_corpus.py`, `build_dictionary.py` (dictionary packs), dependency license checks | `python3 -m unittest` |
 | `test_corpus/` | Small license-cleared PDF fixtures, `MANIFEST` (source + license per file); large files fetched into git-ignored `external/` | used by `pdfium_ffi` tests |
 | `spike/*` branches | Throwaway prototypes (`ink_lab`, `annot_write`, `saf_lab`, `render_probe`, `render_lab`). **Reuse their code as a reference; never merge them** | — |
 
@@ -75,6 +75,7 @@ tools/check.sh packages/doxa_dict     # fast loop while working: format + analyz
 python3 tools/check_repo_rules.py    # mechanical repository rules for tracked files
 python3 tools/check_dependency_licenses.py pub   # pub license check (CI also runs it, plus a Gradle check after the APK build)
 tools/fetch_corpus.sh                # large test PDFs into test_corpus/external/ (needs curl, sha256sum, Ghostscript)
+python3 tools/build_dictionary.py --help   # StarDict packs from Wiktextract JSONL or Open English WordNet (issue #43)
 cd app && flutter build apk --debug  # Android build
 cd packages/pdfium_ffi && dart run tool/ffigen.dart   # regenerate bindings (only when headers change)
 cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dart format .   # regenerate platform messages
