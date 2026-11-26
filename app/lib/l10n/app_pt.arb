@@ -125,5 +125,11 @@
   "fileActionPermissionLost": "O Doxa não tem mais permissão para alterar este arquivo.",
   "fileActionUnsupported": "Este armazenamento não permite isso para este arquivo.",
   "fileActionFailed": "Não foi possível alterar o arquivo.",
-  "documentNotReopenable": "Pronto. Para reabri-lo daqui, abra-o uma vez com Abrir arquivo."
+  "documentNotReopenable": "Pronto. Para reabri-lo daqui, abra-o uma vez com Abrir arquivo.",
+  "deleteDocumentsTitle": "{count, plural, =1{Excluir 1 documento?} other{Excluir {count} documentos?}}",
+  "deleteDocumentsMessage": "Os arquivos serão excluídos do aparelho. Não é possível desfazer.",
+  "fileActionsFailed": "Não foi possível alterar {failed} de {total} documentos.",
+  "selectedCount": "{count, plural, =1{1 selecionado} other{{count} selecionados}}",
+  "clearSelection": "Limpar seleção",
+  "selectAll": "Selecionar tudo"
 }

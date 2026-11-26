@@ -557,5 +557,47 @@
   "documentNotReopenable": "Done. To reopen it from here, open it once with Open file.",
   "@documentNotReopenable": {
     "description": "Shown after a rename or move when the app could not keep access to the file's new location."
+  },
+  "deleteDocumentsTitle": "{count, plural, =1{Delete 1 document?} other{Delete {count} documents?}}",
+  "@deleteDocumentsTitle": {
+    "description": "Title of the delete confirmation for several selected documents.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteDocumentsMessage": "The files will be deleted from the device. This cannot be undone.",
+  "@deleteDocumentsMessage": {
+    "description": "Body of the delete confirmation for several documents."
+  },
+  "fileActionsFailed": "{failed} of {total} documents could not be changed.",
+  "@fileActionsFailed": {
+    "description": "Shown when part of a batch move or delete fails.",
+    "placeholders": {
+      "failed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "selectedCount": "{count, plural, =1{1 selected} other{{count} selected}}",
+  "@selectedCount": {
+    "description": "Title of the selection bar on the home screen and in folders.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearSelection": "Clear selection",
+  "@clearSelection": {
+    "description": "Tooltip of the button that leaves selection mode."
+  },
+  "selectAll": "Select all",
+  "@selectAll": {
+    "description": "Tooltip of the button that selects every document shown."
   }
 }

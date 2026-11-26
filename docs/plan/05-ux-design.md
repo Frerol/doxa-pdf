@@ -25,7 +25,7 @@ View options saves layout, cover page, tap zones, keep zoom and page colours as 
 
 **Library file actions** (FR-FILE-011, maintainer decision 2026-11-26): each document in Recents, Favorites and a library folder has a
 ⋮ menu with **Rename**, **Move** and **Delete**. Long-press selects several documents and shows a selection bar with the same actions
-for the whole selection (except Rename). Rename keeps the `.pdf` extension and the reading state. Delete always asks first.
+for the whole selection (except Rename), plus **Select all**; while selecting, a tap selects, and Back or a tab change ends selection. Rename keeps the `.pdf` extension and the reading state. Delete always asks first.
 Move opens Doxa's own folder picker: the library folders on the same storage, then their subfolders level by level, and
 **Move here**. It is offered only for documents inside a library folder, because the system can move only between folders the app has access to.
 
