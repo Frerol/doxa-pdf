@@ -11,7 +11,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
 import '../dev/dev_documents.dart';
-import '../reader/reader_page.dart';
+import '../reader/reader_tabs.dart';
 import '../settings/app_settings.dart';
 import '../settings/settings_page.dart';
 import 'document_actions.dart';
@@ -76,6 +76,11 @@ class _LibraryHomeState extends State<LibraryHome>
 
   final _folderCache = FolderListingCache();
 
+  /// The open documents (FR-FILE-007); they stay open when the user goes
+  /// back here, and opening a document from here adds a tab.
+  final _readerTabs = ReaderTabs();
+  bool _readerShown = false;
+
   late final DocumentActions? _actions = switch (widget.documentFiles) {
     final files? => DocumentActions(
       files: files,
@@ -118,6 +123,7 @@ class _LibraryHomeState extends State<LibraryHome>
     _query.dispose();
     _thumbnailsChanged.dispose();
     _tabs.dispose();
+    _readerTabs.dispose();
     _selection.dispose();
     super.dispose();
   }
@@ -296,21 +302,18 @@ class _LibraryHomeState extends State<LibraryHome>
       await release?.call();
       return;
     }
-    final engine = widget.engine;
-    final settings = widget.settings;
     final state = record?.state;
-    Future<PdfEngine>? readerEngine;
-    final route = MaterialPageRoute<void>(
-      builder: (_) => ReaderPage(
-        engine: readerEngine ??= Future.sync(engine),
-        source: FileSource(path),
+    _readerTabs.open(
+      ReaderTab(
+        // The same document opened again shows its tab.
+        key: identity ?? path,
         title: displayName,
-        settings: settings,
-        releaseSource: release,
-        initialPosition: state == null
+        source: FileSource(path),
+        release: release,
+        position: state == null
             ? null
             : (page: state.page, x: state.x, y: state.y, zoom: state.zoom),
-        initialRightToLeft: state?.rightToLeft ?? false,
+        rightToLeft: state?.rightToLeft ?? false,
         onReadingState: record == null
             ? null
             : (position, rightToLeft, pageCount) => unawaited(
@@ -332,10 +335,27 @@ class _LibraryHomeState extends State<LibraryHome>
                   _thumbnail(engine, document, info, identity!),
       ),
     );
+    _showReader();
+  }
+
+  /// Shows the open tabs (FR-FILE-007), unless they are already shown.
+  void _showReader() {
+    if (_readerShown) return;
+    _readerShown = true;
+    final engine = widget.engine;
+    Future<PdfEngine>? readerEngine;
     unawaited(
-      Navigator.of(context).push(route).then((_) async {
-        if (readerEngine == null) await release?.call();
-      }),
+      Navigator.of(context)
+          .push(
+            MaterialPageRoute<void>(
+              builder: (_) => ReaderWorkspace(
+                tabs: _readerTabs,
+                engine: readerEngine ??= Future.sync(engine),
+                settings: widget.settings,
+              ),
+            ),
+          )
+          .whenComplete(() => _readerShown = false),
     );
   }
 

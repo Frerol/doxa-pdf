@@ -61,6 +61,8 @@ class ReaderPage extends StatefulWidget {
     this.initialRightToLeft = false,
     this.onReadingState,
     this.onOpened,
+    this.tabRow,
+    this.onGiveUp,
   });
 
   final Future<PdfEngine> engine;
@@ -86,6 +88,14 @@ class ReaderPage extends StatefulWidget {
   /// background, and when the reader closes.
   final ReadingStateListener? onReadingState;
   final DocumentOpenedListener? onOpened;
+
+  /// The open documents (FR-FILE-007), shown under the app bar and hidden
+  /// with it.
+  final PreferredSizeWidget? tabRow;
+
+  /// Closes the document when the user gives up opening it (a cancelled
+  /// password prompt). Without it, the page's route is removed.
+  final VoidCallback? onGiveUp;
 
   @override
   State<ReaderPage> createState() => _ReaderPageState();
@@ -224,7 +234,9 @@ class _ReaderPageState extends State<ReaderPage> {
     if (!mounted) return;
     _promptPending = false;
     if (password == null) {
-      if (route.isFirst) {
+      if (widget.onGiveUp case final giveUp?) {
+        giveUp();
+      } else if (route.isFirst) {
         setState(() => _failure = _Failure.cancelled);
       } else {
         navigator.removeRoute(route);
@@ -380,6 +392,7 @@ class _ReaderPageState extends State<ReaderPage> {
                   ? const BackButton()
                   : null,
               title: Text(widget.title, overflow: TextOverflow.ellipsis),
+              bottom: widget.tabRow,
               actions: [
                 if (controller != null && controller.info.pageCount > 0) ...[
                   Builder(

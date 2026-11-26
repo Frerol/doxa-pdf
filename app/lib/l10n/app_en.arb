@@ -599,5 +599,14 @@
   "selectAll": "Select all",
   "@selectAll": {
     "description": "Tooltip of the button that selects every document shown."
+  },
+  "closeTab": "Close {name}",
+  "@closeTab": {
+    "description": "Tooltip of the button that closes a document's tab (FR-FILE-007).",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   }
 }

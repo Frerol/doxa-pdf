@@ -80,6 +80,12 @@ Default desktop shortcuts: `H` highlight, `U` underline, `P` pen, `E` eraser, `L
 - **No explicit annotate mode for the stylus**: the S Pen always writes. Finger tools (markup, notes, shapes) are chosen in the toolbar, and otherwise the finger only reads.
 - **Toolbar fixed at the top** on tablets. Phones use the compact bottom toolbar.
 - **Tabs on tablets** as well as desktop.
+- **Tabs (FR-FILE-007), maintainer decisions 2026-11-26:**
+  - On medium and expanded widths the tab row sits **under the reader's app bar** and hides with it. Each tab has its own close button.
+  - Opening a document from home **adds a tab**. A document that is already open shows its tab instead.
+  - Back returns home and keeps the tabs.
+  - There is **no fixed tab limit**. Only the active tab keeps its document open in the engine; the others keep their place and reopen
+    there when shown. One large scanned book alone comes close to the NFR-PERF-006 budget, so several open documents would not fit.
 
 ### Still open
 - Toolbar placement on landscape phones.

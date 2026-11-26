@@ -7,6 +7,7 @@ import 'package:doxa_pdf/features/library/library_database.dart';
 import 'package:doxa_pdf/features/library/library_home.dart';
 import 'package:doxa_pdf/features/library/library_repository.dart';
 import 'package:doxa_pdf/features/reader/reader_page.dart';
+import 'package:doxa_pdf/features/reader/reader_tabs.dart';
 import 'package:doxa_pdf/l10n/gen/app_localizations.dart';
 import 'package:doxa_pdf/src/doxa_app.dart';
 import 'package:doxa_platform/doxa_platform.dart';
@@ -267,7 +268,8 @@ void main() {
       expect(reader.initialPosition, (page: 12, x: 0.0, y: 0.25, zoom: 1.5));
       expect(reader.initialRightToLeft, isTrue);
       await closeReader(tester);
-      expect(documents.released, [1]);
+      // The tab stays open, so its source is still leased (FR-FILE-007).
+      expect(documents.released, isEmpty);
     });
 
     testWidgets('a lost permission explains how to open the file again', (
@@ -673,6 +675,98 @@ void main() {
         'move $tree/document/b $tree sem',
       ]);
       expect(find.textContaining('selected'), findsNothing);
+    });
+  });
+
+  group('tabs (FR-FILE-007)', () {
+    String shownTitle(WidgetTester tester) =>
+        tester.widget<ReaderPage>(find.byType(ReaderPage)).title;
+
+    Future<void> openBoth(WidgetTester tester) async {
+      await launch(tester);
+      await openPicked(tester, pdf(1, 'Calculus.pdf'));
+      await closeReader(tester);
+      await openPicked(tester, pdf(2, 'Physics.pdf'));
+    }
+
+    testWidgets('a document opened from home joins the open tabs', (
+      tester,
+    ) async {
+      await openBoth(tester);
+      expect(shownTitle(tester), 'Physics.pdf');
+      expect(find.byTooltip('Close Calculus.pdf'), findsOneWidget);
+      expect(find.byTooltip('Close Physics.pdf'), findsOneWidget);
+      // Inactive tabs hold no document in the engine (NFR-PERF-006).
+      expect(engine.openDocumentCount, 1);
+    });
+
+    testWidgets('switching back shows the tab where it was left', (
+      tester,
+    ) async {
+      final first = pdf(1, 'Calculus.pdf');
+      documents.persisted[first.uri] = first;
+      final doc = await library.recordOpen(
+        identity: 'id:${first.path}',
+        displayName: first.displayName,
+        uri: first.uri,
+      );
+      await library.saveState(doc.id, (
+        page: 12,
+        x: 0,
+        y: 0,
+        zoom: 1,
+        rightToLeft: true,
+      ), pageCount: 20);
+      await launch(tester);
+      await tester.tap(find.text('Calculus.pdf'));
+      await tester.pumpAndSettle();
+      await closeReader(tester);
+      await openPicked(tester, pdf(2, 'Physics.pdf'));
+
+      await tester.tap(find.text('Calculus.pdf'));
+      await tester.pumpAndSettle();
+      final reader = tester.widget<ReaderPage>(find.byType(ReaderPage));
+      expect(reader.title, 'Calculus.pdf');
+      expect(reader.initialPosition?.page, 12);
+      expect(reader.initialRightToLeft, isTrue);
+      expect(engine.openDocumentCount, 1);
+    });
+
+    testWidgets('opening an open document shows its tab, not a second one', (
+      tester,
+    ) async {
+      await openBoth(tester);
+      await closeReader(tester);
+      await tester.tap(find.text('Calculus.pdf'));
+      await tester.pumpAndSettle();
+      expect(shownTitle(tester), 'Calculus.pdf');
+      expect(find.byTooltip('Close Calculus.pdf'), findsOneWidget);
+      // The extra lease from reopening went back at once.
+      expect(documents.released, [1]);
+    });
+
+    testWidgets('closing tabs shows the one to the left, then home', (
+      tester,
+    ) async {
+      await openBoth(tester);
+      await tester.tap(find.byTooltip('Close Physics.pdf'));
+      await tester.pumpAndSettle();
+      expect(shownTitle(tester), 'Calculus.pdf');
+      expect(documents.released, [2]);
+
+      await tester.tap(find.byTooltip('Close Calculus.pdf'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ReaderPage), findsNothing);
+      expect(find.text('Open file'), findsOneWidget);
+      expect(documents.released, [2, 1]);
+    });
+
+    testWidgets('a phone shows no tab row', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await openBoth(tester);
+      expect(find.byType(ReaderTabRow), findsNothing);
     });
   });
 
