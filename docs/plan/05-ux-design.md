@@ -18,7 +18,7 @@ flowchart LR
   Reader --> Review[Annotations review panel]
   Reader --> Bookmarks[Bookmarks panel]
   Reader --> ViewOptions[View options<br/>layout, page colours]
-  Home --> Settings[Settings<br/>appearance, pen, markup, saving, language, about]
+  Home --> Settings[Settings<br/>search · General · Viewing · Tabs · Annotating · Stylus · Dictionaries · About]
 ```
 
 View options saves layout, cover page, tap zones, keep zoom and page colours as global defaults. Right-to-left page order is per document.
@@ -33,9 +33,9 @@ Move opens Doxa's own folder picker: the library folders on the same storage, th
 
 | Size class | Layout |
 |---|---|
-| **Compact** (phones) | Top app bar (auto-hide) + bottom **annotation toolbar** in annotate mode. Panels open as full-screen sheets. |
-| **Medium** (small tablets, split screen) | Tabs row + annotation toolbar **fixed at the top**. Panels open as modal side sheets. |
-| **Expanded** (large tablets, desktop) | Tabs row, annotation toolbar **fixed at the top**, left **navigation rail** for panels (outline/thumbnails/review/bookmarks) as a resizable side pane. |
+| **Compact** (phones) | Top app bar (a tap on the page hides it, §7) + bottom **annotation toolbar** in annotate mode. Panels open as full-screen sheets. |
+| **Medium** (small tablets, split screen) | Tabs row + annotation toolbar **fixed at the top**. The side panel docks on the left when it fits, otherwise it opens as a modal sheet. |
+| **Expanded** (large tablets, desktop) | Tabs row, annotation toolbar **fixed at the top**, a **side panel docked on the left** (bookmarks, contents, annotations) and a full-screen thumbnail grid (§7). |
 
 ### Annotation toolbar (all sizes)
 `[Highlighter ▾] [Underline/Strike ▾] [Pen 1] [Pen 2] [Highlighter pen] [Eraser ▾] [Lasso] [Note] [Shapes ▾] | [Undo] [Redo] | [Stylus-only ✎]`
@@ -94,9 +94,7 @@ maintainer keeps; this section is what the app follows.
   section has "See all", which opens its full list (the current lists, with search, sort and multi-selection).
 - **Reader (Night):** a compact app bar (back, side-panel button, title, page number in tabular figures, tools). Under it, the tab
   row has browser-like tabs with a top stripe in the document's colour. Both hide together in full screen.
-  - The **side panel** opens and closes with its app-bar button and pushes the page aside instead of covering it.
-  - Icons at its top switch its content. Alpha 1 has **Thumbnails** and **Contents**; **Bookmarks** and **Annotations** join when
-    they are built. A feature that is not built is never shown.
+  - The **side panel** and the **thumbnail grid** follow "Reader navigation and chrome" in §7.
 - **App theme and page colour are separate:** light and dark change the bars, tabs and panels. The page follows its own colour
   option in View options (normal, night, sepia, custom).
 
@@ -121,6 +119,67 @@ maintainer keeps; this section is what the app follows.
   - Back returns home and keeps the tabs.
   - There is **no fixed tab limit**. Only the active tab keeps its document open in the engine; the others keep their place and reopen
     there when shown. One large scanned book alone comes close to the NFR-PERF-006 budget, so several open documents would not fit.
+
+### Reader navigation and chrome (maintainer decisions 2026-11-26)
+Generic requirements for the reader, written from observations of the reference layout (§8) and the maintainer's choices.
+Each point below is the target for alpha 1 unless it names a feature that is not built yet; a feature that is not built is never shown.
+
+**Bars and taps**
+- A **single tap in the middle** of the page hides the app bar, the tab row, the page indicator, the scrubber, the history control and the
+  system bars together; the next tap shows them again. This works in every mode, not only in full screen (#95). At fit zoom the page re-fits to the taller area.
+- Bars **never hide on scroll**.
+- With the edge-tap option on, a tap within about the outer **10–15% of the screen width** turns to the previous or next page (or spread)
+  and does not toggle the bars.
+
+**Page indicator, scrubber and history**
+- The **page indicator** sits at the top left of the page area, under the tab row: the page label, then the position and total, for
+  example "iv (6 / 120)". In a spread it names the last visible page. At fit zoom in paged layouts it is a plain strip; when zoomed in or
+  scrolling continuously it becomes a small floating pill over the page. The page number leaves the app bar.
+- A **scrubber grip** sits on the bottom edge of the page area. Its position across the width maps to the page. Dragging it turns pages live
+  and updates the indicator, with a thin track shown only while dragging and no preview bubble. In vertical scrolling it moves to the right
+  edge and works as a fast-scroll handle. Its range follows the page area, so it shrinks when the side panel is open.
+- After a jump (contents entry, thumbnail, link, search result) a small **back/forward control** appears at the bottom left. It walks the
+  jump history like a browser and fades to a faint state when idle.
+
+**Zoom**
+- No zoom buttons, percentage or slider in the bars. **Pinch** zooms freely.
+- **Double tap** toggles between fit and about 2.5× around the tapped point.
+- **Fit page** or **fit width** is a setting (Settings → Viewing), default fit page. **Keep zoom when turning pages** is a setting, on by default.
+- Desktop keeps its keyboard zoom shortcuts (§4).
+
+**Side panel** (bookmarks, contents, annotations)
+- Opens and closes with its app-bar button. It docks **on the left** (maintainer choice), below the tab row, so the app bar and tabs stay
+  full width above it. It takes about a quarter of the width in landscape and about two fifths in portrait on tablets; on phones it is a full-screen sheet.
+- It **docks, never overlays**: no scrim, and the page area narrows. At fit zoom the page re-fits to the narrower area. When zoomed in, the
+  zoom and position are kept and the page is clipped at the panel. Closing it gives the width back with the same zoom and position.
+- Three icon tabs switch its content, in this order: **Bookmarks**, **Contents**, **Annotations**. The header shows the section name and a close
+  button, plus the section's own tools (search, and expand/collapse all for contents; sort and filter for annotations).
+- Contents rows show the title on the left and the **page label** on the right; nested entries are indented under a chevron that expands them.
+- Tapping an entry jumps there and **keeps the panel open** on tablets (it closes on phones). A tap on the page toggles the bars and leaves
+  the panel open; when the bars hide, the panel takes the full height.
+
+**Thumbnails**
+- A separate app-bar button opens a **full-screen thumbnail grid** that replaces the reader, with its own bar and back arrow (the tab row is hidden).
+- The grid adapts to the width: about 4 columns in portrait and 6 in landscape on the reference tablet. Each thumbnail has its page label
+  centred at the bottom edge, and the current page's label uses the accent colour.
+- Tapping a thumbnail opens that page and closes the grid, keeping the zoom. The back arrow and system Back close the grid and stay in the document.
+- Page editing from the grid (reorder, insert, delete) comes with the page features of a later alpha.
+
+**View options**
+- A **centred dialog** over a dimmed reader (about half the width in landscape, three quarters in portrait). Changes apply live behind it, and
+  it stays open until **OK**.
+- In order: **Layout** as a 2×2 choice grid (single page, two pages, cover + two pages, and reflow when it exists); **Vertical scrolling**
+  as a switch (off = horizontal paging); **Page colour** as three presets (normal, night, sepia) and a "more" button that opens a grid of
+  paper/text combinations with custom colours; **Actions** (rotate, crop) when they are built.
+- Two pages pair from the first page: (1, 2), (3, 4). Cover + two pages shows page 1 alone on the right half, then (2, 3), (4, 5), and a lone last
+  page on the left half. Turning moves by spread.
+
+**Settings**
+- A **search field** at the top that filters settings as the user types.
+- Categories in order: **General, Viewing, Tabs, Annotating, Stylus** (plus Dictionaries and About, which Doxa has). Each category is one
+  scrolling page with section headers; there are no deeper sub-pages.
+- Each row has a title, a one-line description and a trailing switch; a choice opens a small dialog with radio options.
+- Doxa's own settings content stays ours: categories and controls follow this structure, and the texts are written by us.
 
 ### Still open
 - Toolbar placement on landscape phones.
