@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'doxa_platform_platform_interface.dart';
+import 'library_folders.dart';
 import 'pdf_documents.dart';
 import 'src/messages.g.dart';
 
@@ -20,6 +21,9 @@ class PigeonDoxaPlatform extends DoxaPlatformPlatform {
 
   @override
   late final PdfDocuments pdfDocuments = _PigeonPdfDocuments(_hostApi);
+
+  @override
+  late final LibraryFolders libraryFolders = _PigeonLibraryFolders(_hostApi);
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -67,17 +71,38 @@ class _PigeonPdfDocuments implements PdfDocuments, PdfIntentApi {
   @override
   Future<void> releasePdf(int leaseId) => _hostApi.releasePdf(leaseId);
 
-  Future<T> _access<T>(Future<T> Function() action) async {
-    try {
-      return await action();
-    } on PlatformException catch (error) {
-      throw PdfAccessException(switch (error.code) {
-        'missing' => PdfAccessError.missing,
-        'notPdf' => PdfAccessError.notPdf,
-        'permissionLost' => PdfAccessError.permissionLost,
-        'unreadable' => PdfAccessError.unreadable,
-        _ => throw error,
-      });
-    }
+  Future<T> _access<T>(Future<T> Function() action) => _pdfAccess(action);
+}
+
+class _PigeonLibraryFolders implements LibraryFolders {
+  _PigeonLibraryFolders(this._hostApi);
+
+  final DoxaPlatformPluginApi _hostApi;
+
+  @override
+  Future<PlatformFolder?> pickFolder() => _pdfAccess(_hostApi.pickFolder);
+
+  @override
+  Future<List<PlatformFolderEntry>> listFolder(
+    String treeUri, {
+    String? documentId,
+  }) => _pdfAccess(() => _hostApi.listFolder(treeUri, documentId));
+
+  @override
+  Future<void> releaseFolder(String treeUri) => _hostApi.releaseFolder(treeUri);
+}
+
+/// Maps host errors to [PdfAccessException].
+Future<T> _pdfAccess<T>(Future<T> Function() action) async {
+  try {
+    return await action();
+  } on PlatformException catch (error) {
+    throw PdfAccessException(switch (error.code) {
+      'missing' => PdfAccessError.missing,
+      'notPdf' => PdfAccessError.notPdf,
+      'permissionLost' => PdfAccessError.permissionLost,
+      'unreadable' => PdfAccessError.unreadable,
+      _ => throw error,
+    });
   }
 }

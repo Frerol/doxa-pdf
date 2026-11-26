@@ -188,6 +188,128 @@ class PlatformPdf {
   }
 }
 
+/// A folder tree the user granted with the system folder picker
+/// (FR-FILE-006). [treeUri] keeps a persisted grant until released.
+class PlatformFolder {
+  PlatformFolder({required this.treeUri, required this.displayName});
+
+  String treeUri;
+
+  String displayName;
+
+  List<Object?> _toList() {
+    return <Object?>[treeUri, displayName];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static PlatformFolder decode(Object result) {
+    result as List<Object?>;
+    return PlatformFolder(
+      treeUri: result[0]! as String,
+      displayName: result[1]! as String,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! PlatformFolder || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(treeUri, other.treeUri) &&
+        _deepEquals(displayName, other.displayName);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'PlatformFolder(treeUri: $treeUri, displayName: $displayName)';
+  }
+}
+
+/// A PDF or a subfolder inside a granted folder tree.
+class PlatformFolderEntry {
+  PlatformFolderEntry({
+    required this.documentId,
+    required this.uri,
+    required this.name,
+    required this.isDirectory,
+    this.size,
+    this.lastModified,
+  });
+
+  /// Pass to [DoxaPlatformPluginApi.listFolder] to open a subfolder.
+  String documentId;
+
+  /// Document URI under the tree; opens a PDF with `openPersistedPdf`.
+  String uri;
+
+  String name;
+
+  bool isDirectory;
+
+  /// Bytes, or null when the provider does not say (and for folders).
+  int? size;
+
+  /// Milliseconds since the epoch, or null when unknown.
+  int? lastModified;
+
+  List<Object?> _toList() {
+    return <Object?>[documentId, uri, name, isDirectory, size, lastModified];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static PlatformFolderEntry decode(Object result) {
+    result as List<Object?>;
+    return PlatformFolderEntry(
+      documentId: result[0]! as String,
+      uri: result[1]! as String,
+      name: result[2]! as String,
+      isDirectory: result[3]! as bool,
+      size: result[4] as int?,
+      lastModified: result[5] as int?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! PlatformFolderEntry || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(documentId, other.documentId) &&
+        _deepEquals(uri, other.uri) &&
+        _deepEquals(name, other.name) &&
+        _deepEquals(isDirectory, other.isDirectory) &&
+        _deepEquals(size, other.size) &&
+        _deepEquals(lastModified, other.lastModified);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'PlatformFolderEntry(documentId: $documentId, uri: $uri, name: $name, isDirectory: $isDirectory, size: $size, lastModified: $lastModified)';
+  }
+}
+
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
   @override
@@ -197,6 +319,12 @@ class _PigeonCodec extends StandardMessageCodec {
       buffer.putInt64(value);
     } else if (value is PlatformPdf) {
       buffer.putUint8(129);
+      writeValue(buffer, value.encode());
+    } else if (value is PlatformFolder) {
+      buffer.putUint8(130);
+      writeValue(buffer, value.encode());
+    } else if (value is PlatformFolderEntry) {
+      buffer.putUint8(131);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -208,6 +336,10 @@ class _PigeonCodec extends StandardMessageCodec {
     switch (type) {
       case 129:
         return PlatformPdf.decode(readValue(buffer)!);
+      case 130:
+        return PlatformFolder.decode(readValue(buffer)!);
+      case 131:
+        return PlatformFolderEntry.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -397,6 +529,72 @@ class DoxaPlatformPluginApi {
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
       <Object?>[leaseId],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  /// Asks the user for a folder and keeps read and write access to it
+  /// (FR-FILE-006). Null when the picker is cancelled.
+  Future<PlatformFolder?> pickFolder() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.pickFolder$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as PlatformFolder?;
+  }
+
+  /// The PDFs and subfolders directly inside [documentId] of the tree
+  /// [treeUri], or inside its root when [documentId] is null. Fails with
+  /// `permissionLost` or `missing`.
+  Future<List<PlatformFolderEntry>> listFolder(
+    String treeUri,
+    String? documentId,
+  ) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.listFolder$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[treeUri, documentId],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as List<Object?>).cast<PlatformFolderEntry>();
+  }
+
+  /// Gives up the persisted grant of a folder the user removed.
+  Future<void> releaseFolder(String treeUri) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.releaseFolder$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[treeUri],
     );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
     _extractReplyValueOrThrow(

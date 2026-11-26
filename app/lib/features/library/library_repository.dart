@@ -170,6 +170,55 @@ final class LibraryRepository {
       );
 }
 
+/// A folder in the library (FR-FILE-006).
+final class LibraryFolder {
+  LibraryFolder._(LibraryFolderRow row)
+    : id = row.id,
+      treeUri = row.treeUri,
+      displayName = row.displayName;
+
+  final int id;
+  final String treeUri;
+  final String displayName;
+}
+
+/// The folders the user added to the library (FR-FILE-006).
+extension LibraryFoldersRepository on LibraryRepository {
+  /// Folders by name.
+  Stream<List<LibraryFolder>> watchFolders() {
+    final query = _db.select(_db.folders)
+      ..orderBy([
+        (f) => OrderingTerm.asc(f.displayName.collate(Collate.noCase)),
+        (f) => OrderingTerm.asc(f.id),
+      ]);
+    return query.watch().map(
+      (rows) => [for (final row in rows) LibraryFolder._(row)],
+    );
+  }
+
+  /// Adds a folder; adding the same folder again only updates its name.
+  Future<void> addFolder({
+    required String treeUri,
+    required String displayName,
+  }) => _db
+      .into(_db.folders)
+      .insert(
+        FoldersCompanion.insert(
+          treeUri: treeUri,
+          displayName: displayName,
+          addedAt: _clock(),
+        ),
+        onConflict: DoUpdate(
+          (_) => FoldersCompanion(displayName: Value(displayName)),
+          target: [_db.folders.treeUri],
+        ),
+      );
+
+  /// Removes a folder from the library; its files are not touched.
+  Future<void> removeFolder(int id) =>
+      (_db.delete(_db.folders)..where((f) => f.id.equals(id))).go();
+}
+
 /// Where the thumbnails of the library's documents are kept.
 final class ThumbnailStore {
   ThumbnailStore(this.directory);

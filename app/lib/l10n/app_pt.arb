@@ -98,5 +98,17 @@
   "addToFavorites": "Adicionar aos favoritos",
   "removeFromFavorites": "Remover dos favoritos",
   "removeFromRecents": "Remover dos recentes",
-  "libraryCannotReopen": "Não é mais possível abrir este documento daqui. Abra-o de novo com Abrir arquivo."
+  "libraryCannotReopen": "Não é mais possível abrir este documento daqui. Abra-o de novo com Abrir arquivo.",
+  "libraryFolders": "Pastas",
+  "addFolder": "Adicionar pasta",
+  "libraryFoldersEmpty": "Adicione uma pasta com seus PDFs para navegar por ela aqui.",
+  "removeFolder": "Remover da biblioteca",
+  "folderEmpty": "Nenhum PDF ou pasta aqui.",
+  "folderPermissionLost": "O acesso a esta pasta foi perdido. Remova-a da biblioteca e adicione-a de novo.",
+  "folderMissing": "Esta pasta não existe mais.",
+  "folderUnreadable": "Não foi possível ler esta pasta.",
+  "sortBy": "Ordenar",
+  "sortName": "Nome",
+  "sortModified": "Data de modificação",
+  "sortSize": "Tamanho"
 }

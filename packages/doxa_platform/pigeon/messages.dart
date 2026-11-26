@@ -31,6 +31,41 @@ class PlatformPdf {
   bool persistedWrite;
 }
 
+/// A folder tree the user granted with the system folder picker
+/// (FR-FILE-006). [treeUri] keeps a persisted grant until released.
+class PlatformFolder {
+  PlatformFolder(this.treeUri, this.displayName);
+
+  String treeUri;
+  String displayName;
+}
+
+/// A PDF or a subfolder inside a granted folder tree.
+class PlatformFolderEntry {
+  PlatformFolderEntry(
+    this.documentId,
+    this.uri,
+    this.name,
+    this.isDirectory,
+    this.size,
+    this.lastModified,
+  );
+
+  /// Pass to [DoxaPlatformPluginApi.listFolder] to open a subfolder.
+  String documentId;
+
+  /// Document URI under the tree; opens a PDF with `openPersistedPdf`.
+  String uri;
+  String name;
+  bool isDirectory;
+
+  /// Bytes, or null when the provider does not say (and for folders).
+  int? size;
+
+  /// Milliseconds since the epoch, or null when unknown.
+  int? lastModified;
+}
+
 @ConfigurePigeon(
   PigeonOptions(
     dartPackageName: 'doxa_platform',
@@ -70,6 +105,20 @@ abstract class DoxaPlatformPluginApi {
   PlatformPdf? takeIncomingPdf();
 
   void releasePdf(int leaseId);
+
+  /// Asks the user for a folder and keeps read and write access to it
+  /// (FR-FILE-006). Null when the picker is cancelled.
+  @asyncCallback
+  PlatformFolder? pickFolder();
+
+  /// The PDFs and subfolders directly inside [documentId] of the tree
+  /// [treeUri], or inside its root when [documentId] is null. Fails with
+  /// `permissionLost` or `missing`.
+  @asyncCallback
+  List<PlatformFolderEntry> listFolder(String treeUri, String? documentId);
+
+  /// Gives up the persisted grant of a folder the user removed.
+  void releaseFolder(String treeUri);
 }
 
 @FlutterApi()

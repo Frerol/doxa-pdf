@@ -15,6 +15,7 @@ import '../reader/reader_page.dart';
 import '../settings/app_settings.dart';
 import '../settings/settings_page.dart';
 import 'document_identity.dart';
+import 'folder_page.dart';
 import 'library_repository.dart';
 import 'library_thumbnails.dart';
 
@@ -34,6 +35,7 @@ class LibraryHome extends StatefulWidget {
     this.thumbnails,
     this.pdfDocuments,
     this.devDocumentsDir,
+    this.libraryFolders,
     this.identify = documentIdentity,
     this.clock = DateTime.now,
   });
@@ -46,6 +48,9 @@ class LibraryHome extends StatefulWidget {
   final ThumbnailStore? thumbnails;
   final PdfDocuments? pdfDocuments;
   final String? devDocumentsDir;
+
+  /// Folder access (FR-FILE-006); the Folders tab is hidden when null.
+  final LibraryFolders? libraryFolders;
   final DocumentIdentifier identify;
   final DateTime Function() clock;
 
@@ -60,6 +65,8 @@ class _LibraryHomeState extends State<LibraryHome> {
   bool _picking = false;
   bool _searching = false;
   final _query = TextEditingController();
+
+  final _folderCache = FolderListingCache();
 
   /// Bumped when a thumbnail is written, so the lists load it again.
   final _thumbnailsChanged = ValueNotifier<int>(0);
@@ -122,6 +129,57 @@ class _LibraryHomeState extends State<LibraryHome> {
       _showAccessError(PdfAccessError.unreadable);
     } finally {
       if (mounted) setState(() => _picking = false);
+    }
+  }
+
+  Future<void> _addFolder() async {
+    final folders = widget.libraryFolders!;
+    try {
+      final folder = await folders.pickFolder();
+      if (folder == null) return;
+      await widget.library!.addFolder(
+        treeUri: folder.treeUri,
+        displayName: folder.displayName,
+      );
+    } on Object catch (error) {
+      debugPrint('Doxa: cannot add folder: $error');
+      if (mounted) _showMessage(AppLocalizations.of(context).folderUnreadable);
+    }
+  }
+
+  Future<void> _removeFolder(LibraryFolder folder) async {
+    await widget.libraryFolders?.releaseFolder(folder.treeUri);
+    await widget.library?.removeFolder(folder.id);
+  }
+
+  void _browse(LibraryFolder folder) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => FolderPage(
+          folders: widget.libraryFolders!,
+          treeUri: folder.treeUri,
+          title: folder.displayName,
+          cache: _folderCache,
+          onOpen: (pdf) => unawaited(_openFromFolder(pdf)),
+        ),
+      ),
+    );
+  }
+
+  /// Opens a PDF of a library folder through the folder's grant.
+  Future<void> _openFromFolder(PlatformFolderEntry pdf) async {
+    final documents = widget.pdfDocuments;
+    if (documents == null) return;
+    try {
+      await _openPlatformPdf(
+        documents,
+        await documents.openPersistedPdf(pdf.uri),
+      );
+    } on PdfAccessException catch (error) {
+      _showAccessError(error.error);
+    } on Object catch (error) {
+      debugPrint('Doxa: cannot open ${pdf.name}: $error');
+      _showAccessError(PdfAccessError.unreadable);
     }
   }
 
@@ -303,8 +361,9 @@ class _LibraryHomeState extends State<LibraryHome> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final library = widget.library;
+    final folders = library == null ? null : widget.libraryFolders;
     return DefaultTabController(
-      length: 2,
+      length: folders == null ? 2 : 3,
       child: Scaffold(
         appBar: AppBar(
           title: _searching
@@ -361,6 +420,7 @@ class _LibraryHomeState extends State<LibraryHome> {
             tabs: [
               Tab(text: l10n.libraryRecents),
               Tab(text: l10n.libraryFavorites),
+              if (folders != null) Tab(text: l10n.libraryFolders),
             ],
           ),
         ),
@@ -395,24 +455,19 @@ class _LibraryHomeState extends State<LibraryHome> {
               onOpen: _reopen,
               showRemoveFromRecents: false,
             ),
+            if (folders != null)
+              _FolderList(
+                folders: library!.watchFolders(),
+                query: _query.text,
+                onAdd: _addFolder,
+                onBrowse: _browse,
+                onRemove: _removeFolder,
+              ),
           ],
         ),
       ),
     );
   }
-}
-
-/// Folds case and the accents of Latin letters, for the name filter.
-String _fold(String text) {
-  const from = 'àáâãäåçèéêëìíîïñòóôõöùúûüýÿ';
-  const to = 'aaaaaaceeeeiiiinooooouuuuyy';
-  final lower = text.toLowerCase();
-  final out = StringBuffer();
-  for (final char in lower.split('')) {
-    final index = from.indexOf(char);
-    out.write(index < 0 ? char : to[index]);
-  }
-  return out.toString();
 }
 
 class _DocumentList extends StatefulWidget {
@@ -459,12 +514,12 @@ class _DocumentListState extends State<_DocumentList>
       stream: _documents,
       builder: (context, snapshot) {
         final all = snapshot.data ?? const <LibraryDocument>[];
-        final query = _fold(widget.query.trim());
+        final query = foldName(widget.query.trim());
         final shown = query.isEmpty
             ? all
             : [
                 for (final d in all)
-                  if (_fold(d.displayName).contains(query)) d,
+                  if (foldName(d.displayName).contains(query)) d,
               ];
         if (shown.isEmpty) {
           if (_documents != null && !snapshot.hasData) {
@@ -650,4 +705,82 @@ String lastReadLabel(AppLocalizations l10n, DateTime when, DateTime now) {
   if (days == 1) return l10n.lastReadYesterday;
   if (days < 7) return l10n.lastReadDaysAgo(days);
   return DateFormat.yMMMd(l10n.localeName).format(when);
+}
+
+class _FolderList extends StatefulWidget {
+  const _FolderList({
+    required this.folders,
+    required this.query,
+    required this.onAdd,
+    required this.onBrowse,
+    required this.onRemove,
+  });
+
+  final Stream<List<LibraryFolder>> folders;
+  final String query;
+  final VoidCallback onAdd;
+  final ValueChanged<LibraryFolder> onBrowse;
+  final ValueChanged<LibraryFolder> onRemove;
+
+  @override
+  State<_FolderList> createState() => _FolderListState();
+}
+
+class _FolderListState extends State<_FolderList>
+    with AutomaticKeepAliveClientMixin {
+  late final Stream<List<LibraryFolder>> _folders = widget.folders;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final l10n = AppLocalizations.of(context);
+    return StreamBuilder<List<LibraryFolder>>(
+      stream: _folders,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final query = foldName(widget.query.trim());
+        final shown = [
+          for (final f in snapshot.data!)
+            if (query.isEmpty || foldName(f.displayName).contains(query)) f,
+        ];
+        final add = ListTile(
+          leading: const Icon(Icons.create_new_folder_outlined),
+          title: Text(l10n.addFolder),
+          onTap: widget.onAdd,
+        );
+        if (snapshot.data!.isEmpty) {
+          return ListView(
+            children: [
+              add,
+              _EmptyState(message: l10n.libraryFoldersEmpty),
+            ],
+          );
+        }
+        return ListView(
+          padding: const EdgeInsets.only(bottom: 88),
+          children: [
+            add,
+            for (final folder in shown)
+              ListTile(
+                leading: const Icon(Icons.folder_outlined),
+                title: Text(folder.displayName),
+                onTap: () => widget.onBrowse(folder),
+                trailing: PopupMenuButton<LibraryFolder>(
+                  onSelected: widget.onRemove,
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                      value: folder,
+                      child: Text(l10n.removeFolder),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
 }

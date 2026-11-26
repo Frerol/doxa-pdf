@@ -2,12 +2,28 @@
 
 import 'package:doxa_platform/doxa_platform.dart';
 import 'package:doxa_platform/doxa_platform_pigeon.dart';
-import 'package:doxa_platform/src/messages.g.dart' hide PlatformPdf;
+import 'package:doxa_platform/src/messages.g.dart'
+    hide PlatformPdf, PlatformFolder, PlatformFolderEntry;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('a lost folder grant is reported as permissionLost (FR-FILE-006)', () {
+    final api = FakeDoxaPlatformPluginApi(platformVersion: '42');
+    final folders = PigeonDoxaPlatform(api: api).libraryFolders;
+    expect(
+      folders.listFolder('content://p/tree/1'),
+      throwsA(
+        isA<PdfAccessException>().having(
+          (e) => e.error,
+          'error',
+          PdfAccessError.permissionLost,
+        ),
+      ),
+    );
+  });
 
   test('getPlatformVersion', () async {
     final api = FakeDoxaPlatformPluginApi(platformVersion: '42');
@@ -125,6 +141,21 @@ class FakeDoxaPlatformPluginApi implements DoxaPlatformPluginApi {
 
   @override
   Future<void> releasePdf(int leaseId) async => released = leaseId;
+
+  List<PlatformFolderEntry>? entries;
+  String? releasedFolder;
+
+  @override
+  Future<PlatformFolder?> pickFolder() async => null;
+
+  @override
+  Future<List<PlatformFolderEntry>> listFolder(
+    String treeUri,
+    String? documentId,
+  ) async => entries ?? (throw PlatformException(code: 'permissionLost'));
+
+  @override
+  Future<void> releaseFolder(String treeUri) async => releasedFolder = treeUri;
 
   @override
   // ignore: non_constant_identifier_names

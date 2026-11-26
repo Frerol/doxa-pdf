@@ -2,12 +2,17 @@
 
 import 'doxa_platform_platform_interface.dart';
 
+import 'library_folders.dart';
 import 'pdf_documents.dart';
 
+export 'library_folders.dart';
 export 'pdf_documents.dart';
 
 class DoxaPlatform {
   PdfDocuments get pdfDocuments => DoxaPlatformPlatform.instance.pdfDocuments;
+
+  LibraryFolders get libraryFolders =>
+      DoxaPlatformPlatform.instance.libraryFolders;
 
   Future<String?> getPlatformVersion() {
     return DoxaPlatformPlatform.instance.getPlatformVersion();

@@ -73,7 +73,7 @@ def violations(root, paths, names, targets=()):
         if (
             path == "LICENSE"
             or path.startswith(SKIP_PREFIXES)
-            or file.name.endswith((".g.dart", ".g.kt", ".g.swift"))
+            or file.name.endswith((".g.dart", ".g.kt", ".g.swift", ".steps.dart"))
             or file.name.startswith("messages.g.")
             or file.is_symlink()
             or not file.is_file()

@@ -4,7 +4,7 @@
 //
 import 'package:drift/drift.dart';
 
-class Documents extends Table with TableInfo {
+class Documents extends Table with TableInfo<Documents, DocumentsData> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -146,8 +146,62 @@ class Documents extends Table with TableInfo {
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Never map(Map<String, dynamic> data, {String? tablePrefix}) {
-    throw UnsupportedError('TableInfo.map in schema verification code');
+  DocumentsData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DocumentsData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      identity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}identity'],
+      )!,
+      uri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uri'],
+      ),
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      )!,
+      pageCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}page_count'],
+      )!,
+      page: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}page'],
+      )!,
+      pageX: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}page_x'],
+      )!,
+      pageY: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}page_y'],
+      )!,
+      zoom: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}zoom'],
+      )!,
+      rightToLeft: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}right_to_left'],
+      )!,
+      favorite: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}favorite'],
+      )!,
+      inRecents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}in_recents'],
+      )!,
+      lastOpenedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_opened_at'],
+      )!,
+    );
   }
 
   @override
@@ -157,6 +211,399 @@ class Documents extends Table with TableInfo {
 
   @override
   bool get dontWriteConstraints => true;
+}
+
+class DocumentsData extends DataClass implements Insertable<DocumentsData> {
+  final int id;
+  final String identity;
+  final String? uri;
+  final String displayName;
+  final int pageCount;
+  final int page;
+  final double pageX;
+  final double pageY;
+  final double zoom;
+  final int rightToLeft;
+  final int favorite;
+  final int inRecents;
+  final int lastOpenedAt;
+  const DocumentsData({
+    required this.id,
+    required this.identity,
+    this.uri,
+    required this.displayName,
+    required this.pageCount,
+    required this.page,
+    required this.pageX,
+    required this.pageY,
+    required this.zoom,
+    required this.rightToLeft,
+    required this.favorite,
+    required this.inRecents,
+    required this.lastOpenedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['identity'] = Variable<String>(identity);
+    if (!nullToAbsent || uri != null) {
+      map['uri'] = Variable<String>(uri);
+    }
+    map['display_name'] = Variable<String>(displayName);
+    map['page_count'] = Variable<int>(pageCount);
+    map['page'] = Variable<int>(page);
+    map['page_x'] = Variable<double>(pageX);
+    map['page_y'] = Variable<double>(pageY);
+    map['zoom'] = Variable<double>(zoom);
+    map['right_to_left'] = Variable<int>(rightToLeft);
+    map['favorite'] = Variable<int>(favorite);
+    map['in_recents'] = Variable<int>(inRecents);
+    map['last_opened_at'] = Variable<int>(lastOpenedAt);
+    return map;
+  }
+
+  DocumentsCompanion toCompanion(bool nullToAbsent) {
+    return DocumentsCompanion(
+      id: Value(id),
+      identity: Value(identity),
+      uri: uri == null && nullToAbsent ? const Value.absent() : Value(uri),
+      displayName: Value(displayName),
+      pageCount: Value(pageCount),
+      page: Value(page),
+      pageX: Value(pageX),
+      pageY: Value(pageY),
+      zoom: Value(zoom),
+      rightToLeft: Value(rightToLeft),
+      favorite: Value(favorite),
+      inRecents: Value(inRecents),
+      lastOpenedAt: Value(lastOpenedAt),
+    );
+  }
+
+  factory DocumentsData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DocumentsData(
+      id: serializer.fromJson<int>(json['id']),
+      identity: serializer.fromJson<String>(json['identity']),
+      uri: serializer.fromJson<String?>(json['uri']),
+      displayName: serializer.fromJson<String>(json['displayName']),
+      pageCount: serializer.fromJson<int>(json['pageCount']),
+      page: serializer.fromJson<int>(json['page']),
+      pageX: serializer.fromJson<double>(json['pageX']),
+      pageY: serializer.fromJson<double>(json['pageY']),
+      zoom: serializer.fromJson<double>(json['zoom']),
+      rightToLeft: serializer.fromJson<int>(json['rightToLeft']),
+      favorite: serializer.fromJson<int>(json['favorite']),
+      inRecents: serializer.fromJson<int>(json['inRecents']),
+      lastOpenedAt: serializer.fromJson<int>(json['lastOpenedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'identity': serializer.toJson<String>(identity),
+      'uri': serializer.toJson<String?>(uri),
+      'displayName': serializer.toJson<String>(displayName),
+      'pageCount': serializer.toJson<int>(pageCount),
+      'page': serializer.toJson<int>(page),
+      'pageX': serializer.toJson<double>(pageX),
+      'pageY': serializer.toJson<double>(pageY),
+      'zoom': serializer.toJson<double>(zoom),
+      'rightToLeft': serializer.toJson<int>(rightToLeft),
+      'favorite': serializer.toJson<int>(favorite),
+      'inRecents': serializer.toJson<int>(inRecents),
+      'lastOpenedAt': serializer.toJson<int>(lastOpenedAt),
+    };
+  }
+
+  DocumentsData copyWith({
+    int? id,
+    String? identity,
+    Value<String?> uri = const Value.absent(),
+    String? displayName,
+    int? pageCount,
+    int? page,
+    double? pageX,
+    double? pageY,
+    double? zoom,
+    int? rightToLeft,
+    int? favorite,
+    int? inRecents,
+    int? lastOpenedAt,
+  }) => DocumentsData(
+    id: id ?? this.id,
+    identity: identity ?? this.identity,
+    uri: uri.present ? uri.value : this.uri,
+    displayName: displayName ?? this.displayName,
+    pageCount: pageCount ?? this.pageCount,
+    page: page ?? this.page,
+    pageX: pageX ?? this.pageX,
+    pageY: pageY ?? this.pageY,
+    zoom: zoom ?? this.zoom,
+    rightToLeft: rightToLeft ?? this.rightToLeft,
+    favorite: favorite ?? this.favorite,
+    inRecents: inRecents ?? this.inRecents,
+    lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
+  );
+  DocumentsData copyWithCompanion(DocumentsCompanion data) {
+    return DocumentsData(
+      id: data.id.present ? data.id.value : this.id,
+      identity: data.identity.present ? data.identity.value : this.identity,
+      uri: data.uri.present ? data.uri.value : this.uri,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      pageCount: data.pageCount.present ? data.pageCount.value : this.pageCount,
+      page: data.page.present ? data.page.value : this.page,
+      pageX: data.pageX.present ? data.pageX.value : this.pageX,
+      pageY: data.pageY.present ? data.pageY.value : this.pageY,
+      zoom: data.zoom.present ? data.zoom.value : this.zoom,
+      rightToLeft: data.rightToLeft.present
+          ? data.rightToLeft.value
+          : this.rightToLeft,
+      favorite: data.favorite.present ? data.favorite.value : this.favorite,
+      inRecents: data.inRecents.present ? data.inRecents.value : this.inRecents,
+      lastOpenedAt: data.lastOpenedAt.present
+          ? data.lastOpenedAt.value
+          : this.lastOpenedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentsData(')
+          ..write('id: $id, ')
+          ..write('identity: $identity, ')
+          ..write('uri: $uri, ')
+          ..write('displayName: $displayName, ')
+          ..write('pageCount: $pageCount, ')
+          ..write('page: $page, ')
+          ..write('pageX: $pageX, ')
+          ..write('pageY: $pageY, ')
+          ..write('zoom: $zoom, ')
+          ..write('rightToLeft: $rightToLeft, ')
+          ..write('favorite: $favorite, ')
+          ..write('inRecents: $inRecents, ')
+          ..write('lastOpenedAt: $lastOpenedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    identity,
+    uri,
+    displayName,
+    pageCount,
+    page,
+    pageX,
+    pageY,
+    zoom,
+    rightToLeft,
+    favorite,
+    inRecents,
+    lastOpenedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DocumentsData &&
+          other.id == this.id &&
+          other.identity == this.identity &&
+          other.uri == this.uri &&
+          other.displayName == this.displayName &&
+          other.pageCount == this.pageCount &&
+          other.page == this.page &&
+          other.pageX == this.pageX &&
+          other.pageY == this.pageY &&
+          other.zoom == this.zoom &&
+          other.rightToLeft == this.rightToLeft &&
+          other.favorite == this.favorite &&
+          other.inRecents == this.inRecents &&
+          other.lastOpenedAt == this.lastOpenedAt);
+}
+
+class DocumentsCompanion extends UpdateCompanion<DocumentsData> {
+  final Value<int> id;
+  final Value<String> identity;
+  final Value<String?> uri;
+  final Value<String> displayName;
+  final Value<int> pageCount;
+  final Value<int> page;
+  final Value<double> pageX;
+  final Value<double> pageY;
+  final Value<double> zoom;
+  final Value<int> rightToLeft;
+  final Value<int> favorite;
+  final Value<int> inRecents;
+  final Value<int> lastOpenedAt;
+  const DocumentsCompanion({
+    this.id = const Value.absent(),
+    this.identity = const Value.absent(),
+    this.uri = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.pageCount = const Value.absent(),
+    this.page = const Value.absent(),
+    this.pageX = const Value.absent(),
+    this.pageY = const Value.absent(),
+    this.zoom = const Value.absent(),
+    this.rightToLeft = const Value.absent(),
+    this.favorite = const Value.absent(),
+    this.inRecents = const Value.absent(),
+    this.lastOpenedAt = const Value.absent(),
+  });
+  DocumentsCompanion.insert({
+    this.id = const Value.absent(),
+    required String identity,
+    this.uri = const Value.absent(),
+    required String displayName,
+    this.pageCount = const Value.absent(),
+    this.page = const Value.absent(),
+    this.pageX = const Value.absent(),
+    this.pageY = const Value.absent(),
+    this.zoom = const Value.absent(),
+    this.rightToLeft = const Value.absent(),
+    this.favorite = const Value.absent(),
+    this.inRecents = const Value.absent(),
+    required int lastOpenedAt,
+  }) : identity = Value(identity),
+       displayName = Value(displayName),
+       lastOpenedAt = Value(lastOpenedAt);
+  static Insertable<DocumentsData> custom({
+    Expression<int>? id,
+    Expression<String>? identity,
+    Expression<String>? uri,
+    Expression<String>? displayName,
+    Expression<int>? pageCount,
+    Expression<int>? page,
+    Expression<double>? pageX,
+    Expression<double>? pageY,
+    Expression<double>? zoom,
+    Expression<int>? rightToLeft,
+    Expression<int>? favorite,
+    Expression<int>? inRecents,
+    Expression<int>? lastOpenedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (identity != null) 'identity': identity,
+      if (uri != null) 'uri': uri,
+      if (displayName != null) 'display_name': displayName,
+      if (pageCount != null) 'page_count': pageCount,
+      if (page != null) 'page': page,
+      if (pageX != null) 'page_x': pageX,
+      if (pageY != null) 'page_y': pageY,
+      if (zoom != null) 'zoom': zoom,
+      if (rightToLeft != null) 'right_to_left': rightToLeft,
+      if (favorite != null) 'favorite': favorite,
+      if (inRecents != null) 'in_recents': inRecents,
+      if (lastOpenedAt != null) 'last_opened_at': lastOpenedAt,
+    });
+  }
+
+  DocumentsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? identity,
+    Value<String?>? uri,
+    Value<String>? displayName,
+    Value<int>? pageCount,
+    Value<int>? page,
+    Value<double>? pageX,
+    Value<double>? pageY,
+    Value<double>? zoom,
+    Value<int>? rightToLeft,
+    Value<int>? favorite,
+    Value<int>? inRecents,
+    Value<int>? lastOpenedAt,
+  }) {
+    return DocumentsCompanion(
+      id: id ?? this.id,
+      identity: identity ?? this.identity,
+      uri: uri ?? this.uri,
+      displayName: displayName ?? this.displayName,
+      pageCount: pageCount ?? this.pageCount,
+      page: page ?? this.page,
+      pageX: pageX ?? this.pageX,
+      pageY: pageY ?? this.pageY,
+      zoom: zoom ?? this.zoom,
+      rightToLeft: rightToLeft ?? this.rightToLeft,
+      favorite: favorite ?? this.favorite,
+      inRecents: inRecents ?? this.inRecents,
+      lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (identity.present) {
+      map['identity'] = Variable<String>(identity.value);
+    }
+    if (uri.present) {
+      map['uri'] = Variable<String>(uri.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (pageCount.present) {
+      map['page_count'] = Variable<int>(pageCount.value);
+    }
+    if (page.present) {
+      map['page'] = Variable<int>(page.value);
+    }
+    if (pageX.present) {
+      map['page_x'] = Variable<double>(pageX.value);
+    }
+    if (pageY.present) {
+      map['page_y'] = Variable<double>(pageY.value);
+    }
+    if (zoom.present) {
+      map['zoom'] = Variable<double>(zoom.value);
+    }
+    if (rightToLeft.present) {
+      map['right_to_left'] = Variable<int>(rightToLeft.value);
+    }
+    if (favorite.present) {
+      map['favorite'] = Variable<int>(favorite.value);
+    }
+    if (inRecents.present) {
+      map['in_recents'] = Variable<int>(inRecents.value);
+    }
+    if (lastOpenedAt.present) {
+      map['last_opened_at'] = Variable<int>(lastOpenedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentsCompanion(')
+          ..write('id: $id, ')
+          ..write('identity: $identity, ')
+          ..write('uri: $uri, ')
+          ..write('displayName: $displayName, ')
+          ..write('pageCount: $pageCount, ')
+          ..write('page: $page, ')
+          ..write('pageX: $pageX, ')
+          ..write('pageY: $pageY, ')
+          ..write('zoom: $zoom, ')
+          ..write('rightToLeft: $rightToLeft, ')
+          ..write('favorite: $favorite, ')
+          ..write('inRecents: $inRecents, ')
+          ..write('lastOpenedAt: $lastOpenedAt')
+          ..write(')'))
+        .toString();
+  }
 }
 
 class DatabaseAtV1 extends GeneratedDatabase {
