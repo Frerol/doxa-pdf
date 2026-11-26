@@ -25,6 +25,7 @@ class DoxaPlatformPlugin :
     private val activity: Activity? get() = activityBinding?.activity
     private var pdfFiles: PdfFiles? = null
     private var folders: LibraryFolders? = null
+    private var documentFiles: DocumentFiles? = null
     private var pendingFolder: ((Result<PlatformFolder?>) -> Unit)? = null
     private var pdfIntents: PdfIntentApi? = null
     private var pendingPicker: ((Result<PlatformPdf?>) -> Unit)? = null
@@ -36,6 +37,7 @@ class DoxaPlatformPlugin :
         context = flutterPluginBinding.applicationContext
         pdfFiles = PdfFiles(flutterPluginBinding.applicationContext)
         folders = LibraryFolders(flutterPluginBinding.applicationContext)
+        documentFiles = DocumentFiles(flutterPluginBinding.applicationContext)
         pdfIntents = PdfIntentApi(flutterPluginBinding.binaryMessenger)
         DoxaPlatformPluginApi.setUp(flutterPluginBinding.binaryMessenger, this)
     }
@@ -162,6 +164,29 @@ class DoxaPlatformPlugin :
         folders?.release(treeUri)
     }
 
+    override fun renameDocument(
+        uri: String,
+        displayName: String,
+        callback: (Result<PlatformMovedDocument>) -> Unit,
+    ) {
+        documentFiles?.rename(uri, displayName, callback)
+            ?: callback(Result.failure(FlutterError("failed")))
+    }
+
+    override fun moveDocument(
+        uri: String,
+        targetTreeUri: String,
+        targetDocumentId: String?,
+        callback: (Result<PlatformMovedDocument>) -> Unit,
+    ) {
+        documentFiles?.move(uri, targetTreeUri, targetDocumentId, callback)
+            ?: callback(Result.failure(FlutterError("failed")))
+    }
+
+    override fun deleteDocument(uri: String, callback: (Result<Unit>) -> Unit) {
+        documentFiles?.delete(uri, callback) ?: callback(Result.failure(FlutterError("failed")))
+    }
+
     private fun onPickerResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         if (requestCode == PICK_FOLDER) {
             onFolderResult(resultCode, data)
@@ -277,6 +302,8 @@ class DoxaPlatformPlugin :
         pdfFiles = null
         folders?.close()
         folders = null
+        documentFiles?.close()
+        documentFiles = null
         context = null
     }
 

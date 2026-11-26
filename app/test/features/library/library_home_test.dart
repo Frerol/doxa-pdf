@@ -75,6 +75,51 @@ class FakeLibraryFolders implements LibraryFolders {
   Future<void> releaseFolder(String treeUri) async => released.add(treeUri);
 }
 
+class FakeDocumentFiles implements DocumentFiles {
+  final calls = <String>[];
+  DocumentFileError? error;
+
+  /// Whether the provider leaves a lasting grant on renamed files.
+  bool persists = true;
+
+  void _check() {
+    if (error case final error?) throw DocumentFileException(error);
+  }
+
+  @override
+  Future<PlatformMovedDocument> rename(String uri, String displayName) async {
+    calls.add('rename $uri $displayName');
+    _check();
+    return PlatformMovedDocument(
+      uri: '$uri-renamed',
+      displayName: displayName,
+      persisted: persists,
+    );
+  }
+
+  @override
+  Future<PlatformMovedDocument> move(
+    String uri, {
+    required String targetTreeUri,
+    String? targetDocumentId,
+  }) async {
+    calls.add('move $uri $targetTreeUri $targetDocumentId');
+    _check();
+    final name = uri.split('/').last;
+    return PlatformMovedDocument(
+      uri: '$targetTreeUri/document/$targetDocumentId%2F$name',
+      displayName: name,
+      persisted: true,
+    );
+  }
+
+  @override
+  Future<void> delete(String uri) async {
+    calls.add('delete $uri');
+    _check();
+  }
+}
+
 const tree = 'content://storage/tree/books';
 
 PlatformFolderEntry folderEntry(String id, String name, {bool dir = false}) =>
@@ -93,6 +138,7 @@ void main() {
   late FakePdfDocuments documents;
   late FakePdfEngine engine;
   late FakeLibraryFolders folders;
+  late FakeDocumentFiles files;
   final now = DateTime(2026, 11, 26, 10);
 
   setUp(() {
@@ -105,6 +151,7 @@ void main() {
     library = LibraryRepository(db, clock: () => now);
     documents = FakePdfDocuments();
     folders = FakeLibraryFolders();
+    files = FakeDocumentFiles();
     engine = FakePdfEngine({
       for (final id in [1, 2])
         pdf(id, '').path: FakeDocument(
@@ -128,6 +175,7 @@ void main() {
         // One identity per path: the fake paths are not real files.
         identify: (path) async => 'id:$path',
         libraryFolders: folders,
+        documentFiles: files,
       ),
     );
     await tester.pumpAndSettle();
@@ -333,6 +381,158 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Books'), findsNothing);
       expect(folders.released, [tree]);
+    });
+  });
+
+  group('rename, move and delete (FR-FILE-011)', () {
+    Future<void> menu(WidgetTester tester, String item) async {
+      await tester.tap(find.byTooltip('Show menu').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(item));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('renaming keeps the extension and the reading state', (
+      tester,
+    ) async {
+      await launch(tester);
+      await openPicked(tester, pdf(1, 'Calculus.pdf'));
+      await closeReader(tester);
+      await menu(tester, 'Rename');
+      await tester.enterText(find.byType(TextField), 'Calculus II');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(TextButton, 'Rename'));
+      await tester.pumpAndSettle();
+
+      expect(files.calls, ['rename content://provider/1 Calculus II.pdf']);
+      expect(find.text('Calculus II.pdf'), findsOneWidget);
+      expect(find.textContaining('p. 1 of 20'), findsOneWidget);
+      final doc = (await tester.runAsync(() => library.watchRecents().first))!;
+      expect(doc.single.uri, 'content://provider/1-renamed');
+    });
+
+    testWidgets('a rename that loses access says how to reopen', (
+      tester,
+    ) async {
+      files.persists = false;
+      await launch(tester);
+      await openPicked(tester, pdf(1, 'Calculus.pdf'));
+      await closeReader(tester);
+      await menu(tester, 'Rename');
+      await tester.enterText(find.byType(TextField), 'B');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(TextButton, 'Rename'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('open it once with Open file'),
+        findsOneWidget,
+      );
+      final doc = (await tester.runAsync(() => library.watchRecents().first))!;
+      expect(doc.single.canReopen, isFalse);
+    });
+
+    testWidgets('deleting asks first, then leaves the library', (tester) async {
+      await launch(tester);
+      await openPicked(tester, pdf(1, 'Calculus.pdf'));
+      await closeReader(tester);
+      await menu(tester, 'Delete');
+      expect(find.text('Delete “Calculus.pdf”?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(files.calls, isEmpty);
+      expect(find.text('Calculus.pdf'), findsOneWidget);
+
+      await menu(tester, 'Delete');
+      await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+      await tester.pumpAndSettle();
+      expect(files.calls, ['delete content://provider/1']);
+      expect(find.text('Calculus.pdf'), findsNothing);
+    });
+
+    testWidgets('a refused delete keeps the document and says why', (
+      tester,
+    ) async {
+      files.error = DocumentFileError.unsupported;
+      await launch(tester);
+      await openPicked(tester, pdf(1, 'Calculus.pdf'));
+      await closeReader(tester);
+      await menu(tester, 'Delete');
+      await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('This storage does not allow that for this file.'),
+        findsOneWidget,
+      );
+      expect(find.text('Calculus.pdf'), findsOneWidget);
+    });
+
+    testWidgets('a file opened outside a library folder cannot be moved', (
+      tester,
+    ) async {
+      await launch(tester);
+      await openPicked(tester, pdf(1, 'Calculus.pdf'));
+      await closeReader(tester);
+      await tester.tap(find.byTooltip('Show menu'));
+      await tester.pumpAndSettle();
+      expect(find.text('Rename'), findsOneWidget);
+      expect(find.text('Move'), findsNothing);
+    });
+
+    testWidgets('a folder PDF moves into a subfolder picked level by level', (
+      tester,
+    ) async {
+      // Opened through the folder, the document keeps its folder URI.
+      final calc = PlatformPdf(
+        leaseId: 2,
+        uri: '$tree/document/calc',
+        displayName: 'Calculus.pdf',
+        path: pdf(2, '').path,
+        persistedRead: true,
+        persistedWrite: true,
+      );
+      folders.listings[null] = [
+        folderEntry('calc', 'Calculus.pdf'),
+        folderEntry('sem', 'Semester 1', dir: true),
+      ];
+      folders.listings['sem'] = [folderEntry('w1', 'Week 1', dir: true)];
+      documents.persisted['$tree/document/calc'] = calc;
+
+      await launch(tester);
+      folders.picked = PlatformFolder(treeUri: tree, displayName: 'Books');
+      await tester.tap(find.text('Folders'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add folder'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Books'));
+      await tester.pumpAndSettle();
+      // Open it once, so it is in recents.
+      await tester.tap(find.text('Calculus.pdf'));
+      await tester.pumpAndSettle();
+      await closeReader(tester);
+
+      await menu(tester, 'Move');
+      // The library folders are read from the database first.
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      expect(find.text('Move to'), findsOneWidget);
+      await tester.tap(find.text('Books'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Semester 1'));
+      await tester.pumpAndSettle();
+      expect(find.text('Week 1'), findsOneWidget);
+      // Back goes up one level, not out of the picker.
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(find.text('Semester 1'), findsOneWidget);
+      await tester.tap(find.text('Semester 1'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Move here'));
+      await tester.pumpAndSettle();
+
+      expect(files.calls, ['move $tree/document/calc $tree sem']);
+      final doc = (await tester.runAsync(() => library.watchRecents().first))!;
+      expect(doc.single.uri, '$tree/document/sem%2Fcalc');
+      expect(doc.single.canReopen, isTrue);
     });
   });
 

@@ -66,6 +66,22 @@ class PlatformFolderEntry {
   int? lastModified;
 }
 
+/// Where a document is after a rename or a move (FR-FILE-011).
+class PlatformMovedDocument {
+  PlatformMovedDocument(this.uri, this.displayName, this.persisted);
+
+  /// The document's URI now; providers may give it a new one.
+  String uri;
+
+  /// The name the provider gave it, which may differ from the one asked
+  /// for (some providers add a number to avoid a clash).
+  String displayName;
+
+  /// False when the app could not keep a lasting grant on [uri], so the
+  /// library cannot reopen the document from there.
+  bool persisted;
+}
+
 @ConfigurePigeon(
   PigeonOptions(
     dartPackageName: 'doxa_platform',
@@ -119,6 +135,26 @@ abstract class DoxaPlatformPluginApi {
 
   /// Gives up the persisted grant of a folder the user removed.
   void releaseFolder(String treeUri);
+
+  /// Renames the document [uri] to [displayName] (FR-FILE-011). Fails with
+  /// `missing`, `permissionLost`, `unsupported` or `failed`.
+  @asyncCallback
+  PlatformMovedDocument renameDocument(String uri, String displayName);
+
+  /// Moves the document [uri], which must lie in a library folder, into the
+  /// folder [targetDocumentId] of the tree [targetTreeUri], or into its
+  /// root when [targetDocumentId] is null (FR-FILE-011). Fails like
+  /// [renameDocument].
+  @asyncCallback
+  PlatformMovedDocument moveDocument(
+    String uri,
+    String targetTreeUri,
+    String? targetDocumentId,
+  );
+
+  /// Deletes the document [uri] (FR-FILE-011). Fails like [renameDocument].
+  @asyncCallback
+  void deleteDocument(String uri);
 }
 
 @FlutterApi()

@@ -43,6 +43,7 @@ class DoxaApp extends StatefulWidget {
     this.thumbnails,
     this.identify,
     this.libraryFolders,
+    this.documentFiles,
   });
 
   final Future<PdfEngine> Function() engine;
@@ -54,6 +55,10 @@ class DoxaApp extends StatefulWidget {
 
   /// Library folder access; the platform's on Android by default.
   final LibraryFolders? libraryFolders;
+
+  /// Rename, move and delete (FR-FILE-011); the platform's on Android by
+  /// default.
+  final DocumentFiles? documentFiles;
 
   /// Computes document identities; `documentIdentity` by default.
   final DocumentIdentifier? identify;
@@ -147,6 +152,9 @@ class _DoxaAppState extends State<DoxaApp> with WidgetsBindingObserver {
         libraryFolders:
             widget.libraryFolders ??
             (Platform.isAndroid ? DoxaPlatform().libraryFolders : null),
+        documentFiles:
+            widget.documentFiles ??
+            (Platform.isAndroid ? DoxaPlatform().documentFiles : null),
         identify: widget.identify ?? documentIdentity,
         devDocumentsDir:
             widget.devDocumentsDir ??

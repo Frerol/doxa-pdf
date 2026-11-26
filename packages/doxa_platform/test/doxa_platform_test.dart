@@ -16,6 +16,9 @@ class MockDoxaPlatformPlatform
   LibraryFolders get libraryFolders => throw UnimplementedError();
 
   @override
+  DocumentFiles get documentFiles => throw UnimplementedError();
+
+  @override
   Future<String?> getPlatformVersion() => Future.value('42');
 
   final opened = <String>[];

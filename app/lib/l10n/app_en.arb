@@ -492,5 +492,70 @@
   "sortSize": "Size",
   "@sortSize": {
     "description": "Sort a folder by file size, largest first."
+  },
+  "renameDocument": "Rename",
+  "@renameDocument": {
+    "description": "Menu action and dialog button that renames a document's file (FR-FILE-011)."
+  },
+  "renameDocumentTitle": "Rename document",
+  "@renameDocumentTitle": {
+    "description": "Title of the rename dialog."
+  },
+  "renameDocumentName": "Name",
+  "@renameDocumentName": {
+    "description": "Label of the file name field in the rename dialog."
+  },
+  "moveDocument": "Move",
+  "@moveDocument": {
+    "description": "Menu action that moves a document to another folder (FR-FILE-011)."
+  },
+  "moveDocumentTitle": "Move to",
+  "@moveDocumentTitle": {
+    "description": "Title of the page that picks the destination folder."
+  },
+  "moveHere": "Move here",
+  "@moveHere": {
+    "description": "Button that moves the document into the folder shown."
+  },
+  "moveNoFolders": "To move this document, add a library folder on the same storage.",
+  "@moveNoFolders": {
+    "description": "Shown when no library folder can receive the document."
+  },
+  "moveNoSubfolders": "No folders inside. Use Move here to move the document to this folder.",
+  "@moveNoSubfolders": {
+    "description": "Shown in the destination picker for a folder without subfolders."
+  },
+  "deleteDocument": "Delete",
+  "@deleteDocument": {
+    "description": "Menu action and confirmation button that deletes a document's file."
+  },
+  "deleteDocumentTitle": "Delete “{name}”?",
+  "@deleteDocumentTitle": {
+    "description": "Title of the delete confirmation.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteDocumentMessage": "The file will be deleted from the device. This cannot be undone.",
+  "@deleteDocumentMessage": {
+    "description": "Body of the delete confirmation."
+  },
+  "fileActionPermissionLost": "Doxa no longer has permission to change this file.",
+  "@fileActionPermissionLost": {
+    "description": "Shown when a rename, move or delete is refused for lack of permission."
+  },
+  "fileActionUnsupported": "This storage does not allow that for this file.",
+  "@fileActionUnsupported": {
+    "description": "Shown when the storage provider cannot rename, move or delete the file."
+  },
+  "fileActionFailed": "The file could not be changed.",
+  "@fileActionFailed": {
+    "description": "Shown when a rename, move or delete fails for another reason."
+  },
+  "documentNotReopenable": "Done. To reopen it from here, open it once with Open file.",
+  "@documentNotReopenable": {
+    "description": "Shown after a rename or move when the app could not keep access to the file's new location."
   }
 }

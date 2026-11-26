@@ -14,6 +14,7 @@ import '../dev/dev_documents.dart';
 import '../reader/reader_page.dart';
 import '../settings/app_settings.dart';
 import '../settings/settings_page.dart';
+import 'document_actions.dart';
 import 'document_identity.dart';
 import 'folder_page.dart';
 import 'library_repository.dart';
@@ -36,6 +37,7 @@ class LibraryHome extends StatefulWidget {
     this.pdfDocuments,
     this.devDocumentsDir,
     this.libraryFolders,
+    this.documentFiles,
     this.identify = documentIdentity,
     this.clock = DateTime.now,
   });
@@ -51,6 +53,10 @@ class LibraryHome extends StatefulWidget {
 
   /// Folder access (FR-FILE-006); the Folders tab is hidden when null.
   final LibraryFolders? libraryFolders;
+
+  /// Rename, move and delete (FR-FILE-011); the menus leave them out when
+  /// null.
+  final DocumentFiles? documentFiles;
   final DocumentIdentifier identify;
   final DateTime Function() clock;
 
@@ -67,6 +73,16 @@ class _LibraryHomeState extends State<LibraryHome> {
   final _query = TextEditingController();
 
   final _folderCache = FolderListingCache();
+
+  late final DocumentActions? _actions = switch (widget.documentFiles) {
+    final files? => DocumentActions(
+      files: files,
+      library: widget.library,
+      thumbnails: widget.thumbnails,
+      folders: widget.libraryFolders,
+    ),
+    null => null,
+  };
 
   /// Bumped when a thumbnail is written, so the lists load it again.
   final _thumbnailsChanged = ValueNotifier<int>(0);
@@ -160,6 +176,7 @@ class _LibraryHomeState extends State<LibraryHome> {
           treeUri: folder.treeUri,
           title: folder.displayName,
           cache: _folderCache,
+          actions: _actions,
           onOpen: (pdf) => unawaited(_openFromFolder(pdf)),
         ),
       ),
@@ -442,6 +459,7 @@ class _LibraryHomeState extends State<LibraryHome> {
               thumbnailsChanged: _thumbnailsChanged,
               clock: widget.clock,
               onOpen: _reopen,
+              actions: _actions,
               showRemoveFromRecents: true,
             ),
             _DocumentList(
@@ -453,6 +471,7 @@ class _LibraryHomeState extends State<LibraryHome> {
               thumbnailsChanged: _thumbnailsChanged,
               clock: widget.clock,
               onOpen: _reopen,
+              actions: _actions,
               showRemoveFromRecents: false,
             ),
             if (folders != null)
@@ -480,6 +499,7 @@ class _DocumentList extends StatefulWidget {
     required this.thumbnailsChanged,
     required this.clock,
     required this.onOpen,
+    required this.actions,
     required this.showRemoveFromRecents,
   });
 
@@ -491,6 +511,7 @@ class _DocumentList extends StatefulWidget {
   final ValueListenable<int> thumbnailsChanged;
   final DateTime Function() clock;
   final ValueChanged<LibraryDocument> onOpen;
+  final DocumentActions? actions;
   final bool showRemoveFromRecents;
 
   @override
@@ -542,6 +563,7 @@ class _DocumentListState extends State<_DocumentList>
               thumbnail: widget.thumbnails?.fileFor(shown[i].identity),
               now: widget.clock(),
               onOpen: widget.onOpen,
+              actions: widget.actions,
               showRemoveFromRecents: widget.showRemoveFromRecents,
             ),
           ),
@@ -584,7 +606,23 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-enum _DocumentAction { favorite, removeFromRecents }
+sealed class _DocumentAction {
+  const _DocumentAction();
+}
+
+class _ToggleFavorite extends _DocumentAction {
+  const _ToggleFavorite();
+}
+
+class _RemoveFromRecents extends _DocumentAction {
+  const _RemoveFromRecents();
+}
+
+class _OnFile extends _DocumentAction {
+  const _OnFile(this.action);
+
+  final FileAction action;
+}
 
 class _DocumentTile extends StatelessWidget {
   const _DocumentTile({
@@ -593,6 +631,7 @@ class _DocumentTile extends StatelessWidget {
     required this.thumbnail,
     required this.now,
     required this.onOpen,
+    required this.actions,
     required this.showRemoveFromRecents,
   });
 
@@ -601,12 +640,38 @@ class _DocumentTile extends StatelessWidget {
   final File? thumbnail;
   final DateTime now;
   final ValueChanged<LibraryDocument> onOpen;
+  final DocumentActions? actions;
   final bool showRemoveFromRecents;
+
+  void _select(BuildContext context, _DocumentAction action) {
+    switch (action) {
+      case _ToggleFavorite():
+        unawaited(library?.setFavorite(document.id, !document.favorite));
+      case _RemoveFromRecents():
+        unawaited(library?.removeFromRecents(document.id));
+      case _OnFile(:final action):
+        unawaited(
+          runFileAction(
+            context,
+            actions!,
+            action,
+            uri: document.uri!,
+            name: document.displayName,
+          ),
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final fileItems = fileActionItems<_DocumentAction>(
+      l10n,
+      actions,
+      document.uri,
+      _OnFile.new,
+    );
     final when = lastReadLabel(l10n, document.lastOpenedAt, now);
     final subtitle = document.pageCount == 0
         ? when
@@ -630,28 +695,23 @@ class _DocumentTile extends StatelessWidget {
             tooltip: favorite ? l10n.removeFromFavorites : l10n.addToFavorites,
             onPressed: () => library?.setFavorite(document.id, !favorite),
           ),
-          if (showRemoveFromRecents)
+          if (showRemoveFromRecents || fileItems.isNotEmpty)
             PopupMenuButton<_DocumentAction>(
-              onSelected: (action) => switch (action) {
-                _DocumentAction.favorite => library?.setFavorite(
-                  document.id,
-                  !favorite,
-                ),
-                _DocumentAction.removeFromRecents => library?.removeFromRecents(
-                  document.id,
-                ),
-              },
+              onSelected: (action) => _select(context, action),
               itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: _DocumentAction.favorite,
-                  child: Text(
-                    favorite ? l10n.removeFromFavorites : l10n.addToFavorites,
+                if (showRemoveFromRecents) ...[
+                  PopupMenuItem(
+                    value: const _ToggleFavorite(),
+                    child: Text(
+                      favorite ? l10n.removeFromFavorites : l10n.addToFavorites,
+                    ),
                   ),
-                ),
-                PopupMenuItem(
-                  value: _DocumentAction.removeFromRecents,
-                  child: Text(l10n.removeFromRecents),
-                ),
+                  PopupMenuItem(
+                    value: const _RemoveFromRecents(),
+                    child: Text(l10n.removeFromRecents),
+                  ),
+                ],
+                ...fileItems,
               ],
             ),
         ],

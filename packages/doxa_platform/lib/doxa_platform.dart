@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'document_files.dart';
 import 'doxa_platform_platform_interface.dart';
-
 import 'library_folders.dart';
 import 'pdf_documents.dart';
 
+export 'document_files.dart';
 export 'library_folders.dart';
 export 'pdf_documents.dart';
 
@@ -13,6 +14,9 @@ class DoxaPlatform {
 
   LibraryFolders get libraryFolders =>
       DoxaPlatformPlatform.instance.libraryFolders;
+
+  DocumentFiles get documentFiles =>
+      DoxaPlatformPlatform.instance.documentFiles;
 
   Future<String?> getPlatformVersion() {
     return DoxaPlatformPlatform.instance.getPlatformVersion();

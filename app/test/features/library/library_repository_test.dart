@@ -110,6 +110,46 @@ void main() {
     });
   });
 
+  group('rename, move and delete (FR-FILE-011)', () {
+    test('a renamed or moved file keeps its state and favorite', () async {
+      final doc = await open('a', uri: 'content://t/1/document/a');
+      await library.saveState(doc.id, state, pageCount: 100);
+      await library.setFavorite(doc.id, true);
+      await library.relocate(
+        'content://t/1/document/a',
+        newUri: 'content://t/1/document/b',
+        displayName: 'Renamed.pdf',
+      );
+      final moved = (await library.watchFavorites().first).single;
+      expect(moved.uri, 'content://t/1/document/b');
+      expect(moved.displayName, 'Renamed.pdf');
+      expect(moved.state, state);
+    });
+
+    test(
+      'a file without a lasting grant afterwards cannot be reopened',
+      () async {
+        await open('a', uri: 'content://doc/1');
+        await library.relocate(
+          'content://doc/1',
+          newUri: null,
+          displayName: 'B.pdf',
+        );
+        final doc = (await library.watchRecents().first).single;
+        expect(doc.canReopen, isFalse);
+        expect(doc.displayName, 'B.pdf');
+      },
+    );
+
+    test('a deleted file leaves the library, other files stay', () async {
+      await open('a', uri: 'content://doc/1');
+      await open('b', uri: 'content://doc/2');
+      expect(await library.forgetDeleted('content://doc/1'), ['a']);
+      final recents = await library.watchRecents().first;
+      expect(recents.map((d) => d.identity), ['b']);
+    });
+  });
+
   group('library folders (FR-FILE-006)', () {
     test('are listed by name, and adding one again renames it', () async {
       await library.addFolder(treeUri: 'content://t/2', displayName: 'zoology');

@@ -3,7 +3,11 @@
 import 'package:doxa_platform/doxa_platform.dart';
 import 'package:doxa_platform/doxa_platform_pigeon.dart';
 import 'package:doxa_platform/src/messages.g.dart'
-    hide PlatformPdf, PlatformFolder, PlatformFolderEntry;
+    hide
+        PlatformPdf,
+        PlatformFolder,
+        PlatformFolderEntry,
+        PlatformMovedDocument;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -23,6 +27,44 @@ void main() {
         ),
       ),
     );
+  });
+
+  test('provider failures of file actions keep their cause (FR-FILE-011)', () {
+    final api = FakeDoxaPlatformPluginApi(platformVersion: '42');
+    final files = PigeonDoxaPlatform(api: api).documentFiles;
+    Matcher fails(DocumentFileError error) => throwsA(
+      isA<DocumentFileException>().having((e) => e.error, 'error', error),
+    );
+    api.fileError = 'unsupported';
+    expect(
+      files.move('content://p/doc/1', targetTreeUri: 'content://p/tree/t'),
+      fails(DocumentFileError.unsupported),
+    );
+    api.fileError = 'permissionLost';
+    expect(
+      files.delete('content://p/doc/1'),
+      fails(DocumentFileError.permissionLost),
+    );
+    // Codes the Dart side does not know are still failures, not crashes.
+    api.fileError = 'somethingNew';
+    expect(
+      files.rename('content://p/doc/1', 'b.pdf'),
+      fails(DocumentFileError.failed),
+    );
+  });
+
+  test('only documents inside a folder tree can be moved', () {
+    const tree =
+        'content://com.android.externalstorage.documents/tree/primary%3ABooks';
+    expect(isInFolderTree('$tree/document/primary%3ABooks%2Fa.pdf'), isTrue);
+    expect(
+      isInFolderTree(
+        'content://com.android.providers.downloads.documents/document/msf%3A12',
+      ),
+      isFalse,
+    );
+    expect(isInFolderTree(tree), isFalse);
+    expect(isInFolderTree('file:///tree/x/document/y'), isFalse);
   });
 
   test('getPlatformVersion', () async {
@@ -156,6 +198,25 @@ class FakeDoxaPlatformPluginApi implements DoxaPlatformPluginApi {
 
   @override
   Future<void> releaseFolder(String treeUri) async => releasedFolder = treeUri;
+
+  String fileError = 'failed';
+
+  @override
+  Future<PlatformMovedDocument> renameDocument(
+    String uri,
+    String displayName,
+  ) => throw PlatformException(code: fileError);
+
+  @override
+  Future<PlatformMovedDocument> moveDocument(
+    String uri,
+    String targetTreeUri,
+    String? targetDocumentId,
+  ) => throw PlatformException(code: fileError);
+
+  @override
+  Future<void> deleteDocument(String uri) =>
+      throw PlatformException(code: fileError);
 
   @override
   // ignore: non_constant_identifier_names
