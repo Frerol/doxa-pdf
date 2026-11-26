@@ -82,8 +82,14 @@ class FakeDocumentFiles implements DocumentFiles {
   /// Whether the provider leaves a lasting grant on renamed files.
   bool persists = true;
 
-  void _check() {
+  /// URIs whose actions fail with [DocumentFileError.failed].
+  final failing = <String>{};
+
+  void _check([String? uri]) {
     if (error case final error?) throw DocumentFileException(error);
+    if (failing.contains(uri)) {
+      throw const DocumentFileException(DocumentFileError.failed);
+    }
   }
 
   @override
@@ -104,7 +110,7 @@ class FakeDocumentFiles implements DocumentFiles {
     String? targetDocumentId,
   }) async {
     calls.add('move $uri $targetTreeUri $targetDocumentId');
-    _check();
+    _check(uri);
     final name = uri.split('/').last;
     return PlatformMovedDocument(
       uri: '$targetTreeUri/document/$targetDocumentId%2F$name',
@@ -116,7 +122,7 @@ class FakeDocumentFiles implements DocumentFiles {
   @override
   Future<void> delete(String uri) async {
     calls.add('delete $uri');
-    _check();
+    _check(uri);
   }
 }
 
@@ -533,6 +539,140 @@ void main() {
       final doc = (await tester.runAsync(() => library.watchRecents().first))!;
       expect(doc.single.uri, '$tree/document/sem%2Fcalc');
       expect(doc.single.canReopen, isTrue);
+    });
+  });
+
+  group('selecting several documents (FR-FILE-011)', () {
+    Future<void> openTwo(WidgetTester tester) async {
+      await launch(tester);
+      await openPicked(tester, pdf(1, 'Calculus.pdf'));
+      await closeReader(tester);
+      await openPicked(tester, pdf(2, 'Physics.pdf'));
+      await closeReader(tester);
+    }
+
+    testWidgets(
+      'long press selects, taps add, and one confirmation deletes all',
+      (tester) async {
+        await openTwo(tester);
+        await tester.longPress(find.text('Calculus.pdf'));
+        await tester.pumpAndSettle();
+        expect(find.text('1 selected'), findsOneWidget);
+        // While selecting, a tap selects instead of opening.
+        await tester.tap(find.text('Physics.pdf'));
+        await tester.pumpAndSettle();
+        expect(find.byType(ReaderPage), findsNothing);
+        expect(find.text('2 selected'), findsOneWidget);
+
+        await tester.tap(find.byTooltip('Delete'));
+        await tester.pumpAndSettle();
+        expect(find.text('Delete 2 documents?'), findsOneWidget);
+        await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+        await tester.pumpAndSettle();
+        expect(files.calls, [
+          'delete content://provider/1',
+          'delete content://provider/2',
+        ]);
+        expect(find.text('Calculus.pdf'), findsNothing);
+        expect(find.text('Physics.pdf'), findsNothing);
+        expect(find.textContaining('selected'), findsNothing);
+      },
+    );
+
+    testWidgets('a partly failed batch says how many were not changed', (
+      tester,
+    ) async {
+      files.failing.add('content://provider/2');
+      await openTwo(tester);
+      await tester.longPress(find.text('Calculus.pdf'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Select all'));
+      await tester.pumpAndSettle();
+      expect(find.text('2 selected'), findsOneWidget);
+      await tester.tap(find.byTooltip('Delete'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('1 of 2 documents could not be changed.'),
+        findsOneWidget,
+      );
+      expect(find.text('Calculus.pdf'), findsNothing);
+      expect(find.text('Physics.pdf'), findsOneWidget);
+    });
+
+    testWidgets('back and a tab change leave selection mode, not the screen', (
+      tester,
+    ) async {
+      await openTwo(tester);
+      await tester.longPress(find.text('Calculus.pdf'));
+      await tester.pumpAndSettle();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.textContaining('selected'), findsNothing);
+      expect(find.text('Calculus.pdf'), findsOneWidget);
+
+      await tester.longPress(find.text('Calculus.pdf'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Favorites'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('selected'), findsNothing);
+    });
+
+    testWidgets('removing a selection from recents keeps the files', (
+      tester,
+    ) async {
+      await openTwo(tester);
+      await tester.longPress(find.text('Calculus.pdf'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Physics.pdf'));
+      await tester.pumpAndSettle();
+      // Neither was opened from a library folder.
+      expect(find.byTooltip('Move'), findsNothing);
+      await tester.tap(find.byTooltip('Remove from recents'));
+      await tester.pumpAndSettle();
+      expect(find.text('Calculus.pdf'), findsNothing);
+      expect(find.text('Physics.pdf'), findsNothing);
+      expect(files.calls, isEmpty);
+    });
+
+    testWidgets('PDFs selected in a folder move together to one folder', (
+      tester,
+    ) async {
+      folders.listings[null] = [
+        folderEntry('a', 'A.pdf'),
+        folderEntry('b', 'B.pdf'),
+        folderEntry('sem', 'Semester 1', dir: true),
+      ];
+      await launch(tester);
+      folders.picked = PlatformFolder(treeUri: tree, displayName: 'Books');
+      await tester.tap(find.text('Folders'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add folder'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Books'));
+      await tester.pumpAndSettle();
+
+      await tester.longPress(find.text('A.pdf'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Select all'));
+      await tester.pumpAndSettle();
+      // Folders are not selected.
+      expect(find.text('2 selected'), findsOneWidget);
+      await tester.tap(find.byTooltip('Move'));
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Books'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Semester 1'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Move here'));
+      await tester.pumpAndSettle();
+      expect(files.calls, [
+        'move $tree/document/a $tree sem',
+        'move $tree/document/b $tree sem',
+      ]);
+      expect(find.textContaining('selected'), findsNothing);
     });
   });
 

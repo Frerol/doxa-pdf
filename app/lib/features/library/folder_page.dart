@@ -8,6 +8,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
 import 'document_actions.dart';
+import 'selection.dart';
 
 /// How a library folder is sorted (FR-FILE-006). Subfolders always come
 /// first.
@@ -107,15 +108,23 @@ class _FolderPageState extends State<FolderPage> {
   bool _searching = false;
   final _query = TextEditingController();
 
+  /// PDFs selected for a batch move or delete (FR-FILE-011), by URI.
+  final _selection = Selection<String, PlatformFolderEntry>();
+
+  /// The PDFs shown now, for "Select all".
+  var _shownPdfs = const <PlatformFolderEntry>[];
+
   @override
   void initState() {
     super.initState();
     _entries = widget.cache.get(widget.treeUri, widget.documentId);
     unawaited(_load());
+    _selection.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
+    _selection.dispose();
     _query.dispose();
     super.dispose();
   }
@@ -168,6 +177,44 @@ class _FolderPageState extends State<FolderPage> {
     if (changed) await _load();
   }
 
+  /// Runs a batch action on the selected PDFs, then reloads the folder.
+  Future<void> _onSelected(
+    Future<int> Function(
+      DocumentActions actions,
+      List<PlatformFolderEntry> pdfs,
+    )
+    action,
+  ) async {
+    final changed = await action(widget.actions!, _selection.values);
+    _selection.clear();
+    if (changed > 0) await _load();
+  }
+
+  List<Widget> _selectionActions(AppLocalizations l10n) {
+    final actions = widget.actions!;
+    final pdfs = _selection.values;
+    return [
+      if (pdfs.every((pdf) => actions.canMove(pdf.uri)))
+        IconButton(
+          icon: const Icon(Icons.drive_file_move_outlined),
+          tooltip: l10n.moveDocument,
+          onPressed: () => _onSelected(
+            (actions, pdfs) =>
+                actions.moveAll(context, [for (final pdf in pdfs) pdf.uri]),
+          ),
+        ),
+      IconButton(
+        icon: const Icon(Icons.delete_outline),
+        tooltip: l10n.deleteDocument,
+        onPressed: () => _onSelected(
+          (actions, pdfs) => actions.deleteAll(context, [
+            for (final pdf in pdfs) (uri: pdf.uri, name: pdf.name),
+          ]),
+        ),
+      ),
+    ];
+  }
+
   void _setSort(FolderSort sort) {
     _lastSort = sort;
     setState(() => _sort = sort);
@@ -176,54 +223,76 @@ class _FolderPageState extends State<FolderPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: _searching
-            ? TextField(
-                controller: _query,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: l10n.librarySearch,
-                  border: InputBorder.none,
+    final appBar = _selection.isActive
+        ? selectionAppBar(
+            context,
+            count: _selection.length,
+            onClear: _selection.clear,
+            onSelectAll: () => _selection.addAll([
+              for (final pdf in _shownPdfs) MapEntry(pdf.uri, pdf),
+            ]),
+            actions: _selectionActions(l10n),
+          )
+        : null;
+    return PopScope(
+      // Back leaves selection mode first.
+      canPop: !_selection.isActive,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _selection.clear();
+      },
+      child: Scaffold(
+        appBar:
+            appBar ??
+            AppBar(
+              title: _searching
+                  ? TextField(
+                      controller: _query,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: l10n.librarySearch,
+                        border: InputBorder.none,
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    )
+                  : Text(widget.title, overflow: TextOverflow.ellipsis),
+              actions: [
+                IconButton(
+                  icon: Icon(_searching ? Icons.close : Icons.search),
+                  tooltip: _searching
+                      ? l10n.libraryCloseSearch
+                      : l10n.librarySearch,
+                  onPressed: () => setState(() {
+                    _searching = !_searching;
+                    if (!_searching) _query.clear();
+                  }),
                 ),
-                onChanged: (_) => setState(() {}),
-              )
-            : Text(widget.title, overflow: TextOverflow.ellipsis),
-        actions: [
-          IconButton(
-            icon: Icon(_searching ? Icons.close : Icons.search),
-            tooltip: _searching ? l10n.libraryCloseSearch : l10n.librarySearch,
-            onPressed: () => setState(() {
-              _searching = !_searching;
-              if (!_searching) _query.clear();
-            }),
-          ),
-          PopupMenuButton<FolderSort>(
-            icon: const Icon(Icons.sort),
-            tooltip: l10n.sortBy,
-            initialValue: _sort,
-            onSelected: _setSort,
-            itemBuilder: (_) => [
-              CheckedPopupMenuItem(
-                value: FolderSort.name,
-                checked: _sort == FolderSort.name,
-                child: Text(l10n.sortName),
-              ),
-              CheckedPopupMenuItem(
-                value: FolderSort.modified,
-                checked: _sort == FolderSort.modified,
-                child: Text(l10n.sortModified),
-              ),
-              CheckedPopupMenuItem(
-                value: FolderSort.size,
-                checked: _sort == FolderSort.size,
-                child: Text(l10n.sortSize),
-              ),
-            ],
-          ),
-        ],
+                PopupMenuButton<FolderSort>(
+                  icon: const Icon(Icons.sort),
+                  tooltip: l10n.sortBy,
+                  initialValue: _sort,
+                  onSelected: _setSort,
+                  itemBuilder: (_) => [
+                    CheckedPopupMenuItem(
+                      value: FolderSort.name,
+                      checked: _sort == FolderSort.name,
+                      child: Text(l10n.sortName),
+                    ),
+                    CheckedPopupMenuItem(
+                      value: FolderSort.modified,
+                      checked: _sort == FolderSort.modified,
+                      child: Text(l10n.sortModified),
+                    ),
+                    CheckedPopupMenuItem(
+                      value: FolderSort.size,
+                      checked: _sort == FolderSort.size,
+                      child: Text(l10n.sortSize),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+        body: RefreshIndicator(onRefresh: _load, child: _body(l10n)),
       ),
-      body: RefreshIndicator(onRefresh: _load, child: _body(l10n)),
     );
   }
 
@@ -247,6 +316,10 @@ class _FolderPageState extends State<FolderPage> {
           : entries!.where((e) => foldName(e.name).contains(query)),
       _sort,
     );
+    _shownPdfs = [
+      for (final e in shown)
+        if (!e.isDirectory) e,
+    ];
     if (shown.isEmpty) {
       return _Message(
         query.isEmpty
@@ -255,6 +328,9 @@ class _FolderPageState extends State<FolderPage> {
       );
     }
     final locale = l10n.localeName;
+    final selecting = _selection.isActive;
+    // Every PDF of a library folder comes from a document provider.
+    final selectable = widget.actions != null;
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: shown.length,
@@ -264,6 +340,8 @@ class _FolderPageState extends State<FolderPage> {
           return ListTile(
             leading: const Icon(Icons.folder_outlined),
             title: Text(entry.name),
+            // Only PDFs are selected; folders wait until selection ends.
+            enabled: !selecting,
             onTap: () => _openFolder(entry),
           );
         }
@@ -279,12 +357,19 @@ class _FolderPageState extends State<FolderPage> {
           entry.uri,
           (action) => action,
         );
+        final selected = _selection.contains(entry.uri);
+        void select() => _selection.toggle(entry.uri, entry);
         return ListTile(
-          leading: const Icon(Icons.picture_as_pdf_outlined),
+          selected: selected,
+          leading: SelectedMark(
+            selected: selected,
+            child: const Icon(Icons.picture_as_pdf_outlined),
+          ),
           title: Text(entry.name, maxLines: 2, overflow: TextOverflow.ellipsis),
           subtitle: details.isEmpty ? null : Text(details),
-          onTap: () => widget.onOpen(entry),
-          trailing: fileItems.isEmpty
+          onTap: selecting ? select : () => widget.onOpen(entry),
+          onLongPress: selectable ? select : null,
+          trailing: selecting || fileItems.isEmpty
               ? null
               : PopupMenuButton<FileAction>(
                   onSelected: (action) => unawaited(_onFile(action, entry)),

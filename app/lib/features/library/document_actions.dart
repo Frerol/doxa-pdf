@@ -76,39 +76,56 @@ final class DocumentActions {
 
   /// Moves the document at [uri] to a folder the user picks. True when it
   /// moved.
-  Future<bool> move(BuildContext context, {required String uri}) async {
+  Future<bool> move(BuildContext context, {required String uri}) async =>
+      await moveAll(context, [uri]) > 0;
+
+  /// Moves the documents at [uris], all on one storage, to one folder the
+  /// user picks. Returns how many moved; a document already in that folder
+  /// does not count.
+  Future<int> moveAll(BuildContext context, List<String> uris) async {
     final library = this.library;
     final folders = this.folders;
-    if (library == null || folders == null) return false;
-    final authority = Uri.parse(uri).authority;
+    if (library == null || folders == null || uris.isEmpty) return 0;
+    final authority = Uri.parse(uris.first).authority;
     final roots = [
       for (final folder in await library.watchFolders().first)
         if (Uri.tryParse(folder.treeUri)?.authority == authority) folder,
     ];
-    if (!context.mounted) return false;
+    if (!context.mounted) return 0;
     if (roots.isEmpty) {
       _show(context, AppLocalizations.of(context).moveNoFolders);
-      return false;
+      return 0;
     }
     final target = await Navigator.of(context).push<MoveTarget>(
       MaterialPageRoute(
         builder: (_) => MoveTargetPage(roots: roots, folders: folders),
       ),
     );
-    if (target == null || !context.mounted) return false;
-    PlatformMovedDocument? moved;
-    final changed = await _change(context, () async {
-      moved = await files.move(
-        uri,
-        targetTreeUri: target.treeUri,
-        targetDocumentId: target.documentId,
-      );
-      await _relocate(uri, moved!);
-    });
-    if (!changed) return false;
-    if (context.mounted) _warnIfLost(context, moved!);
-    // Moving into the folder it is already in changes nothing.
-    return moved!.uri != uri;
+    if (target == null || !context.mounted) return 0;
+    var moved = 0;
+    var lost = false;
+    final errors = <DocumentFileError>[];
+    for (final uri in uris) {
+      final error = await _attempt(() async {
+        final result = await files.move(
+          uri,
+          targetTreeUri: target.treeUri,
+          targetDocumentId: target.documentId,
+        );
+        await _relocate(uri, result);
+        // Moving into the folder it is already in changes nothing.
+        if (result.uri != uri) moved++;
+        lost |= !result.persisted;
+      });
+      if (error != null) errors.add(error);
+    }
+    if (context.mounted) {
+      _report(context, errors, uris.length);
+      if (lost && errors.isEmpty) {
+        _show(context, AppLocalizations.of(context).documentNotReopenable);
+      }
+    }
+    return moved;
   }
 
   /// Deletes the document at [uri], called [name], after the user confirms.
@@ -117,13 +134,29 @@ final class DocumentActions {
     BuildContext context, {
     required String uri,
     required String name,
-  }) async {
+  }) async => await deleteAll(context, [(uri: uri, name: name)]) > 0;
+
+  /// Deletes [documents] after one confirmation. Returns how many were
+  /// deleted.
+  Future<int> deleteAll(
+    BuildContext context,
+    List<({String uri, String name})> documents,
+  ) async {
+    if (documents.isEmpty) return 0;
     final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(l10n.deleteDocumentTitle(name)),
-        content: Text(l10n.deleteDocumentMessage),
+        title: Text(
+          documents.length == 1
+              ? l10n.deleteDocumentTitle(documents.single.name)
+              : l10n.deleteDocumentsTitle(documents.length),
+        ),
+        content: Text(
+          documents.length == 1
+              ? l10n.deleteDocumentMessage
+              : l10n.deleteDocumentsMessage,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -136,14 +169,23 @@ final class DocumentActions {
         ],
       ),
     );
-    if (confirmed != true || !context.mounted) return false;
-    return _change(context, () async {
-      await files.delete(uri);
-      final identities = await library?.forgetDeleted(uri) ?? const [];
-      for (final identity in identities) {
-        await thumbnails?.delete(identity);
-      }
-    });
+    if (confirmed != true || !context.mounted) return 0;
+    var deleted = 0;
+    final errors = <DocumentFileError>[];
+    for (final document in documents) {
+      final error = await _attempt(() async {
+        await files.delete(document.uri);
+        deleted++;
+        final identities =
+            await library?.forgetDeleted(document.uri) ?? const [];
+        for (final identity in identities) {
+          await thumbnails?.delete(identity);
+        }
+      });
+      if (error != null) errors.add(error);
+    }
+    if (context.mounted) _report(context, errors, documents.length);
+    return deleted;
   }
 
   Future<void> _relocate(String uri, PlatformMovedDocument moved) async {
@@ -161,31 +203,48 @@ final class DocumentActions {
     }
   }
 
-  /// Runs [action]; true when it succeeded.
+  /// Runs [action]; true when it succeeded, otherwise says why.
   Future<bool> _change(
     BuildContext context,
     Future<void> Function() action,
   ) async {
+    final error = await _attempt(action);
+    if (error != null && context.mounted) _report(context, [error], 1);
+    return error == null;
+  }
+
+  /// Runs [action]; null when it succeeded, otherwise why it failed.
+  Future<DocumentFileError?> _attempt(Future<void> Function() action) async {
     try {
       await action();
-      return true;
+      return null;
     } on DocumentFileException catch (error) {
-      if (context.mounted) {
-        final l10n = AppLocalizations.of(context);
-        _show(context, switch (error.error) {
-          DocumentFileError.missing => l10n.fileMissing,
-          DocumentFileError.permissionLost => l10n.fileActionPermissionLost,
-          DocumentFileError.unsupported => l10n.fileActionUnsupported,
-          DocumentFileError.failed => l10n.fileActionFailed,
-        });
-      }
+      return error.error;
     } on Object catch (error) {
       debugPrint('Doxa: file action failed: $error');
-      if (context.mounted) {
-        _show(context, AppLocalizations.of(context).fileActionFailed);
-      }
+      return DocumentFileError.failed;
     }
-    return false;
+  }
+
+  /// Explains the [errors] of an action on [total] documents: the cause when
+  /// there is one document, how many failed when there are more.
+  void _report(
+    BuildContext context,
+    List<DocumentFileError> errors,
+    int total,
+  ) {
+    if (errors.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
+    if (total > 1) {
+      _show(context, l10n.fileActionsFailed(errors.length, total));
+      return;
+    }
+    _show(context, switch (errors.single) {
+      DocumentFileError.missing => l10n.fileMissing,
+      DocumentFileError.permissionLost => l10n.fileActionPermissionLost,
+      DocumentFileError.unsupported => l10n.fileActionUnsupported,
+      DocumentFileError.failed => l10n.fileActionFailed,
+    });
   }
 
   void _show(BuildContext context, String message) {

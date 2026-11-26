@@ -19,6 +19,7 @@ import 'document_identity.dart';
 import 'folder_page.dart';
 import 'library_repository.dart';
 import 'library_thumbnails.dart';
+import 'selection.dart';
 
 /// Computes a document identity from a readable path (injectable in tests).
 typedef DocumentIdentifier = Future<String> Function(String path);
@@ -64,7 +65,8 @@ class LibraryHome extends StatefulWidget {
   State<LibraryHome> createState() => _LibraryHomeState();
 }
 
-class _LibraryHomeState extends State<LibraryHome> {
+class _LibraryHomeState extends State<LibraryHome>
+    with SingleTickerProviderStateMixin {
   StreamSubscription<void>? _incoming;
   bool _draining = false;
   bool _incomingPending = false;
@@ -87,10 +89,26 @@ class _LibraryHomeState extends State<LibraryHome> {
   /// Bumped when a thumbnail is written, so the lists load it again.
   final _thumbnailsChanged = ValueNotifier<int>(0);
 
+  bool get _hasFolders =>
+      widget.library != null && widget.libraryFolders != null;
+
+  late final _tabs = TabController(length: _hasFolders ? 3 : 2, vsync: this)
+    ..addListener(_selection.clear);
+
+  /// Documents selected in Recents or Favorites (FR-FILE-011); a tab
+  /// change clears it.
+  final _selection = Selection<int, LibraryDocument>();
+
+  /// The documents each list shows now, for "Select all".
+  final _shown = <int, List<LibraryDocument>>{};
+
+  static const _recentsTab = 0;
+
   @override
   void initState() {
     super.initState();
     _incoming = widget.pdfDocuments?.incomingPdfs.listen((_) => _onIncoming());
+    _selection.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) => _onIncoming());
   }
 
@@ -99,6 +117,8 @@ class _LibraryHomeState extends State<LibraryHome> {
     unawaited(_incoming?.cancel());
     _query.dispose();
     _thumbnailsChanged.dispose();
+    _tabs.dispose();
+    _selection.dispose();
     super.dispose();
   }
 
@@ -374,73 +394,147 @@ class _LibraryHomeState extends State<LibraryHome> {
     });
   }
 
+  void _selectAll() => _selection.addAll([
+    for (final document in _shown[_tabs.index] ?? const <LibraryDocument>[])
+      MapEntry(document.id, document),
+  ]);
+
+  /// Runs a batch action on the selection, then leaves selection mode.
+  Future<void> _onSelected(
+    Future<void> Function(List<LibraryDocument> documents) action,
+  ) async {
+    await action(_selection.values);
+    _selection.clear();
+  }
+
+  List<Widget> _selectionActions(AppLocalizations l10n) {
+    final chosen = _selection.values;
+    final actions = _actions;
+    final library = widget.library;
+    final uris = [for (final d in chosen) d.uri];
+    final authorities = {
+      for (final uri in uris) Uri.tryParse(uri ?? '')?.authority,
+    };
+    return [
+      if (_tabs.index == _recentsTab && library != null)
+        IconButton(
+          icon: const Icon(Icons.playlist_remove),
+          tooltip: l10n.removeFromRecents,
+          onPressed: () => _onSelected((documents) async {
+            for (final d in documents) {
+              await library.removeFromRecents(d.id);
+            }
+          }),
+        ),
+      if (actions != null &&
+          authorities.length == 1 &&
+          uris.every(actions.canMove))
+        IconButton(
+          icon: const Icon(Icons.drive_file_move_outlined),
+          tooltip: l10n.moveDocument,
+          onPressed: () => _onSelected(
+            (documents) =>
+                actions.moveAll(context, [for (final d in documents) d.uri!]),
+          ),
+        ),
+      if (actions != null && uris.every(actions.canChange))
+        IconButton(
+          icon: const Icon(Icons.delete_outline),
+          tooltip: l10n.deleteDocument,
+          onPressed: () => _onSelected(
+            (documents) => actions.deleteAll(context, [
+              for (final d in documents) (uri: d.uri!, name: d.displayName),
+            ]),
+          ),
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final library = widget.library;
-    final folders = library == null ? null : widget.libraryFolders;
-    return DefaultTabController(
-      length: folders == null ? 2 : 3,
+    final folders = _hasFolders ? widget.libraryFolders : null;
+    final tabBar = TabBar(
+      controller: _tabs,
+      tabs: [
+        Tab(text: l10n.libraryRecents),
+        Tab(text: l10n.libraryFavorites),
+        if (folders != null) Tab(text: l10n.libraryFolders),
+      ],
+    );
+    return PopScope(
+      // Back leaves selection mode first.
+      canPop: !_selection.isActive,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _selection.clear();
+      },
       child: Scaffold(
-        appBar: AppBar(
-          title: _searching
-              ? TextField(
-                  controller: _query,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: l10n.librarySearch,
-                    border: InputBorder.none,
-                  ),
-                  onChanged: (_) => setState(() {}),
-                )
-              : Text(l10n.appTitle),
-          actions: [
-            if (_searching)
-              IconButton(
-                icon: const Icon(Icons.close),
-                tooltip: l10n.libraryCloseSearch,
-                onPressed: () => _setSearching(false),
+        appBar: _selection.isActive
+            ? selectionAppBar(
+                context,
+                count: _selection.length,
+                onClear: _selection.clear,
+                onSelectAll: _selectAll,
+                actions: _selectionActions(l10n),
+                bottom: tabBar,
               )
-            else
-              IconButton(
-                icon: const Icon(Icons.search),
-                tooltip: l10n.librarySearch,
-                onPressed: () => _setSearching(true),
-              ),
-            IconButton(
-              icon: const Icon(Icons.settings_outlined),
-              tooltip: l10n.settingsTitle,
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => SettingsPage(settings: widget.settings),
-                ),
-              ),
-            ),
-            if (widget.devDocumentsDir case final dir?)
-              IconButton(
-                icon: const Icon(Icons.developer_mode_outlined),
-                tooltip: l10n.devDocumentsTitle,
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => Scaffold(
-                      appBar: AppBar(title: Text(l10n.devDocumentsTitle)),
-                      body: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: DevDocuments(directory: dir, onOpen: _openFile),
+            : AppBar(
+                title: _searching
+                    ? TextField(
+                        controller: _query,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          hintText: l10n.librarySearch,
+                          border: InputBorder.none,
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      )
+                    : Text(l10n.appTitle),
+                actions: [
+                  if (_searching)
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: l10n.libraryCloseSearch,
+                      onPressed: () => _setSearching(false),
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(Icons.search),
+                      tooltip: l10n.librarySearch,
+                      onPressed: () => _setSearching(true),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.settings_outlined),
+                    tooltip: l10n.settingsTitle,
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => SettingsPage(settings: widget.settings),
                       ),
                     ),
                   ),
-                ),
+                  if (widget.devDocumentsDir case final dir?)
+                    IconButton(
+                      icon: const Icon(Icons.developer_mode_outlined),
+                      tooltip: l10n.devDocumentsTitle,
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => Scaffold(
+                            appBar: AppBar(title: Text(l10n.devDocumentsTitle)),
+                            body: SingleChildScrollView(
+                              padding: const EdgeInsets.all(16),
+                              child: DevDocuments(
+                                directory: dir,
+                                onOpen: _openFile,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+                bottom: tabBar,
               ),
-          ],
-          bottom: TabBar(
-            tabs: [
-              Tab(text: l10n.libraryRecents),
-              Tab(text: l10n.libraryFavorites),
-              if (folders != null) Tab(text: l10n.libraryFolders),
-            ],
-          ),
-        ),
         floatingActionButton: widget.pdfDocuments == null
             ? null
             : FloatingActionButton.extended(
@@ -449,6 +543,7 @@ class _LibraryHomeState extends State<LibraryHome> {
                 label: Text(l10n.openFile),
               ),
         body: TabBarView(
+          controller: _tabs,
           children: [
             _DocumentList(
               documents: library?.watchRecents(),
@@ -461,6 +556,8 @@ class _LibraryHomeState extends State<LibraryHome> {
               onOpen: _reopen,
               actions: _actions,
               showRemoveFromRecents: true,
+              selection: _selection,
+              onShown: (shown) => _shown[0] = shown,
             ),
             _DocumentList(
               documents: library?.watchFavorites(),
@@ -473,6 +570,8 @@ class _LibraryHomeState extends State<LibraryHome> {
               onOpen: _reopen,
               actions: _actions,
               showRemoveFromRecents: false,
+              selection: _selection,
+              onShown: (shown) => _shown[1] = shown,
             ),
             if (folders != null)
               _FolderList(
@@ -501,6 +600,8 @@ class _DocumentList extends StatefulWidget {
     required this.onOpen,
     required this.actions,
     required this.showRemoveFromRecents,
+    required this.selection,
+    required this.onShown,
   });
 
   final Stream<List<LibraryDocument>>? documents;
@@ -513,6 +614,10 @@ class _DocumentList extends StatefulWidget {
   final ValueChanged<LibraryDocument> onOpen;
   final DocumentActions? actions;
   final bool showRemoveFromRecents;
+  final Selection<int, LibraryDocument> selection;
+
+  /// Told the documents shown after each build, without a rebuild.
+  final ValueChanged<List<LibraryDocument>> onShown;
 
   @override
   State<_DocumentList> createState() => _DocumentListState();
@@ -542,6 +647,7 @@ class _DocumentListState extends State<_DocumentList>
                 for (final d in all)
                   if (foldName(d.displayName).contains(query)) d,
               ];
+        widget.onShown(shown);
         if (shown.isEmpty) {
           if (_documents != null && !snapshot.hasData) {
             return const SizedBox.shrink();
@@ -565,6 +671,11 @@ class _DocumentListState extends State<_DocumentList>
               onOpen: widget.onOpen,
               actions: widget.actions,
               showRemoveFromRecents: widget.showRemoveFromRecents,
+              selectable:
+                  widget.actions != null || widget.showRemoveFromRecents,
+              selecting: widget.selection.isActive,
+              selected: widget.selection.contains(shown[i].id),
+              onSelect: () => widget.selection.toggle(shown[i].id, shown[i]),
             ),
           ),
         );
@@ -633,6 +744,10 @@ class _DocumentTile extends StatelessWidget {
     required this.onOpen,
     required this.actions,
     required this.showRemoveFromRecents,
+    required this.selectable,
+    required this.selecting,
+    required this.selected,
+    required this.onSelect,
   });
 
   final LibraryDocument document;
@@ -642,6 +757,14 @@ class _DocumentTile extends StatelessWidget {
   final ValueChanged<LibraryDocument> onOpen;
   final DocumentActions? actions;
   final bool showRemoveFromRecents;
+
+  /// Whether a long press selects the document (FR-FILE-011).
+  final bool selectable;
+
+  /// While documents are selected, a tap selects instead of opening.
+  final bool selecting;
+  final bool selected;
+  final VoidCallback onSelect;
 
   void _select(BuildContext context, _DocumentAction action) {
     switch (action) {
@@ -678,44 +801,55 @@ class _DocumentTile extends StatelessWidget {
         : '${l10n.libraryProgress(document.state.page + 1, document.pageCount, (document.progress * 100).floor())} · $when';
     final favorite = document.favorite;
     return ListTile(
-      leading: _Thumbnail(file: thumbnail),
+      selected: selected,
+      leading: SelectedMark(
+        selected: selected,
+        child: _Thumbnail(file: thumbnail),
+      ),
       title: Text(
         document.displayName,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(subtitle),
-      onTap: () => onOpen(document),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: Icon(favorite ? Icons.star : Icons.star_border),
-            color: favorite ? theme.colorScheme.primary : null,
-            tooltip: favorite ? l10n.removeFromFavorites : l10n.addToFavorites,
-            onPressed: () => library?.setFavorite(document.id, !favorite),
-          ),
-          if (showRemoveFromRecents || fileItems.isNotEmpty)
-            PopupMenuButton<_DocumentAction>(
-              onSelected: (action) => _select(context, action),
-              itemBuilder: (_) => [
-                if (showRemoveFromRecents) ...[
-                  PopupMenuItem(
-                    value: const _ToggleFavorite(),
-                    child: Text(
-                      favorite ? l10n.removeFromFavorites : l10n.addToFavorites,
-                    ),
+      onTap: selecting ? onSelect : () => onOpen(document),
+      onLongPress: selectable ? onSelect : null,
+      trailing: selecting
+          ? null
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(favorite ? Icons.star : Icons.star_border),
+                  color: favorite ? theme.colorScheme.primary : null,
+                  tooltip: favorite
+                      ? l10n.removeFromFavorites
+                      : l10n.addToFavorites,
+                  onPressed: () => library?.setFavorite(document.id, !favorite),
+                ),
+                if (showRemoveFromRecents || fileItems.isNotEmpty)
+                  PopupMenuButton<_DocumentAction>(
+                    onSelected: (action) => _select(context, action),
+                    itemBuilder: (_) => [
+                      if (showRemoveFromRecents) ...[
+                        PopupMenuItem(
+                          value: const _ToggleFavorite(),
+                          child: Text(
+                            favorite
+                                ? l10n.removeFromFavorites
+                                : l10n.addToFavorites,
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: const _RemoveFromRecents(),
+                          child: Text(l10n.removeFromRecents),
+                        ),
+                      ],
+                      ...fileItems,
+                    ],
                   ),
-                  PopupMenuItem(
-                    value: const _RemoveFromRecents(),
-                    child: Text(l10n.removeFromRecents),
-                  ),
-                ],
-                ...fileItems,
               ],
             ),
-        ],
-      ),
     );
   }
 }
