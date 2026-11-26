@@ -85,20 +85,34 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('opens the picker result and releases it after reader close', (
+  testWidgets('opens the picker result and releases it once its tab closes', (
     tester,
   ) async {
     documents.picked = pdf(1, 'Provider name.pdf');
     documents.onRelease = () => expect(engine.openDocumentCount, 0);
     await launch(tester);
     await pick(tester);
-    expect(find.text('Provider name.pdf'), findsOneWidget);
+    expect(
+      tester.widget<ReaderPage>(find.byType(ReaderPage)).title,
+      'Provider name.pdf',
+    );
     expect(find.byType(ReaderView), findsOneWidget);
     expect(documents.released, isEmpty);
 
+    // Back keeps the tab (FR-FILE-007): the engine closes the document,
+    // but the source stays leased for when the tab is shown again.
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
-    expect(documents.released, [1]);
+    expect(engine.openDocumentCount, 0);
+    expect(documents.released, isEmpty);
+
+    await pick(tester);
+    await tester.tap(find.byTooltip('Close Provider name.pdf'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ReaderPage), findsNothing);
+    // The second pick of the same file went back at once; the tab's own
+    // source goes back after the engine closed the document.
+    expect(documents.released, [1, 1]);
   });
 
   testWidgets('cancelling the picker stays at home', (tester) async {
@@ -113,13 +127,22 @@ void main() {
   ) async {
     documents.incoming.add(pdf(1, 'Cold start.pdf'));
     await launch(tester);
-    expect(find.text('Cold start.pdf'), findsOneWidget);
+    expect(
+      tester.widget<ReaderPage>(find.byType(ReaderPage)).title,
+      'Cold start.pdf',
+    );
 
     documents.incoming.add(pdf(3, 'Shared.pdf'));
     documents.notifyIncoming();
     await tester.pumpAndSettle();
-    expect(find.text('Shared.pdf'), findsOneWidget);
-    expect(engine.openDocumentCount, 2);
+    // The shared file opens in a new tab; only the active tab keeps its
+    // document open.
+    expect(
+      tester.widget<ReaderPage>(find.byType(ReaderPage)).title,
+      'Shared.pdf',
+    );
+    expect(find.byTooltip('Close Cold start.pdf'), findsOneWidget);
+    expect(engine.openDocumentCount, 1);
   });
 
   testWidgets('shows a wrong password and unlocks on retry', (tester) async {

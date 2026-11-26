@@ -131,5 +131,6 @@
   "fileActionsFailed": "Não foi possível alterar {failed} de {total} documentos.",
   "selectedCount": "{count, plural, =1{1 selecionado} other{{count} selecionados}}",
   "clearSelection": "Limpar seleção",
-  "selectAll": "Selecionar tudo"
+  "selectAll": "Selecionar tudo",
+  "closeTab": "Fechar {name}"
 }
