@@ -217,21 +217,34 @@ class DictionaryScope extends InheritedWidget {
       importer != old.importer;
 }
 
-/// What one dictionary has for a query: its entries, or close headwords
-/// when it has none.
+/// The entries or read failure for one dictionary.
 typedef LookupGroup = ({
   String dictionary,
   List<({String headword, DefinitionResult definition})> entries,
-  List<String> suggestions,
   bool failed,
 });
+
+/// The entries and alternate headwords returned by one lookup request.
+final class LookupResult {
+  const LookupResult(
+    this.groups, {
+    this.suggestions = const [],
+    this.shownWord,
+  });
+
+  final List<LookupGroup> groups;
+  final List<String> suggestions;
+
+  /// The suggestion opened automatically for a query that missed everywhere.
+  final String? shownWord;
+}
 
 /// Looks words up in a long-lived isolate (ADR-0009: never on the UI
 /// isolate, never on the engine's), which keeps the dictionaries open
 /// between lookups.
 abstract interface class DictionaryLookup {
   /// The results of [query] in [dictionaries], in that order.
-  Future<List<LookupGroup>> lookup(
+  Future<LookupResult> lookup(
     String query,
     List<InstalledDictionary> dictionaries,
   );
@@ -253,7 +266,7 @@ final class IsolateDictionaryLookup implements DictionaryLookup {
   }();
 
   @override
-  Future<List<LookupGroup>> lookup(
+  Future<LookupResult> lookup(
     String query,
     List<InstalledDictionary> dictionaries,
   ) async {
@@ -266,7 +279,7 @@ final class IsolateDictionaryLookup implements DictionaryLookup {
     ));
     final result = await reply.first;
     reply.close();
-    return result as List<LookupGroup>;
+    return result as LookupResult;
   }
 
   @override
@@ -292,32 +305,68 @@ void _workerMain(SendPort ready) {
     for (final path in open.keys.where((p) => !paths.contains(p)).toList()) {
       open.remove(path)!.close();
     }
-    final groups = <LookupGroup>[];
-    for (final (:name, :ifo) in wanted) {
+    List<LookupGroup> readEntries(String word) => [
+      for (final (:name, :ifo) in wanted) _readEntries(open, ifo, name, word),
+    ];
+
+    final groups = readEntries(query);
+    if (groups.any((group) => group.entries.isNotEmpty)) {
+      reply.send(LookupResult(groups));
+      return;
+    }
+
+    // Score the union of the existing per-dictionary suggestions before the
+    // popup caps the chips. A tied distance leaves all suggestions as chips.
+    final suggestions = <String>{};
+    for (var i = 0; i < wanted.length; i++) {
+      if (groups[i].failed) continue;
       try {
-        final dictionary = open[ifo] ??= Dictionary.open(File(ifo));
-        final entries = dictionary.lookup(query);
-        groups.add((
-          dictionary: name,
-          entries: [
-            for (final e in entries)
-              (headword: e.headword, definition: convertDefinition(e.fields)),
-          ],
-          suggestions: entries.isEmpty
-              ? dictionary.suggest(query, limit: 5)
-              : const [],
-          failed: false,
-        ));
+        suggestions.addAll(open[wanted[i].ifo]!.suggest(query, limit: 5));
       } on Object {
-        // A damaged file must not take the other dictionaries down.
-        groups.add((
-          dictionary: name,
+        groups[i] = (
+          dictionary: groups[i].dictionary,
           entries: const [],
-          suggestions: const [],
           failed: true,
-        ));
+        );
       }
     }
-    reply.send(groups);
+    final closest = closestSuggestion(query, suggestions);
+    if (closest != null) {
+      final matches = readEntries(closest);
+      if (matches.any((group) => group.entries.isNotEmpty)) {
+        suggestions.remove(closest);
+        reply.send(
+          LookupResult(
+            matches,
+            suggestions: suggestions.toList(),
+            shownWord: closest,
+          ),
+        );
+        return;
+      }
+    }
+    reply.send(LookupResult(groups, suggestions: suggestions.toList()));
   });
+}
+
+LookupGroup _readEntries(
+  Map<String, Dictionary> open,
+  String ifo,
+  String name,
+  String query,
+) {
+  try {
+    final dictionary = open[ifo] ??= Dictionary.open(File(ifo));
+    return (
+      dictionary: name,
+      entries: [
+        for (final e in dictionary.lookup(query))
+          (headword: e.headword, definition: convertDefinition(e.fields)),
+      ],
+      failed: false,
+    );
+  } on Object {
+    // A damaged file must not take the other dictionaries down.
+    return (dictionary: name, entries: const [], failed: true);
+  }
 }

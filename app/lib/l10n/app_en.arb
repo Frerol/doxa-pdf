@@ -639,6 +639,15 @@
       }
     }
   },
+  "dictionaryShowing": "Showing “{word}”",
+  "@dictionaryShowing": {
+    "description": "Introduces the closest headword opened automatically when no dictionary matched.",
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
   "dictionarySuggestions": "Did you mean:",
   "@dictionarySuggestions": {
     "description": "Introduces close headwords offered when nothing matched (FR-TEXT-010)."

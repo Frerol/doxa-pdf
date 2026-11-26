@@ -325,12 +325,12 @@ class _RecordingLookup implements DictionaryLookup {
   final queries = <String>[];
 
   @override
-  Future<List<LookupGroup>> lookup(
+  Future<LookupResult> lookup(
     String query,
     List<InstalledDictionary> dictionaries,
   ) async {
     queries.add(query);
-    return const [];
+    return const LookupResult([]);
   }
 
   @override
