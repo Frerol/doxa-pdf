@@ -121,13 +121,27 @@ final class StarDictSynonyms {
   final _WordTable _table;
 
   /// Parses a present synonym file. Its count is required in [info].
-  static StarDictSynonyms parse(List<int> bytes, StarDictInfo info) {
+  ///
+  /// With [gzip], [bytes] is a gzip or dictzip `.syn.dz`, as some writers
+  /// (PyGlossary) produce. The `.ifo` gives no size for it, so it may
+  /// decompress to at most [StarDictIndex.maxGzipIndexSize] bytes.
+  static StarDictSynonyms parse(
+    List<int> bytes,
+    StarDictInfo info, {
+    bool gzip = false,
+  }) {
     final count = info.synWordCount;
     if (count == null) {
       throw const DictionaryFormatException('Missing synwordcount for .syn');
     }
 
-    final table = _WordTable.parse(_copyBytes(bytes, '.syn'), count, 4, '.syn');
+    final copied = _copyBytes(bytes, '.syn');
+    final table = _WordTable.parse(
+      gzip ? _inflateSynonyms(copied) : copied,
+      count,
+      4,
+      '.syn',
+    );
     final synonyms = StarDictSynonyms._(table);
     for (var i = 0; i < count; i++) {
       if (synonyms.ordinalAt(i) >= info.wordCount) {
@@ -149,6 +163,31 @@ final class StarDictSynonyms {
       .lookup(alias, ignoreAsciiCase: ignoreAsciiCase)
       .map(ordinalAt)
       .toList();
+}
+
+Uint8List _inflateSynonyms(Uint8List bytes) {
+  if (bytes.length < 18 || bytes[0] != 0x1f || bytes[1] != 0x8b) {
+    throw const DictionaryFormatException('Missing .syn.dz header or trailer');
+  }
+  final output = _BoundedOutput(StarDictIndex.maxGzipIndexSize);
+  try {
+    final decoder = GZipCodec().decoder.startChunkedConversion(output);
+    decoder.add(bytes);
+    // A complete stream lets a second gzip member decode after it; a cut
+    // one reads that member as its own missing bytes.
+    output.checkingEnd = true;
+    decoder
+      ..add(StarDictIndex._endProbe)
+      ..close();
+    if (!output.reachedEnd) {
+      throw const DictionaryFormatException('Truncated .syn.dz stream');
+    }
+  } on DictionaryFormatException {
+    rethrow;
+  } on FormatException {
+    throw const DictionaryFormatException('Invalid .syn.dz stream');
+  }
+  return output.bytes.takeBytes();
 }
 
 Uint8List _copyBytes(List<int> bytes, String file) {

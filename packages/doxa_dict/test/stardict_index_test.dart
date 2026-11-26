@@ -276,6 +276,51 @@ void main() {
       }
     });
 
+    test('reads gzip and dictzip .syn.dz like a plain .syn', () {
+      final plain = [..._alias('alias', 0), ..._alias('other', 1)];
+      final packed = GZipCodec().encode(plain);
+      // dictzip adds an FEXTRA field with its chunk table to the header.
+      final dictzip = [
+        ...packed.sublist(0, 3),
+        packed[3] | 0x04,
+        ...packed.sublist(4, 10),
+        6,
+        0,
+        0x52,
+        0x41,
+        2,
+        0,
+        0,
+        0,
+        ...packed.sublist(10),
+      ];
+      for (final bytes in [packed, dictzip]) {
+        final synonyms = StarDictSynonyms.parse(
+          bytes,
+          _info(0, 2, synonyms: 2),
+          gzip: true,
+        );
+        expect(synonyms.lookup('other'), [1]);
+      }
+    });
+
+    test('rejects a .syn.dz that is not gzip or is cut short', () {
+      final packed = GZipCodec().encode(_alias('alias', 0));
+      for (final bytes in [
+        _alias('alias', 0),
+        packed.sublist(0, packed.length - 4),
+      ]) {
+        expect(
+          () => StarDictSynonyms.parse(
+            bytes,
+            _info(0, 1, synonyms: 1),
+            gzip: true,
+          ),
+          _formatError,
+        );
+      }
+    });
+
     test('rejects aliases out of StarDict order', () {
       final bytes = [..._alias('alias', 0), ..._alias('Alias', 0)];
       expect(
