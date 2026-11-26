@@ -12,7 +12,8 @@ void main() {
     await tester.pumpWidget(const DoxaApp());
 
     expect(find.text('Doxa PDF'), findsOneWidget);
-    expect(find.text('Recents'), findsOneWidget);
+    // An empty library shows how to start (UX §5: no tabs on the home).
+    expect(find.text('Documents you open appear here.'), findsOneWidget);
   });
 
   testWidgets('shows the home in Brazilian Portuguese', (tester) async {
@@ -21,7 +22,9 @@ void main() {
 
     await tester.pumpWidget(const DoxaApp());
 
-    expect(find.text('Recentes'), findsOneWidget);
-    expect(find.text('Favoritos'), findsOneWidget);
+    expect(
+      find.text('Os documentos que você abrir aparecem aqui.'),
+      findsOneWidget,
+    );
   });
 }

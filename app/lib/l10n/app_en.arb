@@ -749,5 +749,47 @@
   "dictionaryNoneFound": "No dictionary found. A StarDict dictionary has an .ifo file.",
   "@dictionaryNoneFound": {
     "description": "Shown when an import holds no .ifo file."
+  },
+  "continueReading": "Continue reading",
+  "@continueReading": {
+    "description": "Title of the home card with the last document read (UX §5)."
+  },
+  "continueOnPage": "Continue on p. {page}",
+  "@continueOnPage": {
+    "description": "Button of the Continue reading card.",
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "seeAll": "See all",
+  "@seeAll": {
+    "description": "Opens a home section's full list."
+  },
+  "seeAllRecents": "See all recents",
+  "@seeAllRecents": {
+    "description": "Opens the full list of recents when only one document is there."
+  },
+  "percentRead": "{percent}% read",
+  "@percentRead": {
+    "description": "Accessibility label of the progress ring.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "homePage": "p. {page} of {count}",
+  "@homePage": {
+    "description": "A document's page on the home screen.",
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
