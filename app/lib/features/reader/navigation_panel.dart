@@ -6,149 +6,185 @@ import 'package:material_ui/material_ui.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'reader_controller.dart';
 
-/// What the reader's side panel shows. Only sections that are built are
-/// listed (UX §5): bookmarks and annotations join when they exist.
-enum PanelSection { pages, outline }
-
-/// The reader's side panel (docs/plan/05-ux-design.md §5): icons at its
-/// top pick its content, page thumbnails (FR-VIEW-008) or the outline
-/// (FR-VIEW-007). The reader opens and closes it with its app-bar button.
-class ReaderSidePanel extends StatelessWidget {
+/// Contents navigation in the docked panel or on a full-screen phone route
+/// (FR-VIEW-007, UX §7).
+class ReaderSidePanel extends StatefulWidget {
   const ReaderSidePanel({
     super.key,
     required this.controller,
-    required this.section,
-    required this.onSection,
     required this.onFollow,
+    this.onClose,
   });
 
-  /// The panel's width when it sits beside the page.
-  static const width = 296.0;
-
   final ReaderController controller;
-  final PanelSection section;
-  final ValueChanged<PanelSection> onSection;
+  final ValueChanged<LinkTarget> onFollow;
 
-  /// Called with the target of a tapped outline entry or thumbnail.
-  final void Function(LinkTarget target) onFollow;
+  /// On phones the enclosing route supplies its own back button.
+  final VoidCallback? onClose;
+
+  @override
+  State<ReaderSidePanel> createState() => _ReaderSidePanelState();
+}
+
+class _ReaderSidePanelState extends State<ReaderSidePanel> {
+  late final Future<List<OutlineNode>> _outline = widget.controller.engine
+      .outline(widget.controller.document);
+  final _expanded = <OutlineNode>{};
+  bool _searching = false;
+  String _query = '';
+
+  Iterable<OutlineNode> _descendants(List<OutlineNode> nodes) sync* {
+    for (final node in nodes) {
+      yield node;
+      yield* _descendants(node.children);
+    }
+  }
+
+  Iterable<({OutlineNode node, int depth})> _visible(
+    List<OutlineNode> nodes,
+    int depth,
+  ) sync* {
+    for (final node in nodes) {
+      yield (node: node, depth: depth);
+      if (_expanded.contains(node)) {
+        yield* _visible(node.children, depth + 1);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final sections = [
-      (PanelSection.pages, Icons.grid_view_outlined, l10n.pagesTab),
-      (PanelSection.outline, Icons.toc, l10n.outlineTab),
-    ];
-    final label = sections.firstWhere((s) => s.$1 == section).$3;
     return Material(
-      color: scheme.surface,
+      color: Theme.of(context).colorScheme.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                for (final (value, icon, name) in sections)
-                  Expanded(
+          if (widget.onClose case final close?)
+            ListTile(
+              title: Text(
+                l10n.outlineTab,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                onPressed: close,
+              ),
+            ),
+          Expanded(
+            child: FutureBuilder(
+              future: _outline,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final nodes = snapshot.data ?? const <OutlineNode>[];
+                if (nodes.isEmpty) {
+                  return Center(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: IconButton(
-                        icon: Icon(icon),
-                        tooltip: name,
-                        isSelected: value == section,
-                        style: IconButton.styleFrom(
-                          minimumSize: const Size.fromHeight(44),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          backgroundColor: value == section
-                              ? scheme.secondaryContainer
-                              : null,
-                          foregroundColor: value == section
-                              ? scheme.onSecondaryContainer
-                              : scheme.onSurfaceVariant,
-                        ),
-                        onPressed: () => onSection(value),
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        l10n.outlineEmpty,
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                  ),
-              ],
+                  );
+                }
+                final all = _descendants(nodes).toList();
+                final branches = all.where((node) => node.children.isNotEmpty);
+                final allExpanded = branches.every(_expanded.contains);
+                final rows = _query.isEmpty
+                    ? _visible(nodes, 0).toList()
+                    : [
+                        for (final node in all)
+                          if (node.title.toLowerCase().contains(_query))
+                            (node: node, depth: 0),
+                      ];
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            _searching ? Icons.search_off : Icons.search,
+                          ),
+                          tooltip: _searching
+                              ? MaterialLocalizations.of(context)
+                                    .closeButtonTooltip
+                              : l10n.outlineSearch,
+                          isSelected: _searching,
+                          onPressed: () => setState(() {
+                            _searching = !_searching;
+                            _query = '';
+                          }),
+                        ),
+                        if (branches.isNotEmpty)
+                          IconButton(
+                            icon: Icon(
+                              allExpanded
+                                  ? Icons.unfold_less
+                                  : Icons.unfold_more,
+                            ),
+                            tooltip: allExpanded
+                                ? l10n.outlineCollapseAll
+                                : l10n.outlineExpandAll,
+                            onPressed: _query.isNotEmpty
+                                ? null
+                                : () => setState(() {
+                                    if (allExpanded) {
+                                      _expanded.clear();
+                                    } else {
+                                      _expanded.addAll(branches);
+                                    }
+                                  }),
+                          ),
+                      ],
+                    ),
+                    if (_searching)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: TextField(
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            hintText: l10n.outlineSearch,
+                          ),
+                          onChanged: (text) => setState(
+                            () => _query = text.trim().toLowerCase(),
+                          ),
+                        ),
+                      ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: rows.isEmpty
+                          ? Center(
+                              child: Text(
+                                l10n.outlineNoMatches,
+                                textAlign: TextAlign.center,
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: rows.length,
+                              itemBuilder: (context, index) {
+                                final row = rows[index];
+                                return _entry(row.node, row.depth);
+                              },
+                            ),
+                    ),
+                  ],
+                );
+              },
             ),
-          ),
-          Divider(height: 1, color: scheme.outlineVariant),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-            child: Semantics(
-              header: true,
-              child: Text(
-                label.toUpperCase(),
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: switch (section) {
-              PanelSection.pages => _Thumbnails(
-                controller: controller,
-                onFollow: onFollow,
-              ),
-              PanelSection.outline => _Outline(
-                controller: controller,
-                onFollow: onFollow,
-              ),
-            },
           ),
         ],
       ),
     );
   }
-}
 
-class _Outline extends StatefulWidget {
-  const _Outline({required this.controller, required this.onFollow});
-  final ReaderController controller;
-  final void Function(LinkTarget target) onFollow;
-
-  @override
-  State<_Outline> createState() => _OutlineState();
-}
-
-class _OutlineState extends State<_Outline> {
-  late final Future<List<OutlineNode>> _outline = widget.controller.engine
-      .outline(widget.controller.document);
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return FutureBuilder(
-      future: _outline,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final nodes = snapshot.data ?? const <OutlineNode>[];
-        if (nodes.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(l10n.outlineEmpty, textAlign: TextAlign.center),
-            ),
-          );
-        }
-        return ListView(
-          children: [for (final node in nodes) _entry(context, node, 0)],
-        );
-      },
-    );
-  }
-
-  Widget _entry(BuildContext context, OutlineNode node, int depth) {
+  Widget _entry(OutlineNode node, int depth) {
     final target = node.target;
     final page = switch (target) {
       GoToTarget(:final destination) => widget.controller.pageLabel(
@@ -156,130 +192,59 @@ class _OutlineState extends State<_Outline> {
       ),
       _ => null,
     };
-    final padding = EdgeInsetsDirectional.only(
-      start: 16.0 + depth * 16,
-      end: 16,
-    );
-    final title = Text(
-      node.title,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-    );
-    final trailing = page == null ? null : Text(page);
-    void follow() {
-      if (target != null) widget.onFollow(target);
-    }
-
-    if (node.children.isEmpty) {
-      return ListTile(
-        contentPadding: padding,
-        title: title,
-        trailing: trailing,
-        enabled: target != null,
-        onTap: follow,
-      );
-    }
-    // A parent opens like a leaf; its arrow shows the children.
-    return ExpansionTile(
-      tilePadding: padding,
-      title: InkWell(onTap: target == null ? null : follow, child: title),
-      subtitle: trailing,
-      children: [
-        for (final child in node.children) _entry(context, child, depth + 1),
-      ],
-    );
-  }
-}
-
-class _Thumbnails extends StatelessWidget {
-  const _Thumbnails({required this.controller, required this.onFollow});
-  final ReaderController controller;
-  final void Function(LinkTarget target) onFollow;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final count = controller.info.pageCount;
-    return ValueListenableBuilder(
-      valueListenable: controller.page,
-      builder: (context, current, _) => GridView.builder(
-        padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 120,
-          childAspectRatio: 0.62,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
+    final expanded = _expanded.contains(node);
+    final l10n = AppLocalizations.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) => Padding(
+        padding: EdgeInsetsDirectional.only(
+          start: (depth * 16.0).clamp(0.0, constraints.maxWidth / 4),
         ),
-        itemCount: count,
-        itemBuilder: (context, page) {
-          final size = controller.info.pageSize(page);
-          final selected = page == current;
-          return InkWell(
-            onTap: () => onFollow(GoToTarget(PdfDestination(page))),
-            child: Column(
-              children: [
-                Expanded(
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: size.width > 0 && size.height > 0
-                          ? size.width / size.height
-                          : 0.77,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFFFFF),
-                          border: Border.all(
-                            color: selected ? colors.primary : colors.outline,
-                            width: selected ? 3 : 1,
-                          ),
+        child: Row(
+          children: [
+            if (node.children.isNotEmpty && _query.isEmpty)
+              IconButton(
+                icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
+                tooltip: expanded
+                    ? l10n.outlineCollapseEntry
+                    : l10n.outlineExpandEntry,
+                onPressed: () => setState(() {
+                  if (expanded) {
+                    _expanded.remove(node);
+                  } else {
+                    _expanded.add(node);
+                  }
+                }),
+              ),
+            Expanded(
+              child: ListTile(
+                contentPadding: const EdgeInsetsDirectional.only(
+                  start: 8,
+                  end: 12,
+                ),
+                title: Text(
+                  node.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: page == null
+                    ? null
+                    : ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: constraints.maxWidth / 4,
                         ),
-                        // Repaints as previews arrive, cell by cell. A
-                        // painter, not a rebuild: the controller signals
-                        // repaints during layout too (a resize when the
-                        // panel opens), when widgets must not rebuild.
-                        child: CustomPaint(
-                          painter: _ThumbnailPainter(controller, page),
-                          child: const SizedBox.expand(),
+                        child: Text(
+                          page,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  controller.pageLabel(page),
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-              ],
+                enabled: target != null,
+                onTap: target == null ? null : () => widget.onFollow(target),
+              ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
-}
-
-/// Paints page [page]'s preview once the controller has it.
-class _ThumbnailPainter extends CustomPainter {
-  _ThumbnailPainter(this.controller, this.page)
-    : super(repaint: controller.repaint);
-
-  final ReaderController controller;
-  final int page;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final image = controller.thumbnail(page);
-    if (image == null) return;
-    paintImage(
-      canvas: canvas,
-      rect: Offset.zero & size,
-      image: image,
-      fit: BoxFit.fill,
-      filterQuality: FilterQuality.medium,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_ThumbnailPainter old) =>
-      old.controller != controller || old.page != page;
 }
