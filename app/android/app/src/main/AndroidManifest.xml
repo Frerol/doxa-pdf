@@ -27,6 +27,13 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:scheme="content" android:mimeType="application/pdf"/>
             </intent-filter>
+            <!-- Dictionary packs (FR-TEXT-012): "Open with" imports them. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="content" android:mimeType="application/zip"/>
+                <data android:scheme="content" android:mimeType="application/x-zip-compressed"/>
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND"/>
                 <category android:name="android.intent.category.DEFAULT"/>

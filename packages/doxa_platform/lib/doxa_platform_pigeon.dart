@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'dictionary_imports.dart';
 import 'document_files.dart';
 import 'doxa_platform_platform_interface.dart';
 import 'library_folders.dart';
@@ -28,6 +29,11 @@ class PigeonDoxaPlatform extends DoxaPlatformPlatform {
 
   @override
   late final DocumentFiles documentFiles = _PigeonDocumentFiles(_hostApi);
+
+  @override
+  late final DictionaryImports dictionaryImports = _PigeonDictionaryImports(
+    _hostApi,
+  );
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -117,6 +123,47 @@ class _PigeonDocumentFiles implements DocumentFiles {
   @override
   Future<void> delete(String uri) =>
       _fileAction(() => _hostApi.deleteDocument(uri));
+}
+
+class _PigeonDictionaryImports
+    implements DictionaryImports, DictionaryIntentApi {
+  _PigeonDictionaryImports(this._hostApi);
+
+  final DoxaPlatformPluginApi _hostApi;
+  late final _incoming = StreamController<void>.broadcast(
+    onListen: () => DictionaryIntentApi.setUp(this),
+    onCancel: () => DictionaryIntentApi.setUp(null),
+  );
+
+  @override
+  Stream<void> get incoming => _incoming.stream;
+
+  @override
+  Future<void> incomingDictionaryAvailable() async => _incoming.add(null);
+
+  @override
+  Future<String?> pickFiles() => _staging(_hostApi.pickDictionaryFiles);
+
+  @override
+  Future<String?> pickFolder() => _staging(_hostApi.pickDictionaryFolder);
+
+  @override
+  Future<String?> takeIncoming() => _staging(_hostApi.takeIncomingDictionary);
+
+  /// Maps host errors to [DictionaryImportException].
+  static Future<String?> _staging(Future<String?> Function() action) async {
+    try {
+      return await action();
+    } on PlatformException catch (error) {
+      throw DictionaryImportException(switch (error.code) {
+        'missing' => DictionaryImportError.missing,
+        'permissionLost' => DictionaryImportError.permissionLost,
+        'notDictionary' => DictionaryImportError.notDictionary,
+        'tooLarge' => DictionaryImportError.tooLarge,
+        _ => DictionaryImportError.unreadable,
+      });
+    }
+  }
 }
 
 /// Maps host errors to [DocumentFileException].

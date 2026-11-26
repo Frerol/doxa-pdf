@@ -523,6 +523,24 @@ interface DoxaPlatformPluginApi {
   fun moveDocument(uri: String, targetTreeUri: String, targetDocumentId: String?, callback: (Result<PlatformMovedDocument>) -> Unit)
   /** Deletes the document [uri] (FR-FILE-011). Fails like [renameDocument]. */
   fun deleteDocument(uri: String, callback: (Result<Unit>) -> Unit)
+  /**
+   * Asks for dictionary files (a `.zip` or loose StarDict files) and
+   * copies them into a new staging folder in the cache, extracting each
+   * `.zip` (FR-TEXT-009). Returns the folder's path, or null when the
+   * picker is cancelled. Fails with `missing`, `permissionLost`,
+   * `notDictionary`, `tooLarge` or `unreadable`.
+   */
+  fun pickDictionaryFiles(callback: (Result<String?>) -> Unit)
+  /**
+   * Like [pickDictionaryFiles], for a folder picked with the system's
+   * folder picker. No lasting grant is kept.
+   */
+  fun pickDictionaryFolder(callback: (Result<String?>) -> Unit)
+  /**
+   * Stages the next dictionary `.zip` opened with "Open with"
+   * (FR-TEXT-012), or returns null when none is waiting.
+   */
+  fun takeIncomingDictionary(callback: (Result<String?>) -> Unit)
 
   companion object {
     /** The codec used by DoxaPlatformPluginApi. */
@@ -806,6 +824,60 @@ interface DoxaPlatformPluginApi {
           channel.setMessageHandler(null)
         }
       }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.pickDictionaryFiles$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.pickDictionaryFiles{ result: Result<String?> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(MessagesPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(MessagesPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.pickDictionaryFolder$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.pickDictionaryFolder{ result: Result<String?> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(MessagesPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(MessagesPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.takeIncomingDictionary$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.takeIncomingDictionary{ result: Result<String?> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(MessagesPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(MessagesPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
     }
   }
 }
@@ -821,6 +893,33 @@ class PdfIntentApi(private val binaryMessenger: BinaryMessenger, private val mes
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
     val channelName = "dev.flutter.pigeon.doxa_platform.PdfIntentApi.incomingPdfAvailable$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(null) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(MessagesPigeonUtils.createConnectionError(channelName)))
+      } 
+    }
+  }
+}
+/** Generated class from Pigeon that represents Flutter messages that can be called from Kotlin. */
+class DictionaryIntentApi(private val binaryMessenger: BinaryMessenger, private val messageChannelSuffix: String = "") {
+  companion object {
+    /** The codec used by DictionaryIntentApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      MessagesPigeonCodec()
+    }
+  }
+  /** A dictionary `.zip` was opened with "Open with". */
+  fun incomingDictionaryAvailable(callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.doxa_platform.DictionaryIntentApi.incomingDictionaryAvailable$separatedMessageChannelSuffix"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(null) {
       if (it is List<*>) {

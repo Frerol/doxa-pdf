@@ -8,6 +8,8 @@ import 'dart:isolate';
 import 'package:doxa_dict/doxa_dict.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'dictionary_import.dart';
+
 /// A dictionary the user installed (FR-TEXT-009): one folder under the
 /// library's root holding a StarDict set.
 @immutable
@@ -68,7 +70,7 @@ final class DictionaryLibrary extends ChangeNotifier {
   /// Finds the installed sets. Validating a large set reads its index, so
   /// this runs on another isolate.
   Future<void> load() async {
-    final found = await Isolate.run(() => _scan(root.path));
+    final found = await _scanOnIsolate(root.path);
     final saved = await _readManifest();
     final byId = {for (final d in found) d.id: d};
     _all = [
@@ -124,6 +126,14 @@ final class DictionaryLibrary extends ChangeNotifier {
     await _save();
   }
 
+  /// Installs the sets staged in [staging] (see `installStaged`), on
+  /// another isolate, and lists them, enabled, after the others.
+  Future<InstallReport> install(String staging) async {
+    final report = await _installOnIsolate(root.path, staging);
+    await load();
+    return report;
+  }
+
   /// Deletes the dictionary's folder.
   Future<void> remove(String id) async {
     _all = [
@@ -136,6 +146,15 @@ final class DictionaryLibrary extends ChangeNotifier {
     if (await folder.exists()) await folder.delete(recursive: true);
   }
 }
+
+// Top-level, so the closures capture only their plain arguments: a
+// closure made in a method can capture `this` and its zone, which cannot
+// be sent to another isolate.
+Future<List<InstalledDictionary>> _scanOnIsolate(String root) =>
+    Isolate.run(() => _scan(root));
+
+Future<InstallReport> _installOnIsolate(String root, String staging) =>
+    Isolate.run(() => installStaged(root, staging));
 
 List<InstalledDictionary> _scan(String rootPath) {
   final root = Directory(rootPath);
@@ -175,7 +194,7 @@ class DictionaryScope extends InheritedWidget {
     required this.library,
     required this.lookup,
     required this.openUri,
-    this.onImport,
+    this.importer,
     required super.child,
   });
 
@@ -185,8 +204,8 @@ class DictionaryScope extends InheritedWidget {
   /// Opens the dictionaries page in the browser.
   final Future<bool> Function(String uri) openUri;
 
-  /// Imports a dictionary with the system picker; hidden when null.
-  final VoidCallback? onImport;
+  /// Imports dictionaries; Import file is hidden when null.
+  final DictionaryImporter? importer;
 
   static DictionaryScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<DictionaryScope>();
@@ -195,7 +214,7 @@ class DictionaryScope extends InheritedWidget {
   bool updateShouldNotify(DictionaryScope old) =>
       library != old.library ||
       lookup != old.lookup ||
-      onImport != old.onImport;
+      importer != old.importer;
 }
 
 /// What one dictionary has for a query: its entries, or close headwords

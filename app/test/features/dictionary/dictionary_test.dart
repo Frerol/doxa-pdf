@@ -6,9 +6,11 @@ import 'dart:typed_data';
 
 import 'package:doxa_dict/doxa_dict.dart';
 import 'package:doxa_pdf/features/dictionary/dictionaries_page.dart';
+import 'package:doxa_pdf/features/dictionary/dictionary_import.dart';
 import 'package:doxa_pdf/features/dictionary/dictionary_library.dart';
 import 'package:doxa_pdf/features/dictionary/dictionary_popup.dart';
 import 'package:doxa_pdf/l10n/gen/app_localizations.dart';
+import 'package:doxa_platform/doxa_platform.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -78,6 +80,104 @@ void main() {
     });
   });
 
+  group('import (FR-TEXT-009)', () {
+    late String installed;
+    late Directory staging;
+    setUp(() {
+      installed = '${root.path}/installed';
+      staging = Directory('${root.path}/staging')..createSync();
+    });
+
+    test('installs sets from nested folders, one folder each', () {
+      writeSet(Directory('${staging.path}/a/b'), 'Alpha Pack', {'cat': 'x'});
+      writeSet(staging, 'beta', {'dog': 'y'});
+      File('${staging.path}/LICENSE.txt').writeAsStringSync('CC BY-SA');
+      final report = installStaged(installed, staging.path);
+      expect(report.added, ['Alpha Pack', 'beta']);
+      expect(report.problems, isEmpty);
+      expect(staging.existsSync(), isFalse);
+      expect(File('$installed/alpha-pack/Alpha Pack.ifo').existsSync(), isTrue);
+      expect(File('$installed/beta/LICENSE.txt').existsSync(), isTrue);
+    });
+
+    test('names a missing file, rejects a bad set, skips a duplicate', () {
+      writeSet(Directory('${staging.path}/ok'), 'Alpha', {'cat': 'x'});
+      installStaged(installed, staging.path);
+
+      staging.createSync();
+      writeSet(Directory('${staging.path}/again'), 'Alpha', {'cat': 'x'});
+      writeSet(Directory('${staging.path}/nodict'), 'Gamma', {'cat': 'x'});
+      File('${staging.path}/nodict/Gamma.dict').deleteSync();
+      writeSet(Directory('${staging.path}/bad'), 'Delta', {'cat': 'x'});
+      File('${staging.path}/bad/Delta.idx').writeAsBytesSync([1, 2, 3]);
+      final report = installStaged(installed, staging.path);
+      expect(report.added, isEmpty);
+      expect(report.duplicates, ['Alpha']);
+      expect(report.problems, [
+        (set: 'Delta.ifo', missingFile: null),
+        (set: 'Gamma.ifo', missingFile: 'Gamma.dict'),
+      ]);
+      expect(Directory(installed).listSync(), hasLength(1));
+    });
+
+    test('the message says what was added, then the first problem', () async {
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(
+        importMessage(l10n, (
+          added: ['Alpha'],
+          duplicates: const [],
+          problems: [(set: 'Gamma.ifo', missingFile: 'Gamma.dict')],
+        )),
+        'Added “Alpha”. “Gamma.dict” is missing.',
+      );
+      expect(
+        importMessage(l10n, (
+          added: const [],
+          duplicates: const [],
+          problems: const [],
+        )),
+        startsWith('No dictionary found.'),
+      );
+    });
+
+    testWidgets('a .zip opened with Open with is imported at start', (
+      tester,
+    ) async {
+      final library = DictionaryLibrary(installed);
+      writeSet(staging, 'Alpha', {'cat': 'x'});
+      final imports = _FakeImports()..incomingStaged.add(staging.path);
+      tester.platformDispatcher.localesTestValue = const [Locale('en')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            ...GlobalMaterialLocalizations.delegates,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => IncomingDictionaries(
+            importer: DictionaryImporter(library: library, imports: imports),
+            child: child!,
+          ),
+          home: const Scaffold(),
+        ),
+      );
+      for (
+        var i = 0;
+        i < 50 && find.text('Added “Alpha”.').evaluate().isEmpty;
+        i++
+      ) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(library.all.single.name, 'Alpha');
+      expect(find.text('Added “Alpha”.'), findsOneWidget);
+    });
+  });
+
   group('lookup (FR-TEXT-008, FR-TEXT-010)', () {
     test('runs on a worker, in the given order, past a damaged set', () async {
       writeSet(Directory('${root.path}/a'), 'Alpha', {'cat': 'animal'});
@@ -135,7 +235,6 @@ void main() {
       tester,
     ) async {
       final opened = <String>[];
-      var imported = 0;
       await pump(
         tester,
         DictionaryLookupView(
@@ -146,13 +245,50 @@ void main() {
             opened.add(uri);
             return true;
           },
-          onImport: () => imported++,
         ),
       );
       await tester.tap(find.text('Get dictionaries'));
-      await tester.tap(find.text('Import file'));
       expect(opened, [dictionariesPage]);
-      expect(imported, 1);
+      // Without an importer there is nothing to import with.
+      expect(find.text('Import file'), findsNothing);
+    });
+
+    testWidgets('Import file from the empty state answers the lookup', (
+      tester,
+    ) async {
+      final library = DictionaryLibrary('${root.path}/installed');
+      final staging = Directory('${root.path}/staging');
+      writeSet(Directory('${staging.path}/pack/nested'), 'Alpha', {
+        'cat': 'animal',
+      });
+      final imports = _FakeImports()..staged.add(staging.path);
+      final lookup = _FakeLookup();
+      await pump(
+        tester,
+        DictionaryLookupView(
+          query: 'cat',
+          library: library,
+          lookup: lookup,
+          openUri: (_) async => true,
+          importer: DictionaryImporter(library: library, imports: imports),
+        ),
+      );
+      await tester.tap(find.text('Import file'));
+      // Staging, installing and finding the set use real isolates and I/O.
+      for (
+        var i = 0;
+        i < 50 && find.text('Added “Alpha”.').evaluate().isEmpty;
+        i++
+      ) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Added “Alpha”.'), findsOneWidget);
+      expect(lookup.queries, ['cat']);
+      expect(find.textContaining('feline animal'), findsOneWidget);
     });
 
     testWidgets('groups results by dictionary and follows suggestions', (
@@ -222,6 +358,25 @@ void main() {
     expect(find.text('No dictionary yet'), findsOneWidget);
     expect(Directory('${root.path}/a').existsSync(), isFalse);
   });
+}
+
+class _FakeImports implements DictionaryImports {
+  final staged = <String>[];
+  final incomingStaged = <String>[];
+
+  @override
+  Future<String?> pickFiles() async =>
+      staged.isEmpty ? null : staged.removeAt(0);
+
+  @override
+  Future<String?> pickFolder() => pickFiles();
+
+  @override
+  Stream<void> get incoming => const Stream.empty();
+
+  @override
+  Future<String?> takeIncoming() async =>
+      incomingStaged.isEmpty ? null : incomingStaged.removeAt(0);
 }
 
 class _FakeLookup implements DictionaryLookup {

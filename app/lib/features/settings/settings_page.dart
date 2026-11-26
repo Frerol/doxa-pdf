@@ -128,7 +128,7 @@ class SettingsPage extends StatelessWidget {
                     builder: (_) => DictionariesPage(
                       library: scope.library,
                       openUri: scope.openUri,
-                      onImport: scope.onImport,
+                      importer: scope.importer,
                     ),
                   ),
                 ),

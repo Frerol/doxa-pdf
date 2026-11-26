@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import 'dictionary_import.dart';
 import 'dictionary_library.dart';
 
 /// The project page that lists Doxa's dictionary packs (FR-TEXT-012). The
@@ -26,14 +27,14 @@ Future<void> showDictionaryLookup(
   required DictionaryLibrary library,
   required DictionaryLookup lookup,
   required Future<bool> Function(String uri) openUri,
-  VoidCallback? onImport,
+  DictionaryImporter? importer,
 }) {
   final content = DictionaryLookupView(
     query: query,
     library: library,
     lookup: lookup,
     openUri: openUri,
-    onImport: onImport,
+    importer: importer,
   );
   if (MediaQuery.sizeOf(context).width >= _dialogWidth) {
     return showDialog<void>(
@@ -68,14 +69,14 @@ class DictionaryLookupView extends StatefulWidget {
     required this.library,
     required this.lookup,
     required this.openUri,
-    this.onImport,
+    this.importer,
   });
 
   final String query;
   final DictionaryLibrary library;
   final DictionaryLookup lookup;
   final Future<bool> Function(String uri) openUri;
-  final VoidCallback? onImport;
+  final DictionaryImporter? importer;
 
   @override
   State<DictionaryLookupView> createState() => _DictionaryLookupViewState();
@@ -89,6 +90,18 @@ class _DictionaryLookupViewState extends State<DictionaryLookupView> {
   void initState() {
     super.initState();
     _search();
+    widget.library.addListener(_onLibrary);
+  }
+
+  @override
+  void dispose() {
+    widget.library.removeListener(_onLibrary);
+    super.dispose();
+  }
+
+  /// A dictionary imported from the empty state answers at once.
+  void _onLibrary() {
+    if (mounted) setState(_search);
   }
 
   void _search() {
@@ -116,7 +129,7 @@ class _DictionaryLookupViewState extends State<DictionaryLookupView> {
     if (results == null) {
       return DictionaryEmptyState(
         openUri: widget.openUri,
-        onImport: widget.onImport,
+        importer: widget.importer,
       );
     }
     return FutureBuilder<List<LookupGroup>>(
@@ -302,10 +315,10 @@ class _NotFound extends StatelessWidget {
 /// explanation, **Get dictionaries** and **Import file**. Settings →
 /// Dictionaries shows it too.
 class DictionaryEmptyState extends StatelessWidget {
-  const DictionaryEmptyState({super.key, required this.openUri, this.onImport});
+  const DictionaryEmptyState({super.key, required this.openUri, this.importer});
 
   final Future<bool> Function(String uri) openUri;
-  final VoidCallback? onImport;
+  final DictionaryImporter? importer;
 
   @override
   Widget build(BuildContext context) {
@@ -336,12 +349,12 @@ class DictionaryEmptyState extends StatelessWidget {
             label: Text(l10n.dictionaryGet),
             onPressed: () => unawaited(openUri(dictionariesPage)),
           ),
-          if (onImport case final import?) ...[
+          if (importer case final importer?) ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
               icon: const Icon(Icons.file_open_outlined),
               label: Text(l10n.dictionaryImport),
-              onPressed: import,
+              onPressed: () => unawaited(importer.pickFiles(context)),
             ),
           ],
         ],

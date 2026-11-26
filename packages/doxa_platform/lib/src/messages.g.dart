@@ -741,6 +741,69 @@ class DoxaPlatformPluginApi {
       isNullValid: true,
     );
   }
+
+  /// Asks for dictionary files (a `.zip` or loose StarDict files) and
+  /// copies them into a new staging folder in the cache, extracting each
+  /// `.zip` (FR-TEXT-009). Returns the folder's path, or null when the
+  /// picker is cancelled. Fails with `missing`, `permissionLost`,
+  /// `notDictionary`, `tooLarge` or `unreadable`.
+  Future<String?> pickDictionaryFiles() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.pickDictionaryFiles$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as String?;
+  }
+
+  /// Like [pickDictionaryFiles], for a folder picked with the system's
+  /// folder picker. No lasting grant is kept.
+  Future<String?> pickDictionaryFolder() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.pickDictionaryFolder$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as String?;
+  }
+
+  /// Stages the next dictionary `.zip` opened with "Open with"
+  /// (FR-TEXT-012), or returns null when none is waiting.
+  Future<String?> takeIncomingDictionary() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.takeIncomingDictionary$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as String?;
+  }
 }
 
 abstract class PdfIntentApi {
@@ -768,6 +831,46 @@ abstract class PdfIntentApi {
         pigeonVar_channel.setMessageHandler((Object? message) async {
           try {
             await api.incomingPdfAvailable();
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+  }
+}
+
+abstract class DictionaryIntentApi {
+  static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
+
+  /// A dictionary `.zip` was opened with "Open with".
+  Future<void> incomingDictionaryAvailable();
+
+  static void setUp(
+    DictionaryIntentApi? api, {
+    BinaryMessenger? binaryMessenger,
+    String messageChannelSuffix = '',
+  }) {
+    messageChannelSuffix = messageChannelSuffix.isNotEmpty
+        ? '.$messageChannelSuffix'
+        : '';
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.doxa_platform.DictionaryIntentApi.incomingDictionaryAvailable$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          try {
+            await api.incomingDictionaryAvailable();
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);

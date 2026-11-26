@@ -155,10 +155,35 @@ abstract class DoxaPlatformPluginApi {
   /// Deletes the document [uri] (FR-FILE-011). Fails like [renameDocument].
   @asyncCallback
   void deleteDocument(String uri);
+
+  /// Asks for dictionary files (a `.zip` or loose StarDict files) and
+  /// copies them into a new staging folder in the cache, extracting each
+  /// `.zip` (FR-TEXT-009). Returns the folder's path, or null when the
+  /// picker is cancelled. Fails with `missing`, `permissionLost`,
+  /// `notDictionary`, `tooLarge` or `unreadable`.
+  @asyncCallback
+  String? pickDictionaryFiles();
+
+  /// Like [pickDictionaryFiles], for a folder picked with the system's
+  /// folder picker. No lasting grant is kept.
+  @asyncCallback
+  String? pickDictionaryFolder();
+
+  /// Stages the next dictionary `.zip` opened with "Open with"
+  /// (FR-TEXT-012), or returns null when none is waiting.
+  @asyncCallback
+  String? takeIncomingDictionary();
 }
 
 @FlutterApi()
 abstract class PdfIntentApi {
   @asyncCallback
   void incomingPdfAvailable();
+}
+
+@FlutterApi()
+abstract class DictionaryIntentApi {
+  /// A dictionary `.zip` was opened with "Open with".
+  @asyncCallback
+  void incomingDictionaryAvailable();
 }

@@ -12,8 +12,10 @@ anything itself: you download a pack here with your browser, then open it with D
 You can also use **Settings → Dictionaries → Import file**. Turn dictionaries on or off there, drag them to change the order in which results
 appear, or remove them.
 
-> **Status:** the lookup and Settings → Dictionaries are in the app. Importing (steps 2 and 3, and **Import file**) is still being built
-> ([#43](https://github.com/Frerol/doxa-pdf/issues/43)), and the packs are published with `1.0.0-alpha.1`.
+Settings → Dictionaries also has **Import folder**, for a dictionary that is not in a `.zip`.
+
+> **Status:** the packs below are published with `1.0.0-alpha.1` ([#43](https://github.com/Frerol/doxa-pdf/issues/43)). Until then,
+> import any StarDict dictionary you have.
 
 ## Packs built by Doxa
 

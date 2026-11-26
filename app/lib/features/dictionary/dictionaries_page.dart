@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
 import '../library/folder_page.dart' show formatFileSize;
+import 'dictionary_import.dart';
 import 'dictionary_library.dart';
 import 'dictionary_popup.dart';
 
@@ -17,12 +18,12 @@ class DictionariesPage extends StatelessWidget {
     super.key,
     required this.library,
     required this.openUri,
-    this.onImport,
+    this.importer,
   });
 
   final DictionaryLibrary library;
   final Future<bool> Function(String uri) openUri;
-  final VoidCallback? onImport;
+  final DictionaryImporter? importer;
 
   Future<void> _remove(BuildContext context, InstalledDictionary d) async {
     final l10n = AppLocalizations.of(context);
@@ -50,11 +51,21 @@ class DictionariesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.dictionariesTitle)),
-      floatingActionButton: onImport == null || library.all.isEmpty
+      appBar: AppBar(
+        title: Text(l10n.dictionariesTitle),
+        actions: [
+          if (importer case final importer?)
+            IconButton(
+              icon: const Icon(Icons.drive_folder_upload_outlined),
+              tooltip: l10n.dictionaryImportFolder,
+              onPressed: () => unawaited(importer.pickFolder(context)),
+            ),
+        ],
+      ),
+      floatingActionButton: importer == null || library.all.isEmpty
           ? null
           : FloatingActionButton.extended(
-              onPressed: onImport,
+              onPressed: () => unawaited(importer!.pickFiles(context)),
               icon: const Icon(Icons.file_open_outlined),
               label: Text(l10n.dictionaryImport),
             ),
@@ -67,7 +78,7 @@ class DictionariesPage extends StatelessWidget {
           }
           if (all.isEmpty) {
             return Center(
-              child: DictionaryEmptyState(openUri: openUri, onImport: onImport),
+              child: DictionaryEmptyState(openUri: openUri, importer: importer),
             );
           }
           final locale = l10n.localeName;
