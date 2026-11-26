@@ -3,6 +3,7 @@
 import 'package:doxa_core/doxa_core.dart';
 import 'package:doxa_engine/doxa_engine.dart';
 import 'package:doxa_engine/testing.dart';
+import 'package:doxa_pdf/features/reader/navigation_panel.dart';
 import 'package:doxa_pdf/features/reader/reader_controller.dart';
 import 'package:doxa_pdf/features/reader/reader_geometry.dart';
 import 'package:doxa_pdf/features/reader/reader_page.dart';
@@ -173,7 +174,7 @@ void main() {
       await settle(tester);
       expect(tester.takeException(), isNull);
       expect(find.byType(ReaderView), findsOneWidget);
-      expect(find.byTooltip('Contents'), findsNothing);
+      expect(find.byTooltip('Side panel'), findsNothing);
     });
 
     testWidgets('finds links under a tap (FR-VIEW-010)', (tester) async {
@@ -307,7 +308,14 @@ void main() {
       tester,
     ) async {
       await show(tester);
-      await tester.tap(find.byTooltip('Contents'));
+      // The reference tablet in landscape: beside the open panel a page is
+      // still taller than the view, so a jump into page 5 shows page 5.
+      tester.view.physicalSize = const Size(1280, 800);
+      await settle(tester);
+      // The side panel opens from its app-bar button (UX §5).
+      await tester.tap(find.byTooltip('Side panel'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Outline'));
       await tester.pumpAndSettle();
       expect(find.text('Preface'), findsOneWidget);
       // The title opens the chapter; the arrow shows its sections.
@@ -317,12 +325,56 @@ void main() {
       await settle(tester);
       expect(find.text('3 (5 of 10)'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Contents'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Pages'));
+      // Beside the page, the panel stays open after a jump.
+      await tester.tap(find.byTooltip('Pages'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('ii'));
       await settle(tester);
+      expect(find.text('ii (2 of 10)'), findsOneWidget);
+    });
+
+    testWidgets('the side panel sits beside the page on tablets (UX §5)', (
+      tester,
+    ) async {
+      await show(tester);
+      tester.view.physicalSize = const Size(1280, 800);
+      await settle(tester);
+      final full = tester.getSize(find.byType(ReaderView)).width;
+      await tester.tap(find.byTooltip('Side panel'));
+      await settle(tester);
+      // Thumbnails show first; the page makes room instead of being covered.
+      expect(find.byType(ReaderSidePanel), findsOneWidget);
+      expect(find.text('ii'), findsOneWidget);
+      expect(
+        tester.getSize(find.byType(ReaderView)).width,
+        lessThanOrEqualTo(full - ReaderSidePanel.width),
+      );
+      // Resizing the page while thumbnails listen must not rebuild them
+      // during layout.
+      await tester.tap(find.byTooltip('Side panel'));
+      await settle(tester);
+      await tester.tap(find.byTooltip('Side panel'));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byTooltip('Side panel'));
+      await settle(tester);
+      expect(find.byType(ReaderSidePanel), findsNothing);
+      expect(tester.getSize(find.byType(ReaderView)).width, full);
+    });
+
+    testWidgets('on phones the side panel covers the page and closes', (
+      tester,
+    ) async {
+      await show(tester);
+      tester.view.physicalSize = const Size(400, 800);
+      await settle(tester);
+      await tester.tap(find.byTooltip('Side panel'));
+      await settle(tester);
+      expect(find.byType(ReaderSidePanel), findsOneWidget);
+      await tester.tap(find.text('ii'));
+      await settle(tester);
+      expect(find.byType(ReaderSidePanel), findsNothing);
       expect(find.text('ii (2 of 10)'), findsOneWidget);
     });
 

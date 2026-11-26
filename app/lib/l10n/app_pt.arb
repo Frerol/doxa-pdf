@@ -162,5 +162,6 @@
   "seeAll": "Ver todos",
   "seeAllRecents": "Ver todos os recentes",
   "percentRead": "{percent}% lido",
-  "homePage": "p. {page} de {count}"
+  "homePage": "p. {page} de {count}",
+  "sidePanel": "Painel lateral"
 }

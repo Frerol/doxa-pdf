@@ -7,6 +7,7 @@ import 'package:doxa_engine/doxa_engine.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import '../../src/doxa_theme.dart';
 import '../settings/app_settings.dart';
 import 'reader_controller.dart';
 import 'reader_page.dart';
@@ -303,18 +304,29 @@ class ReaderTabRow extends StatelessWidget implements PreferredSizeWidget {
   final ReaderTabs tabs;
 
   @override
-  Size get preferredSize => const Size.fromHeight(48);
+  Size get preferredSize => const Size.fromHeight(42);
+
+  /// A document's colour among the brand colours, the same for its tab
+  /// wherever the tab moves.
+  static Color colorOf(ReaderTab tab) =>
+      brandColors[tab.key.codeUnits.fold(0, (a, b) => a + b) %
+          brandColors.length];
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    // The active tab takes the colour behind the page, so it joins it.
+    final page = theme.brightness == Brightness.dark
+        ? scheme.surfaceContainerLowest
+        : scheme.surfaceContainerHigh;
     final all = tabs.tabs;
     return SizedBox(
       height: preferredSize.height,
       child: ReorderableListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         buildDefaultDragHandles: false,
         itemCount: all.length,
         onReorderItem: tabs.move,
@@ -323,43 +335,57 @@ class ReaderTabRow extends StatelessWidget implements PreferredSizeWidget {
           return ReorderableDelayedDragStartListener(
             key: ObjectKey(all[i]),
             index: i,
-            child: Semantics(
-              selected: active,
-              button: true,
-              child: InkWell(
-                onTap: () => tabs.activate(i),
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 240),
-                  padding: const EdgeInsetsDirectional.only(start: 12),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: active ? scheme.primary : Colors.transparent,
-                        width: 3,
-                      ),
-                    ),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4, right: 2),
+              child: Semantics(
+                selected: active,
+                button: true,
+                child: Material(
+                  color: active ? page : scheme.surfaceContainer,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(8),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          all[i].title,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => tabs.activate(i),
+                    child: Container(
+                      width: 220,
+                      padding: const EdgeInsetsDirectional.only(start: 12),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(
                             color: active
-                                ? scheme.primary
-                                : scheme.onSurfaceVariant,
-                            fontWeight: active ? FontWeight.w600 : null,
+                                ? colorOf(all[i])
+                                : Colors.transparent,
+                            width: 2,
                           ),
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 18),
-                        tooltip: l10n.closeTab(all[i].title),
-                        onPressed: () => tabs.close(i),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              all[i].title,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: active
+                                    ? scheme.onSurface
+                                    : scheme.onSurfaceVariant,
+                                fontWeight: active
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            tooltip: l10n.closeTab(all[i].title),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => tabs.close(i),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),

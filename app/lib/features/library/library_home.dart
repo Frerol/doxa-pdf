@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import '../../src/doxa_theme.dart';
 import '../dev/dev_documents.dart';
 import '../reader/reader_tabs.dart';
 import '../settings/app_settings.dart';

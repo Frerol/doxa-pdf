@@ -121,6 +121,13 @@ class _ReaderPageState extends State<ReaderPage> {
   /// Full screen (FR-VIEW-012): toolbars and system bars hidden; a tap in
   /// the middle of the page shows the toolbars until the next tap.
   bool _fullscreen = false;
+
+  /// The side panel (UX §5): whether it is open and what it shows.
+  bool _panelOpen = false;
+  PanelSection _panelSection = PanelSection.pages;
+
+  /// Widths from which the panel sits beside the page instead of over it.
+  static const _panelBesideWidth = 600.0;
   bool _barsShown = true;
   bool _keptScreenOn = false;
   _Failure? _failure;
@@ -349,6 +356,43 @@ class _ReaderPageState extends State<ReaderPage> {
     if (page != null) controller.goToPage(page, record: true);
   }
 
+  /// The page with the side panel: beside it on wide screens, over it on
+  /// phones, where picking an entry closes it.
+  Widget _withPanel(
+    ReaderController controller, {
+    required bool showPanel,
+    required Widget child,
+  }) {
+    if (!showPanel) return child;
+    final beside = MediaQuery.sizeOf(context).width >= _panelBesideWidth;
+    final panel = ReaderSidePanel(
+      controller: controller,
+      section: _panelSection,
+      onSection: (section) => setState(() => _panelSection = section),
+      onFollow: (target) {
+        if (!beside) setState(() => _panelOpen = false);
+        unawaited(_follow(target));
+      },
+    );
+    if (!beside) {
+      return Stack(
+        children: [
+          child,
+          Positioned.fill(child: panel),
+        ],
+      );
+    }
+    final line = Theme.of(context).colorScheme.outlineVariant;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(width: ReaderSidePanel.width, child: panel),
+        VerticalDivider(width: 1, color: line),
+        Expanded(child: child),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -367,20 +411,13 @@ class _ReaderPageState extends State<ReaderPage> {
     final settings = widget.settings?.value;
     final colorMode = settings?.colorMode ?? _localColorMode;
     final showBars = !_fullscreen || _barsShown || _searchOpen;
+    final canPop = Navigator.of(context).canPop();
+    final hasPanel = controller != null && controller.info.pageCount > 0;
     final body = Scaffold(
       // In full screen the page keeps its size while the bars come and go:
       // the bars are drawn over it instead of resizing it.
       extendBodyBehindAppBar: _fullscreen,
       extendBody: _fullscreen,
-      drawer: controller == null || controller.info.pageCount == 0
-          ? null
-          : NavigationPanel(
-              controller: controller,
-              onFollow: (target) {
-                Navigator.of(context).pop();
-                unawaited(_follow(target));
-              },
-            ),
       appBar: !showBars
           ? null
           : _searchOpen && _search != null
@@ -394,21 +431,27 @@ class _ReaderPageState extends State<ReaderPage> {
           : AppBar(
               // The contents button opens the drawer; no extra menu button.
               automaticallyImplyLeading: false,
-              leading: Navigator.of(context).canPop()
-                  ? const BackButton()
-                  : null,
+              leadingWidth: (canPop ? 48.0 : 0) + (hasPanel ? 48.0 : 0) + 8,
+              leading: Row(
+                children: [
+                  const SizedBox(width: 4),
+                  if (canPop) const BackButton(),
+                  if (hasPanel)
+                    IconButton(
+                      icon: const Icon(Icons.view_sidebar_outlined),
+                      selectedIcon: const Icon(Icons.view_sidebar),
+                      tooltip: l10n.sidePanel,
+                      isSelected: _panelOpen,
+                      onPressed: () => setState(() => _panelOpen = !_panelOpen),
+                    ),
+                ],
+              ),
+              titleSpacing: 8,
               title: Text(widget.title, overflow: TextOverflow.ellipsis),
               bottom: widget.tabRow,
               actions: [
                 ?widget.tabsButton,
                 if (controller != null && controller.info.pageCount > 0) ...[
-                  Builder(
-                    builder: (context) => IconButton(
-                      icon: const Icon(Icons.toc),
-                      tooltip: l10n.navigationPanel,
-                      onPressed: () => Scaffold.of(context).openDrawer(),
-                    ),
-                  ),
                   _HistoryButtons(controller: controller),
                   _PageIndicator(
                     controller: controller,
@@ -443,33 +486,37 @@ class _ReaderPageState extends State<ReaderPage> {
           ? null
           : _PageScrubber(controller: controller),
       body: switch ((controller, _failure)) {
-        (final ReaderController c, _) => Stack(
-          children: [
-            Positioned.fill(
-              child: ReaderView(
-                controller: c,
-                probe: _probe,
-                onLink: _follow,
-                onTap: _onPageTap,
-                selection: _selection,
-                colorFilter: pageColorFilter(
-                  colorMode,
-                  background:
-                      settings?.customBackground ?? defaultCustomBackground,
-                  text: settings?.customText ?? defaultCustomText,
-                ),
-                sheetColor: sheetColor(
-                  colorMode,
-                  background:
-                      settings?.customBackground ?? defaultCustomBackground,
-                ),
-              ),
-            ),
-            if (_selection case final selection?)
+        (final ReaderController c, _) => _withPanel(
+          c,
+          showPanel: hasPanel && _panelOpen && showBars,
+          child: Stack(
+            children: [
               Positioned.fill(
-                child: _SelectionBar(selection: selection, reader: c),
+                child: ReaderView(
+                  controller: c,
+                  probe: _probe,
+                  onLink: _follow,
+                  onTap: _onPageTap,
+                  selection: _selection,
+                  colorFilter: pageColorFilter(
+                    colorMode,
+                    background:
+                        settings?.customBackground ?? defaultCustomBackground,
+                    text: settings?.customText ?? defaultCustomText,
+                  ),
+                  sheetColor: sheetColor(
+                    colorMode,
+                    background:
+                        settings?.customBackground ?? defaultCustomBackground,
+                  ),
+                ),
               ),
-          ],
+              if (_selection case final selection?)
+                Positioned.fill(
+                  child: _SelectionBar(selection: selection, reader: c),
+                ),
+            ],
+          ),
         ),
         (_, _Failure.password || _Failure.wrongPassword) =>
           const SizedBox.shrink(),
@@ -548,7 +595,10 @@ class _PageIndicator extends StatelessWidget {
       valueListenable: controller.page,
       builder: (context, page, _) => TextButton(
         onPressed: onPressed,
-        child: Text(pageIndicatorText(l10n, controller, page)),
+        child: Text(
+          pageIndicatorText(l10n, controller, page),
+          style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
+        ),
       ),
     );
   }
