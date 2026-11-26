@@ -316,6 +316,56 @@ void main() {
     });
   });
 
+  for (final hasDictionaries in [false, true]) {
+    testWidgets('settings offers both import actions from the app bar and body '
+        '(has dictionaries: $hasDictionaries, FR-TEXT-009)', (tester) async {
+      if (hasDictionaries) {
+        writeSet(Directory('${root.path}/a'), 'Alpha', {'cat': 'animal'});
+      }
+      final library = DictionaryLibrary(root.path);
+      await tester.runAsync(library.load);
+      final imports = _FakeImports();
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            ...GlobalMaterialLocalizations.delegates,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: DictionariesPage(
+            library: library,
+            openUri: (_) async => true,
+            importer: DictionaryImporter(library: library, imports: imports),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(hasDictionaries ? 'Alpha' : 'No dictionary yet'),
+        findsOneWidget,
+      );
+
+      for (final (label, picker) in [
+        ('Import file', 'files'),
+        ('Import folder', 'folder'),
+      ]) {
+        final toolbarAction = find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byTooltip(label),
+        );
+        final bodyAction = find.widgetWithText(OutlinedButton, label);
+        for (final action in [toolbarAction, bodyAction]) {
+          expect(action.hitTestable(), findsOneWidget);
+          await tester.tap(action);
+          await tester.pumpAndSettle();
+          expect(imports.pickerCalls, [picker]);
+          imports.pickerCalls.clear();
+        }
+      }
+    });
+  }
+
   testWidgets('settings list, disable and remove dictionaries (FR-TEXT-009)', (
     tester,
   ) async {
@@ -363,13 +413,19 @@ void main() {
 class _FakeImports implements DictionaryImports {
   final staged = <String>[];
   final incomingStaged = <String>[];
+  final pickerCalls = <String>[];
 
   @override
-  Future<String?> pickFiles() async =>
-      staged.isEmpty ? null : staged.removeAt(0);
+  Future<String?> pickFiles() async {
+    pickerCalls.add('files');
+    return staged.isEmpty ? null : staged.removeAt(0);
+  }
 
   @override
-  Future<String?> pickFolder() => pickFiles();
+  Future<String?> pickFolder() async {
+    pickerCalls.add('folder');
+    return staged.isEmpty ? null : staged.removeAt(0);
+  }
 
   @override
   Stream<void> get incoming => const Stream.empty();

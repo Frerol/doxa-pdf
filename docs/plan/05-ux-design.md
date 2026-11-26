@@ -147,7 +147,8 @@ Maintainer decision (2026-11-25): within [ADR-0009](../adr/0009-offline-dictiona
 never have to search the web for a dictionary. Getting the first one takes about three taps (FR-TEXT-008, FR-TEXT-009, FR-TEXT-012).
 
 1. **Empty state.** Tapping **Dictionary** with no dictionary installed opens the usual popup (bottom sheet on phones) with a short explanation
-   and two actions: **Get dictionaries** and **Import file**. Settings → Dictionaries shows the same empty state.
+   and two actions: **Get dictionaries** and **Import file**. Settings → Dictionaries shows the same explanation and **Get dictionaries**
+   action, with the import controls described below.
 2. **Get dictionaries** opens a Doxa project page in the browser with a short, curated list: Portuguese, English, Portuguese → English and
    English → Portuguese at first. Each entry is one `.zip` with its size, source and license. The browser downloads it, so the app itself never
    uses the network ([NFR-SEC-001](02-requirements.md#25-security--privacy-sec)).
@@ -159,6 +160,7 @@ StarDict by a script in `tools/` and published as release assets with their SHA-
 quality, the links and the attribution under our control. Users can still import any other StarDict dictionary.
 
 Import is forgiving: a `.zip` with nested folders, a folder, or loose files all work, and a missing companion file (`.idx`, `.dict`) is
-named in a clear error. **Import file** takes a `.zip` or several loose files. Settings → Dictionaries adds **Import folder** to its app bar,
-for a dictionary that is not in a `.zip`. Each import ends with one snackbar: what was added, then the first problem. Settings → Dictionaries lists each dictionary with its name, size and source, and lets the user enable, disable,
-reorder and remove it.
+named in a clear error. **Import file** takes a `.zip` or several loose files. **Import folder** takes an unpacked dictionary.
+Settings → Dictionaries shows the two import actions side by side as icons with tooltips in the app bar and as labelled buttons above the
+dictionary list and in the empty state. Each import ends with one snackbar: what was added, then the first problem. Settings → Dictionaries
+lists each dictionary with its name, size and source, and lets the user enable, disable, reorder and remove it.
