@@ -313,12 +313,18 @@ class _NotFound extends StatelessWidget {
 
 /// What to do with no dictionary installed (FR-TEXT-012, UX §9): a short
 /// explanation, **Get dictionaries** and **Import file**. Settings →
-/// Dictionaries shows it too.
+/// Dictionaries supplies its own import actions.
 class DictionaryEmptyState extends StatelessWidget {
-  const DictionaryEmptyState({super.key, required this.openUri, this.importer});
+  const DictionaryEmptyState({
+    super.key,
+    required this.openUri,
+    this.importer,
+    this.importActions,
+  });
 
   final Future<bool> Function(String uri) openUri;
   final DictionaryImporter? importer;
+  final Widget? importActions;
 
   @override
   Widget build(BuildContext context) {
@@ -349,7 +355,10 @@ class DictionaryEmptyState extends StatelessWidget {
             label: Text(l10n.dictionaryGet),
             onPressed: () => unawaited(openUri(dictionariesPage)),
           ),
-          if (importer case final importer?) ...[
+          if (importActions case final actions?) ...[
+            const SizedBox(height: 8),
+            actions,
+          ] else if (importer case final importer?) ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
               icon: const Icon(Icons.file_open_outlined),

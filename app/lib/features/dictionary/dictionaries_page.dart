@@ -50,25 +50,25 @@ class DictionariesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final importer = this.importer;
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.dictionariesTitle),
         actions: [
-          if (importer case final importer?)
+          if (importer != null) ...[
+            IconButton(
+              icon: const Icon(Icons.file_open_outlined),
+              tooltip: l10n.dictionaryImport,
+              onPressed: () => unawaited(importer.pickFiles(context)),
+            ),
             IconButton(
               icon: const Icon(Icons.drive_folder_upload_outlined),
               tooltip: l10n.dictionaryImportFolder,
               onPressed: () => unawaited(importer.pickFolder(context)),
             ),
+          ],
         ],
       ),
-      floatingActionButton: importer == null || library.all.isEmpty
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: () => unawaited(importer!.pickFiles(context)),
-              icon: const Icon(Icons.file_open_outlined),
-              label: Text(l10n.dictionaryImport),
-            ),
       body: ListenableBuilder(
         listenable: library,
         builder: (context, _) {
@@ -76,14 +76,25 @@ class DictionariesPage extends StatelessWidget {
           if (!library.loaded) {
             return const Center(child: CircularProgressIndicator());
           }
+          final importActions = importer == null
+              ? null
+              : _ImportButtons(importer: importer);
           if (all.isEmpty) {
             return Center(
-              child: DictionaryEmptyState(openUri: openUri, importer: importer),
+              child: DictionaryEmptyState(
+                openUri: openUri,
+                importActions: importActions,
+              ),
             );
           }
           final locale = l10n.localeName;
           return ReorderableListView.builder(
-            padding: const EdgeInsets.only(bottom: 88),
+            header: importActions == null
+                ? null
+                : Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: importActions,
+                  ),
             itemCount: all.length,
             onReorderItem: (from, to) => unawaited(library.move(from, to)),
             itemBuilder: (context, i) {
@@ -114,6 +125,34 @@ class DictionariesPage extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _ImportButtons extends StatelessWidget {
+  const _ImportButtons({required this.importer});
+
+  final DictionaryImporter importer;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        OutlinedButton.icon(
+          icon: const Icon(Icons.file_open_outlined),
+          label: Text(l10n.dictionaryImport),
+          onPressed: () => unawaited(importer.pickFiles(context)),
+        ),
+        OutlinedButton.icon(
+          icon: const Icon(Icons.drive_folder_upload_outlined),
+          label: Text(l10n.dictionaryImportFolder),
+          onPressed: () => unawaited(importer.pickFolder(context)),
+        ),
+      ],
     );
   }
 }
