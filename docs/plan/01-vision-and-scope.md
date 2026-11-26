@@ -53,28 +53,28 @@ Doxa PDF is an **original implementation**:
 - Tabs, recents, favorites, "Open with" integration.
 
 **Promoted to the MVP:** OCR. Scanned study material is common, and OCR makes it searchable and highlightable.
-An **offline dictionary** (look up the selected word) is also in the MVP, from v0.1 ([ADR-0009](../adr/0009-offline-dictionary.md)).
+An **offline dictionary** (look up the selected word) is also in the MVP, from the first alpha ([ADR-0009](../adr/0009-offline-dictionary.md)).
 **Page organization** and **printing** were promoted to the MVP after a review of a commercial PDF reader's features (2026-11-24); see [11 — MVP](11-mvp.md).
 
-**Tier 3, document utilities (after v1.0 unless cheap):**
+**Tier 3, document utilities (after the three platforms unless cheap):**
 - AcroForm filling, handwritten signatures.
 - Images → PDF, camera scanning.
 
 ## 6. Scope
 
-### In scope for v1.0
-The MVP comes first: Android-only public betas v0.1–v0.4 ([11 — MVP](11-mvp.md)). It covers Tiers 1 and 2 plus **OCR**,
-because scanned study material is common. v1.0 then brings the same feature set to Linux and Windows, plus localization (at least English and Brazilian
+### In scope for 1.x
+The MVP comes first and becomes **1.0.0**: Android-only public alphas, betas and release candidates ([11 — MVP](11-mvp.md)). It covers Tiers 1 and 2 plus **OCR**,
+because scanned study material is common. The 1.x releases then bring the same feature set to Linux (1.1.0) and Windows (1.2.0), plus localization (at least English and Brazilian
 Portuguese), accessibility, and distribution through GitHub Releases, F-Droid, Google Play, Flathub and a
-Windows installer/winget.
+Windows installer/winget (1.3.0).
 
-### Planned after v1.0 (see [roadmap](08-roadmap.md))
+### Planned after the three platforms (see [roadmap](08-roadmap.md))
 - Form filling, signatures, images → PDF, camera scanning, redaction, compressed and password-protected copies.
 - Sync of annotations between devices through user-owned storage (folder sync, WebDAV/Nextcloud).
 - Once the Android, Linux and Windows apps are complete: **EPUB** reading with highlights and comments, **OPDS** catalogs,
-  **KoSync** reading-progress sync, and **cloud storage** accounts (Google Drive, OneDrive, Dropbox). See [requirements §1.12](02-requirements.md#112-e-books-catalogs--cloud-lib-post-10).
+  **KoSync** reading-progress sync, and **cloud storage** accounts (Google Drive, OneDrive, Dropbox). See [requirements §1.12](02-requirements.md#112-e-books-catalogs--cloud-lib-later).
 - Study extras: read-aloud (TTS), focus/reading-ruler mode, flashcards generated from highlights, reflow, in-app translation, handwriting to text.
-- iOS and macOS builds (Flutter allows it; not a v1 commitment).
+- iOS and macOS builds (Flutter allows it; not a 1.x commitment).
 
 ### Not planned for now (may enter scope later)
 These are not part of the current plan, but nothing here is ruled out forever. Each can be revisited
@@ -95,5 +95,5 @@ and PDFium already exposes page-object editing APIs.
 - **Markup speed**: highlighting a sentence takes one gesture plus at most one tap.
 - **Interoperability**: highlights and ink made in Doxa PDF render correctly in Acrobat Reader, pdf.js, Okular and Chrome's viewer, and annotations made in those apps show up in Doxa PDF.
 - **No data loss**: annotations survive crashes and app kills (autosave and journaling).
-- v1.0 ships on all three platforms through at least one official channel each.
+- 1.0.0 ships on Android; by 1.3.0, Doxa PDF ships on all three platforms through at least one official channel each.
 - A contributor can build every target from a clean checkout by following the docs.

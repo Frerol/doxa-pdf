@@ -44,12 +44,27 @@ metadata fails the check.
 
 Platform notes:
 - **Android**: Play requires a signing key. Use Play App Signing with an upload key held by the maintainer (CI keeps it in encrypted secrets). F-Droid signs its own builds.
-- **Windows**: unsigned installers trigger SmartScreen. Plan for a code-signing certificate, or SignPath's free OSS program, before 1.0.
+- **Windows**: unsigned installers trigger SmartScreen. Plan for a code-signing certificate, or SignPath's free OSS program, before the Windows release (1.2.0).
 - **Linux**: the Flatpak needs portals for file access (no broad `--filesystem=home` by default) and an AppStream metainfo file with screenshots.
 
 ## 4. Versioning & release process
 
-- **SemVer** (`MAJOR.MINOR.PATCH`), with `0.x` until 1.0. Android `versionCode` is derived from the version.
+- **SemVer** (`MAJOR.MINOR.PATCH`). Decided with the maintainer on 2026-11-26. Until the first stable release, every release is a **pre-release of 1.0.0**:
+
+  | Stage | Versions | Meaning |
+  |---|---|---|
+  | Alpha | `1.0.0-alpha.1` … `1.0.0-alpha.4` | Early development: incomplete features, may be unstable. One alpha per MVP milestone (M1–M4, [roadmap](08-roadmap.md)); fixes to an alpha are `1.0.0-alpha.1.1`, `alpha.1.2`… |
+  | Beta | `1.0.0-beta.1`, `beta.2`… | Every MVP feature is in; testing and fixes only |
+  | Release candidate | `1.0.0-rc.1`, `rc.2`… | Candidate for release, no known critical (S1) problems |
+  | Stable | `1.0.0` | First official release |
+
+- **After 1.0.0**, each number has one purpose: **MAJOR** for incompatible changes (for example a change in how annotations are stored that older versions cannot read),
+  **MINOR** for new compatible features (Linux is 1.1.0, Windows 1.2.0), **PATCH** for bug fixes only (1.0.1, 1.0.2…).
+- Git tags are `v` + the version (`v1.0.0-alpha.1`). Alphas, betas and release candidates are marked **pre-release** on GitHub Releases.
+- Android `versionCode` is derived from the version and MUST grow with every release, in SemVer order:
+  `MAJOR × 10 000 000 + MINOR × 100 000 + PATCH × 1 000 + stage`, where stage is `100 + 10 × N + F` for `alpha.N.F` (`F` = 0 without a fix number; N, F ≤ 9),
+  `300 + N` for `beta.N`, `500 + N` for `rc.N`, and `999` for the final release. For example, `1.0.0-alpha.1` is 10 000 110, `1.0.0-alpha.1.2` is 10 000 112 and `1.0.0` is 10 000 999.
 - **Conventional Commits** drive the changelog (`CHANGELOG.md`, Keep a Changelog format).
-- Release flow: freeze, then a release candidate tag (`v0.3.0-rc.1`), then the manual checklist (stylus, interop, upgrade from previous version), then the final tag, then store submissions.
+- Release flow for alphas and betas: tag, signed release draft, the manual checklist on the reference tablet (stylus, interop, upgrade from the previous version), then publish.
+  For 1.0.0 and every later minor or major release: freeze, release candidates (`v1.1.0-rc.1`…) until one passes the checklist, then the final tag, then store submissions.
 - Reproducibility: pinned toolchain plus lockfiles. Release artifacts ship with SHA-256 checksums and an SBOM (CycloneDX).

@@ -74,7 +74,7 @@ flowchart TB
 | Navigation | go_router | Deep links for "open file" intents |
 | Local DB | drift (SQLite) | Library, progress, bookmarks, presets, journal |
 | Settings | drift table (typed), not shared_preferences | One storage backend, migrations |
-| i18n | `flutter_localizations` + ARB + `intl` | en, pt-BR at v1.0 |
+| i18n | `flutter_localizations` + ARB + `intl` | en, pt-BR at 1.0.0 |
 | Logging | `package:logging` → rotating local file | Attached to bug reports by the user |
 
 ## 4. Engine worker and rendering pipeline

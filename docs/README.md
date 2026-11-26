@@ -18,7 +18,7 @@ reverse as [ADRs](adr/).
 | 08 | [Roadmap](plan/08-roadmap.md) | Milestones, their scope and exit criteria |
 | 09 | [Risks](plan/09-risks.md) | Known risks and how to mitigate them |
 | 10 | [Governance](plan/10-governance.md) | Workflow, conventions, licensing hygiene, community |
-| 11 | [MVP Definition](plan/11-mvp.md) | What the Android MVP betas (v0.1–v0.4) contain, and when the MVP is done |
+| 11 | [MVP Definition](plan/11-mvp.md) | What the Android MVP alphas contain, and when the MVP becomes 1.0.0 |
 
 ## Process standards
 

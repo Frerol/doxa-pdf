@@ -6,7 +6,7 @@
   <a href="https://github.com/Frerol/doxa-pdf/actions/workflows/ci.yml"><img src="https://github.com/Frerol/doxa-pdf/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-7048E8" alt="License: GPL-3.0-or-later"></a>
   <img src="https://img.shields.io/badge/platforms-Android%20%C2%B7%20Linux%20%C2%B7%20Windows-2BAE66" alt="Platforms: Android, Linux, Windows">
-  <img src="https://img.shields.io/badge/status-M1%20v0.1%20reader-F08C00" alt="Status: M1, v0.1 reader">
+  <img src="https://img.shields.io/badge/status-M1%20alpha%201%20reader-F08C00" alt="Status: M1, alpha 1 reader">
 </p>
 
 # Doxa PDF
@@ -16,8 +16,8 @@ It is built around two things: **marking up text** (highlight, underline, strike
 the page with a pen** (low-latency, pressure-sensitive ink with palm rejection). Everything is stored as
 standard PDF annotations, so your notes open in any reader. It runs offline, has no telemetry, no ads and no paywall.
 
-> **Status: M1, building the v0.1 reader.** M0 is done: the monorepo, PDFium bindings, CI and the rendering, ink, annotation-writing and OCR
-> spikes ([reports](docs/README.md#spike-reports-m0)). Now comes the **Android MVP**, shipped as public betas v0.1–v0.4 ([MVP](docs/plan/11-mvp.md)). The engineering plan lives in [`docs/`](docs/README.md).
+> **Status: M1, building the alpha 1 reader.** M0 is done: the monorepo, PDFium bindings, CI and the rendering, ink, annotation-writing and OCR
+> spikes ([reports](docs/README.md#spike-reports-m0)). Now comes the **Android MVP**, shipped as public alphas, then betas, on the way to 1.0.0 ([MVP](docs/plan/11-mvp.md)). The engineering plan lives in [`docs/`](docs/README.md).
 
 ## Goals
 
@@ -26,7 +26,7 @@ standard PDF annotations, so your notes open in any reader. It runs offline, has
 - **Your notes stay yours**: standard PDF annotations, offline by default, export to Markdown, no account.
 - **Free forever**: licensed under GPL-3.0-or-later.
 
-## Planned feature set (v1.0)
+## Planned feature set (1.x)
 
 | Area | Highlights |
 |---|---|
@@ -38,7 +38,7 @@ standard PDF annotations, so your notes open in any reader. It runs offline, has
 | Review | Annotation panel filtered by color/type/page, jump to annotation, export to Markdown |
 | Platform | File associations, "Open with", recents and favorites, light/dark themes, i18n, accessibility |
 
-Form filling, signatures, EPUB, OPDS, KoSync and cloud accounts come after v1.0.
+Form filling, signatures, EPUB, OPDS, KoSync and cloud accounts come after the Android, Linux and Windows releases.
 See the [requirements](docs/plan/02-requirements.md) and [roadmap](docs/plan/08-roadmap.md).
 
 ## Documentation

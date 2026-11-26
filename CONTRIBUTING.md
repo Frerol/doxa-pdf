@@ -1,7 +1,7 @@
 # Contributing to Doxa PDF
 
 Thanks for your interest! Doxa PDF is in **early development** (Android MVP). The most valuable contributions right now are
-feedback on the [engineering plan](docs/README.md) and help with the [M1 issues](https://github.com/Frerol/doxa-pdf/milestone/2) (v0.1 Reader).
+feedback on the [engineering plan](docs/README.md) and help with the [M1 issues](https://github.com/Frerol/doxa-pdf/milestone/2) (alpha 1, Reader).
 
 ## Ground rules
 - Read the [Code of Conduct](CODE_OF_CONDUCT.md).

@@ -24,7 +24,8 @@ If you depart from a SHOULD, say so in the PR and why. Elsewhere in this file, "
 
 ## 1. Project in one minute
 Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Windows and Linux. The core features are **text markup**
-(highlight, underline, squiggly) and **pen annotation** with the S Pen. The MVP is **Android-only** (betas v0.1–v0.4 on GitHub Releases), and Linux comes next.
+(highlight, underline, squiggly) and **pen annotation** with the S Pen. The MVP is **Android-only** (pre-releases `1.0.0-alpha.1`–`alpha.4`, then betas and release candidates, on GitHub Releases) and becomes 1.0.0; Linux comes next (1.1.0).
+  Versioning: `docs/plan/07-build-release.md` §4. Older docs, ADRs and spikes call the alphas v0.1–v0.4.
 
 - Plan: `docs/README.md` (index), especially `docs/plan/11-mvp.md` (MVP scope), `02-requirements.md` (IDs like `FR-INK-002`) and `08-roadmap.md`.
 - **Stack (ADRs 0001–0004):** Flutter + Dart FFI to PDFium (no V8/XFA), monorepo with pub workspaces, Riverpod for state, drift for the database.
@@ -36,8 +37,8 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 ## 2. Current status
 - **M0 (foundations and spikes) is done.** Its tasks and specs are in git history (`git log -p -- AGENTS.md`). Branch protection on `main` is enabled
   (PR required; checks `Docs`, `Analyze & test`, `Android debug APK`, `PDFium bindings up to date`).
-- **Now: M1 = v0.1 Reader.** Scope: `docs/plan/11-mvp.md` §3 v0.1 and `docs/plan/08-roadmap.md` M1. GitHub is the source of truth for what is open:
-  `gh issue list --repo Frerol/doxa-pdf --milestone "M1 — v0.1 Reader" --state open`. Each issue lists its dependencies, tasks and acceptance criteria.
+- **Now: M1 = alpha 1, Reader.** Scope: `docs/plan/11-mvp.md` §3 v0.1 and `docs/plan/08-roadmap.md` M1. GitHub is the source of truth for what is open:
+  `gh issue list --repo Frerol/doxa-pdf --milestone "M1 — Alpha 1: Reader" --state open`. Each issue lists its dependencies, tasks and acceptance criteria.
 - Update this section only when the milestone changes. Do not track individual issues here.
 
 ## 3. Repository layout
@@ -86,7 +87,7 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
 - Codex's sandbox cannot write `.git/`. When another agent delegates to Codex, that agent creates the branch and commits; Codex only edits files and runs checks.
 - **Pushing:** the SSH key needs a passphrase, so push over HTTPS with the GitHub CLI token:
   `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push -u https://github.com/Frerol/doxa-pdf.git <branch>`
-- Open PRs with `gh pr create --repo Frerol/doxa-pdf --base main`. Give each a milestone (`M0 — Foundations & spikes`, `M1 — v0.1 Reader`, …) and labels
+- Open PRs with `gh pr create --repo Frerol/doxa-pdf --base main`. Give each a milestone (`M0 — Foundations & spikes`, `M1 — Alpha 1: Reader`, …) and labels
   (`type:*`, `area:*`, `platform:*`). Reference requirement IDs and use `Closes #n`. Wait for CI (`gh pr checks <n> --watch`) and report the result.
 - A PR SHOULD cover one issue and change nothing the fix does not need; open an issue for other bugs you find. Keep PRs small.
 - The PR description SHOULD say, in order: what the user gains, what they saw (for fixes), the cause, what changed, the tests, and what was verified where. Never use `git add -A` blindly: check `git status` (agent worktrees under `.claude/worktrees/` must never be committed).
