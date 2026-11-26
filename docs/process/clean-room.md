@@ -54,7 +54,9 @@ Doxa follows the layout and flows of a commercial PDF reader, but nothing of its
 - Every asset MUST be either our own work under the project licence, or under a GPL-3-compatible licence and taken from its original source (not a mirror), with its source, version and licence recorded in the same change.
 - You MUST NOT use assets from a proprietary product, its installer, website or documents. This includes traced, redrawn, recoloured or lookalike copies, and placeholders.
 - You MAY follow another product's layout, arrangement and conventions. Every icon, colour, font and text MUST be chosen or written by us. Icons come from Material Symbols, and colours come from the Doxa palette. You MUST NOT sample colours or trace shapes from another app's screens.
-- **No other product is named** in the repository. Write "a commercial PDF reader".
+- The product that inspired Doxa (observed under section 3) MUST NOT be named in the repository, including file names, commits, issues and PRs. Write "a commercial PDF reader".
+  Other products MAY be named where needed for interoperability targets, engines and libraries, specifications, or sources required by sections 2 and 5.
+  `tools/check_repo_rules.py` checks this rule against a list kept outside the repository (the CI secret `DOXA_FORBIDDEN_NAMES` or a local git-ignored `.forbidden-names`).
 - Translations SHOULD be written from the meaning of the English text, not from another app's localisation.
 
 ## 5. Fixtures and test corpus
