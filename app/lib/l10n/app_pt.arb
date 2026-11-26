@@ -110,5 +110,20 @@
   "sortBy": "Ordenar",
   "sortName": "Nome",
   "sortModified": "Data de modificação",
-  "sortSize": "Tamanho"
+  "sortSize": "Tamanho",
+  "renameDocument": "Renomear",
+  "renameDocumentTitle": "Renomear documento",
+  "renameDocumentName": "Nome",
+  "moveDocument": "Mover",
+  "moveDocumentTitle": "Mover para",
+  "moveHere": "Mover para cá",
+  "moveNoFolders": "Para mover este documento, adicione uma pasta da biblioteca no mesmo armazenamento.",
+  "moveNoSubfolders": "Não há pastas aqui dentro. Use Mover para cá para mover o documento para esta pasta.",
+  "deleteDocument": "Excluir",
+  "deleteDocumentTitle": "Excluir “{name}”?",
+  "deleteDocumentMessage": "O arquivo será excluído do aparelho. Não é possível desfazer.",
+  "fileActionPermissionLost": "O Doxa não tem mais permissão para alterar este arquivo.",
+  "fileActionUnsupported": "Este armazenamento não permite isso para este arquivo.",
+  "fileActionFailed": "Não foi possível alterar o arquivo.",
+  "documentNotReopenable": "Pronto. Para reabri-lo daqui, abra-o uma vez com Abrir arquivo."
 }

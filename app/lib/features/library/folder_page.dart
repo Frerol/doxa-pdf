@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import 'document_actions.dart';
 
 /// How a library folder is sorted (FR-FILE-006). Subfolders always come
 /// first.
@@ -77,6 +78,7 @@ class FolderPage extends StatefulWidget {
     required this.onOpen,
     required this.cache,
     this.documentId,
+    this.actions,
   });
 
   final LibraryFolders folders;
@@ -84,6 +86,9 @@ class FolderPage extends StatefulWidget {
   final String? documentId;
   final String title;
   final FolderListingCache cache;
+
+  /// Rename, move and delete of the folder's PDFs (FR-FILE-011).
+  final DocumentActions? actions;
 
   /// Opens a PDF of the folder.
   final void Function(PlatformFolderEntry pdf) onOpen;
@@ -146,9 +151,21 @@ class _FolderPageState extends State<FolderPage> {
           title: folder.name,
           onOpen: widget.onOpen,
           cache: widget.cache,
+          actions: widget.actions,
         ),
       ),
     );
+  }
+
+  Future<void> _onFile(FileAction action, PlatformFolderEntry pdf) async {
+    final changed = await runFileAction(
+      context,
+      widget.actions!,
+      action,
+      uri: pdf.uri,
+      name: pdf.name,
+    );
+    if (changed) await _load();
   }
 
   void _setSort(FolderSort sort) {
@@ -256,11 +273,23 @@ class _FolderPageState extends State<FolderPage> {
             DateFormat.yMMMd(locale)
                 .format(DateTime.fromMillisecondsSinceEpoch(modified)),
         ].join(' · ');
+        final fileItems = fileActionItems<FileAction>(
+          l10n,
+          widget.actions,
+          entry.uri,
+          (action) => action,
+        );
         return ListTile(
           leading: const Icon(Icons.picture_as_pdf_outlined),
           title: Text(entry.name, maxLines: 2, overflow: TextOverflow.ellipsis),
           subtitle: details.isEmpty ? null : Text(details),
           onTap: () => widget.onOpen(entry),
+          trailing: fileItems.isEmpty
+              ? null
+              : PopupMenuButton<FileAction>(
+                  onSelected: (action) => unawaited(_onFile(action, entry)),
+                  itemBuilder: (_) => fileItems,
+                ),
         );
       },
     );

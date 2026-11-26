@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'document_files.dart';
 import 'doxa_platform_platform_interface.dart';
 import 'library_folders.dart';
 import 'pdf_documents.dart';
@@ -24,6 +25,9 @@ class PigeonDoxaPlatform extends DoxaPlatformPlatform {
 
   @override
   late final LibraryFolders libraryFolders = _PigeonLibraryFolders(_hostApi);
+
+  @override
+  late final DocumentFiles documentFiles = _PigeonDocumentFiles(_hostApi);
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -90,6 +94,43 @@ class _PigeonLibraryFolders implements LibraryFolders {
 
   @override
   Future<void> releaseFolder(String treeUri) => _hostApi.releaseFolder(treeUri);
+}
+
+class _PigeonDocumentFiles implements DocumentFiles {
+  _PigeonDocumentFiles(this._hostApi);
+
+  final DoxaPlatformPluginApi _hostApi;
+
+  @override
+  Future<PlatformMovedDocument> rename(String uri, String displayName) =>
+      _fileAction(() => _hostApi.renameDocument(uri, displayName));
+
+  @override
+  Future<PlatformMovedDocument> move(
+    String uri, {
+    required String targetTreeUri,
+    String? targetDocumentId,
+  }) => _fileAction(
+    () => _hostApi.moveDocument(uri, targetTreeUri, targetDocumentId),
+  );
+
+  @override
+  Future<void> delete(String uri) =>
+      _fileAction(() => _hostApi.deleteDocument(uri));
+}
+
+/// Maps host errors to [DocumentFileException].
+Future<T> _fileAction<T>(Future<T> Function() action) async {
+  try {
+    return await action();
+  } on PlatformException catch (error) {
+    throw DocumentFileException(switch (error.code) {
+      'missing' => DocumentFileError.missing,
+      'permissionLost' => DocumentFileError.permissionLost,
+      'unsupported' => DocumentFileError.unsupported,
+      _ => DocumentFileError.failed,
+    });
+  }
 }
 
 /// Maps host errors to [PdfAccessException].

@@ -310,6 +310,66 @@ class PlatformFolderEntry {
   }
 }
 
+/// Where a document is after a rename or a move (FR-FILE-011).
+class PlatformMovedDocument {
+  PlatformMovedDocument({
+    required this.uri,
+    required this.displayName,
+    required this.persisted,
+  });
+
+  /// The document's URI now; providers may give it a new one.
+  String uri;
+
+  /// The name the provider gave it, which may differ from the one asked
+  /// for (some providers add a number to avoid a clash).
+  String displayName;
+
+  /// False when the app could not keep a lasting grant on [uri], so the
+  /// library cannot reopen the document from there.
+  bool persisted;
+
+  List<Object?> _toList() {
+    return <Object?>[uri, displayName, persisted];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static PlatformMovedDocument decode(Object result) {
+    result as List<Object?>;
+    return PlatformMovedDocument(
+      uri: result[0]! as String,
+      displayName: result[1]! as String,
+      persisted: result[2]! as bool,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! PlatformMovedDocument || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(uri, other.uri) &&
+        _deepEquals(displayName, other.displayName) &&
+        _deepEquals(persisted, other.persisted);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'PlatformMovedDocument(uri: $uri, displayName: $displayName, persisted: $persisted)';
+  }
+}
+
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
   @override
@@ -326,6 +386,9 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is PlatformFolderEntry) {
       buffer.putUint8(131);
       writeValue(buffer, value.encode());
+    } else if (value is PlatformMovedDocument) {
+      buffer.putUint8(132);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -340,6 +403,8 @@ class _PigeonCodec extends StandardMessageCodec {
         return PlatformFolder.decode(readValue(buffer)!);
       case 131:
         return PlatformFolderEntry.decode(readValue(buffer)!);
+      case 132:
+        return PlatformMovedDocument.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -595,6 +660,79 @@ class DoxaPlatformPluginApi {
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
       <Object?>[treeUri],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  /// Renames the document [uri] to [displayName] (FR-FILE-011). Fails with
+  /// `missing`, `permissionLost`, `unsupported` or `failed`.
+  Future<PlatformMovedDocument> renameDocument(
+    String uri,
+    String displayName,
+  ) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.renameDocument$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[uri, displayName],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as PlatformMovedDocument;
+  }
+
+  /// Moves the document [uri], which must lie in a library folder, into the
+  /// folder [targetDocumentId] of the tree [targetTreeUri], or into its
+  /// root when [targetDocumentId] is null (FR-FILE-011). Fails like
+  /// [renameDocument].
+  Future<PlatformMovedDocument> moveDocument(
+    String uri,
+    String targetTreeUri,
+    String? targetDocumentId,
+  ) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.moveDocument$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[uri, targetTreeUri, targetDocumentId],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as PlatformMovedDocument;
+  }
+
+  /// Deletes the document [uri] (FR-FILE-011). Fails like [renameDocument].
+  Future<void> deleteDocument(String uri) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.deleteDocument$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[uri],
     );
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
     _extractReplyValueOrThrow(

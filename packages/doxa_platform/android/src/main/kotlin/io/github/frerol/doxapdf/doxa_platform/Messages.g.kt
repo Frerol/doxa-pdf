@@ -366,6 +366,64 @@ data class PlatformFolderEntry (
     return "PlatformFolderEntry(documentId=$documentId, uri=$uri, name=$name, isDirectory=$isDirectory, size=$size, lastModified=$lastModified)"
   }
 }
+
+/**
+ * Where a document is after a rename or a move (FR-FILE-011).
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class PlatformMovedDocument (
+  /** The document's URI now; providers may give it a new one. */
+  val uri: String,
+  /**
+   * The name the provider gave it, which may differ from the one asked
+   * for (some providers add a number to avoid a clash).
+   */
+  val displayName: String,
+  /**
+   * False when the app could not keep a lasting grant on [uri], so the
+   * library cannot reopen the document from there.
+   */
+  val persisted: Boolean
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): PlatformMovedDocument {
+      val uri = pigeonVar_list[0] as String
+      val displayName = pigeonVar_list[1] as String
+      val persisted = pigeonVar_list[2] as Boolean
+      return PlatformMovedDocument(uri, displayName, persisted)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      uri,
+      displayName,
+      persisted,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as PlatformMovedDocument
+    return MessagesPigeonUtils.deepEquals(this.uri, other.uri) && MessagesPigeonUtils.deepEquals(this.displayName, other.displayName) && MessagesPigeonUtils.deepEquals(this.persisted, other.persisted)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.uri)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.displayName)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.persisted)
+    return result
+  }
+  override fun toString(): String {
+    return "PlatformMovedDocument(uri=$uri, displayName=$displayName, persisted=$persisted)"
+  }
+}
 private open class MessagesPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
@@ -384,6 +442,11 @@ private open class MessagesPigeonCodec : StandardMessageCodec() {
           PlatformFolderEntry.fromList(it)
         }
       }
+      132.toByte() -> {
+        (readValue(buffer) as? List<Any?>)?.let {
+          PlatformMovedDocument.fromList(it)
+        }
+      }
       else -> super.readValueOfType(type, buffer)
     }
   }
@@ -399,6 +462,10 @@ private open class MessagesPigeonCodec : StandardMessageCodec() {
       }
       is PlatformFolderEntry -> {
         stream.write(131)
+        writeValue(stream, value.toList())
+      }
+      is PlatformMovedDocument -> {
+        stream.write(132)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -442,6 +509,20 @@ interface DoxaPlatformPluginApi {
   fun listFolder(treeUri: String, documentId: String?, callback: (Result<List<PlatformFolderEntry>>) -> Unit)
   /** Gives up the persisted grant of a folder the user removed. */
   fun releaseFolder(treeUri: String)
+  /**
+   * Renames the document [uri] to [displayName] (FR-FILE-011). Fails with
+   * `missing`, `permissionLost`, `unsupported` or `failed`.
+   */
+  fun renameDocument(uri: String, displayName: String, callback: (Result<PlatformMovedDocument>) -> Unit)
+  /**
+   * Moves the document [uri], which must lie in a library folder, into the
+   * folder [targetDocumentId] of the tree [targetTreeUri], or into its
+   * root when [targetDocumentId] is null (FR-FILE-011). Fails like
+   * [renameDocument].
+   */
+  fun moveDocument(uri: String, targetTreeUri: String, targetDocumentId: String?, callback: (Result<PlatformMovedDocument>) -> Unit)
+  /** Deletes the document [uri] (FR-FILE-011). Fails like [renameDocument]. */
+  fun deleteDocument(uri: String, callback: (Result<Unit>) -> Unit)
 
   companion object {
     /** The codec used by DoxaPlatformPluginApi. */
@@ -658,6 +739,68 @@ interface DoxaPlatformPluginApi {
               MessagesPigeonUtils.wrapError(exception)
             }
             reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.renameDocument$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val uriArg = args[0] as String
+            val displayNameArg = args[1] as String
+            api.renameDocument(uriArg, displayNameArg) { result: Result<PlatformMovedDocument> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(MessagesPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(MessagesPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.moveDocument$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val uriArg = args[0] as String
+            val targetTreeUriArg = args[1] as String
+            val targetDocumentIdArg = args[2] as String?
+            api.moveDocument(uriArg, targetTreeUriArg, targetDocumentIdArg) { result: Result<PlatformMovedDocument> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(MessagesPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(MessagesPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.deleteDocument$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val uriArg = args[0] as String
+            api.deleteDocument(uriArg) { result: Result<Unit> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(MessagesPigeonUtils.wrapError(error))
+              } else {
+                reply.reply(MessagesPigeonUtils.wrapResult(null))
+              }
+            }
           }
         } else {
           channel.setMessageHandler(null)

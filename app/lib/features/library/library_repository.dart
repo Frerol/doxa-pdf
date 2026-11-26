@@ -168,6 +168,29 @@ final class LibraryRepository {
       (_db.update(_db.documents)..where((d) => d.id.equals(id))).write(
         const DocumentsCompanion(uri: Value(null)),
       );
+
+  /// Records that the file the library reopens from [uri] was renamed or
+  /// moved (FR-FILE-011): it now opens from [newUri] under [displayName].
+  /// A null [newUri] means it can no longer be reopened from here. The
+  /// reading state and favorite stay.
+  Future<void> relocate(
+    String uri, {
+    required String? newUri,
+    required String displayName,
+  }) => (_db.update(_db.documents)..where((d) => d.uri.equals(uri))).write(
+    DocumentsCompanion(uri: Value(newUri), displayName: Value(displayName)),
+  );
+
+  /// Forgets the documents opened from [uri] once the file was deleted
+  /// (FR-FILE-011), and returns their identities so their thumbnails can be
+  /// deleted too.
+  Future<List<String>> forgetDeleted(String uri) => _db.transaction(() async {
+    final rows = await (_db.select(
+      _db.documents,
+    )..where((d) => d.uri.equals(uri))).get();
+    await (_db.delete(_db.documents)..where((d) => d.uri.equals(uri))).go();
+    return [for (final row in rows) row.identity];
+  });
 }
 
 /// A folder in the library (FR-FILE-006).
@@ -234,5 +257,11 @@ final class ThumbnailStore {
     final temp = File('${file.path}.tmp');
     await temp.writeAsBytes(png, flush: true);
     await temp.rename(file.path);
+  }
+
+  /// Deletes the thumbnail of a document whose file was deleted.
+  Future<void> delete(String identity) async {
+    final file = fileFor(identity);
+    if (await file.exists()) await file.delete();
   }
 }
