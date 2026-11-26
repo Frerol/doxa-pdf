@@ -36,6 +36,7 @@ fvm install                 # install the pinned Flutter
 tools/fetch_pdfium.sh       # download the pinned PDFium binaries (Linux + Android)
 fvm flutter pub get         # resolve the whole pub workspace (app + packages)
 tools/check.sh              # format, analyze and test everything (same as CI)
+tools/check.sh packages/doxa_ink   # the same, only for the packages you name (no coverage)
 cd app && fvm flutter run   # run on a connected Android device or emulator
 ```
 

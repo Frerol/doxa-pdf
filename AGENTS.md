@@ -33,20 +33,19 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 - **Product focus:** text markup and pen/ink annotation come first (pressure, palm rejection, low latency). Prioritize work by the tiers in
   `docs/plan/01-vision-and-scope.md` §5. Full PDF editing is "not planned for now", not forbidden. A new feature area needs an ADR first.
 
-## 2. Current status (update this section when it changes)
-- **M0 (foundations and spikes), done.** Done: monorepo scaffold, PDFium bindings, Spike A (rendering, ADR-0005), Spike B (ink, ADR-0006),
-  Spike C (annotation writing, ADR-0008), tasks T-01..T-10 (`doxa_core` geometry/dates/IDs/page transforms/palette, `doxa_ink` pressure/smoothing/simplification/erasing),
-  #9 PDF test corpus (PR #33), #3 full CI with Android APK and dependency license checks (PR #34), and #8 Spike D (OCR: GO with
-  Tesseract4Android, `docs/spikes/D-ocr.md`; ADR-0007 accepted), #10 Code of Conduct contact, and #11 wrap-up (risks re-rated, roadmap and requirements updated after the spikes).
-- **Open:** nothing in M0. Branch protection on `main` is enabled (PR required; checks `Docs`, `Analyze & test`, `Android debug APK`, `PDFium bindings up to date`).
-- **Now:** M1 = v0.1 Reader (§9). The offline dictionary is #43 (T-11..T-13 done; T-14, T-15 next in §11).
+## 2. Current status
+- **M0 (foundations and spikes) is done.** Its tasks and specs are in git history (`git log -p -- AGENTS.md`). Branch protection on `main` is enabled
+  (PR required; checks `Docs`, `Analyze & test`, `Android debug APK`, `PDFium bindings up to date`).
+- **Now: M1 = v0.1 Reader.** Scope: `docs/plan/11-mvp.md` §3 v0.1 and `docs/plan/08-roadmap.md` M1. GitHub is the source of truth for what is open:
+  `gh issue list --repo Frerol/doxa-pdf --milestone "M1 — v0.1 Reader" --state open`. Each issue lists its dependencies, tasks and acceptance criteria.
+- Update this section only when the milestone changes. Do not track individual issues here.
 
 ## 3. Repository layout
 | Path | What | Tests |
 |---|---|---|
 | `app/` | Flutter app (Android; applicationId `io.github.frerol.doxapdf`, minSdk 29) | `flutter test` |
 | `packages/doxa_core` | Pure Dart domain: geometry, page transforms, dates, IDs, palette. **No Flutter imports** (enforced by a test) | `dart test` |
-| `packages/doxa_dict` | Pure Dart offline dictionary support (StarDict metadata parser) | `dart test` |
+| `packages/doxa_dict` | Pure Dart offline dictionary: StarDict `.ifo`, `.idx`/`.syn` index, `.dict`/dictzip reader | `dart test` |
 | `packages/doxa_ink` | Pure Dart ink: pressure curve, arc smoothing, resampling, hit testing, partial erase | `dart test` |
 | `packages/doxa_engine` | `PdfEngine` on PDFium: engine isolate, priority queue with generation cancellation, render/edit instances, text, search; `FakePdfEngine` in `testing.dart` | `dart test` (needs PDFium) |
 | `packages/pdfium_ffi` | ffigen-generated PDFium bindings + `openPdfium()` loader | `dart test` (needs PDFium) |
@@ -56,7 +55,7 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 | `spike/*` branches | Throwaway prototypes (`ink_lab`, `annot_write`, `saf_lab`, `render_probe`, `render_lab`). **Reuse their code as a reference; never merge them** | — |
 
 ## 4. Environment (maintainer's machine)
-- Flutter **3.50.1** via FVM (pinned in `.fvmrc`): `export PATH="$HOME/fvm/default/bin:$PATH"` (or `.fvm/flutter_sdk/bin`). JDK 17: `export JAVA_HOME=$HOME/.local/share/jdk/17`.
+- Flutter via FVM (version pinned in `.fvmrc`): `export PATH="$HOME/fvm/default/bin:$PATH"` (or `.fvm/flutter_sdk/bin`). JDK 17: `export JAVA_HOME=$HOME/.local/share/jdk/17`.
   Android SDK: `export ANDROID_HOME=$HOME/Android/Sdk`, `adb` at `$ANDROID_HOME/platform-tools/adb`.
 - PDFium binaries are git-ignored: run `tools/fetch_pdfium.sh` (all), or `linux`/`android` only. The Android build fails early with a clear message if they are missing.
 - **Reference device:** Galaxy Tab S10 FE (SM-X520), Android 16, 90 Hz, S Pen, usually on USB as serial `RXGL20545MJ`. Install and run with
@@ -70,6 +69,7 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 tools/fetch_pdfium.sh linux          # pinned PDFium for native tests
 flutter pub get                      # whole pub workspace, from the repo root
 tools/check.sh                       # format + analyze + all tests (with coverage); must pass before any PR
+tools/check.sh packages/doxa_dict     # fast loop while working: format + analyze + tests of the given packages only
 # CI also runs Markdown link checks, the license checks, the Android debug APK build and a bindings-up-to-date check
 python3 tools/check_dependency_licenses.py pub   # pub license check (CI also runs it, plus a Gradle check after the APK build)
 tools/fetch_corpus.sh                # large test PDFs into test_corpus/external/ (needs curl, sha256sum, Ghostscript)
@@ -103,7 +103,7 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
   products; an agent that writes code MUST NOT operate a proprietary app or read its install; screenshots of other apps MUST NOT be committed.
 - You MUST NOT name the commercial PDF reader that inspired Doxa anywhere (code, docs, commits, issues, PRs). Write "a commercial PDF reader".
   The UI SHOULD resemble the leading commercial mobile readers in **layout and flows**, with an original identity (`docs/plan/05-ux-design.md` §8).
-- Significant decisions need an ADR (`docs/adr/0000-template.md`). The next free number is 0010.
+- Significant decisions need an ADR (`docs/adr/0000-template.md`). Take the next free number in `docs/adr/`.
 - Do not edit generated files by hand (`pdfium_bindings.g.dart`, `messages.g.*`, `app/lib/l10n/gen/`), `tools/pdfium.lock`, accepted ADRs, or `LICENSE`.
 
 **Flutter 3.50**
@@ -137,85 +137,12 @@ cd packages/doxa_platform && dart run pigeon --input pigeon/messages.dart && dar
 - **Stylus pointers must never reach pan/zoom recognizers** (`InteractiveViewer`, scrollables). Disabling pan after the pen's pointer-down is too late:
   the recognizer has already joined the gesture arena and the page shifts a little under the pen (seen in Spike D's harness).
 
-## 8. M0 wrap-up (done)
-All M0 tasks are done (#2–#11); their specs are in git history (`git log -p -- AGENTS.md`). The M1 issues (#46–#55, plus #43) are listed in §9.
-
-## 9. Guide for M1 (v0.1 Reader)
-Scope: `docs/plan/11-mvp.md` §3 v0.1 and `08-roadmap.md` M1. Suggested order (each a separate PR, behind tests):
-1. **`doxa_engine` production engine** from `spike/render:spikes/render_lab/lib/engine.dart`: a typed request/response protocol instead of maps,
-   a priority queue with generation cancellation, the render/edit instance split (ADR-0005), page sizes, outline, text, search. Unit tests with the PDFium fixture.
-2. **Reader view** in `app/`: continuous vertical layout first, previews + 512 px tiles + LRU cache, pinch zoom and fling (from `render_lab/lib/main.dart`),
-   then single page, two pages and horizontal layouts. Add `onTrimMemory` handling and keep RSS under 400 MB on scanned books.
-3. **Opening files:** SAF picker and "Open with" intents through `doxa_platform` (pigeon; see `spike/annot-write:spikes/saf_lab` for the Kotlin side),
-   then recents with progress, library folders and tabs.
-4. Navigation panels (outline, thumbnails), search, night/sepia, and pt-BR + en strings.
-5. **Offline dictionary** (FR-TEXT-008..010, FR-TEXT-012, ADR-0009): `packages/doxa_dict` first (tasks T-11..T-15 in §11), then the dictionary pack builder in `tools/`, import/settings, the guided empty state and the lookup popup in `app/` (`docs/plan/05-ux-design.md` §9).
-M1 issues: #46 engine · #47 continuous reader · #48 paged layouts · #49 opening files · #50 library and reading state · #51 tabs ·
-#52 navigation · #53 search and selection · #54 comfort and settings · #43 dictionary · #55 v0.1 beta release.
-Each issue lists its dependencies, tasks and acceptance criteria. Keep the UI **familiar and original** (§7).
-
-## 10. When to stop and ask the maintainer
+## 8. When to stop and ask the maintainer
 You MUST stop and ask the maintainer before work that needs the physical tablet (S Pen feel, visual checks), UI/UX choices not covered by `05-ux-design.md`, new dependencies, licensing questions,
 ADR-level decisions, releases/store/signing, Code of Conduct reports, or any destructive git operation (force-push to shared branches, history rewrites, deleting branches you did not create).
 
-## 11. Task queue for agents
-Well-specified, pure Dart tasks for coding agents. Take a task only when the maintainer assigns it. **One task per PR**, titled `<type>(<package>): … (T-xx)`, on a branch `feat/<topic>`.
-Tasks run in order; each says what it depends on. The maintainer ticks them in "Completed agent tasks" after the merge.
+## 9. Task queue for agents
+Well-specified, pure Dart tasks for coding agents. Each task is a GitHub issue titled `… (T-xx)` that holds the full spec and its dependencies.
+Take a task only when the maintainer assigns it. **One task per PR**, titled `<type>(<package>): … (T-xx)`, on a branch `feat/<topic>`, with `Closes #n`.
 
-**T-11..T-15 implement `packages/doxa_dict` (FR-TEXT-008..010, [ADR-0009](docs/adr/0009-offline-dictionary.md)). ADR-0009 is accepted; start with T-11.**
-Rules for all of them: pure Dart (no Flutter imports; add a dependency-rule test like `doxa_core`'s), **no new dependencies** (`dart:io` zlib is enough),
-SPDX headers, `dart test` from the package dir, small fixtures under `test/fixtures/` produced by a committed generator, and malformed-input tests
-(truncated files, wrong sizes, bad UTF-8) that must throw a typed `DictionaryFormatException`, never crash or hang.
-
-### T-11 · Package scaffold and `.ifo` parser
-Create `packages/doxa_dict` (workspace member, `analysis_options.yaml` like the other packages) and `StarDictInfo.parse(List<int> bytes)`:
-- Decode strictly as UTF-8 (bad bytes → `DictionaryFormatException`). Accept LF, CRLF and CR line endings and skip blank lines.
-- The first line must be `StarDict's dict ifo file`, and the first key after it must be `version` (`2.4.2` or `3.0.0`). Split each line at the **first** `=`.
-- Required: `bookname`, `wordcount`, `idxfilesize`. Optional: `synwordcount`, `idxoffsetbits` (32 or 64; only valid with `3.0.0`; default 32),
-  `sametypesequence`, `author`, `email`, `website`, `description`, `date`, `dicttype`. Every other key (for example `lang`) goes to an `extra` map.
-- Tests for every key, defaults, line endings and each error.
-
-### T-12 · `.idx` and `.syn` index (depends on T-11)
-- `.idx` (or gzip-compressed `.idx.gz`, decompressed with a size bound): entries are a UTF-8 headword ending in `\0`, an unsigned big-endian offset
-  of `idxoffsetbits` bits and an unsigned big-endian 32-bit size. `idxfilesize` is compared with the **decompressed** byte count and the entry count with `wordcount`.
-- `.syn`: a UTF-8 alias ending in `\0` and an unsigned big-endian 32-bit **zero-based ordinal** into `.idx`. If `.syn` exists, `synwordcount` is required
-  and must match; ordinals out of range are errors. Duplicate aliases pointing to different entries are all kept.
-- Both files must be sorted in StarDict order: `g_ascii_strcasecmp`, ties broken by a byte-wise `strcmp`. Validate the order on load and binary-search over it.
-- Tests: exact hits, case-only differences, first/last entries, duplicate headwords, synonyms, 64-bit offsets, `.idx.gz`, unsorted and truncated files.
-
-### T-13 · `.dict` and dictzip reader (depends on T-11)
-- Random-access reads of `(offset, size)` from a plain `.dict` and from dictzip `.dict.dz`.
-- Dictzip layout: inside the gzip `FEXTRA` field, the `RA` subfield has a little-endian 16-bit length, then unsigned little-endian 16-bit values for
-  version (`1`), the nominal uncompressed chunk length, the chunk count, and each compressed chunk size. Compressed data starts after the **full** gzip header
-  (`FEXTRA`, `FNAME`, `FCOMMENT`, `FHCRC`). Validate the table against the file size, inflate only the chunks a range needs with `ZLibDecoder(raw: true)`,
-  check each inflated length (the last chunk may be shorter), and keep a small LRU of chunks.
-- Field framing: lowercase types are text ending in `\0`; uppercase types are binary, prefixed by an unsigned big-endian 32-bit length.
-  Without `sametypesequence`, each field starts with its type byte. With it, type bytes are omitted and the **last** field takes the remaining bytes of the
-  entry, with neither its `\0` nor its length prefix.
-- Fixtures: a dictzip file made by a committed generator that reproduces `dictzip` (one gzip member, `Z_FULL_FLUSH` at each chunk boundary; Python's `zlib` is fine),
-  plus mixed text/binary entries in both framings. Tests: ranges inside one chunk, across chunks, at the end of the file; plain and dictzip give identical bytes.
-
-### T-14 · `Dictionary` facade and lookup normalization (depends on T-12, T-13)
-- `Dictionary.open(File ifo)` loads the companion files sharing the `.ifo` basename (`.idx` before `.idx.gz`, `.dict` before `.dict.dz`, optional `.syn`)
-  and exposes `info`. `Dictionary.findAll(Directory dir)` lists every valid `.ifo` set in a directory tree and reports the invalid ones with their error.
-- `lookup(String query) → List<DictionaryEntry>` (headword, ordinal, raw fields) per FR-TEXT-010. Trim surrounding whitespace and punctuation, then try, in order,
-  stopping at the first level that has results: (1) exact headword, (2) case-folded, (3) case- and diacritic-folded. At each level, direct `.idx` hits and `.syn`
-  aliases are merged, deduplicated by ordinal and returned in `.idx` order.
-- Folding uses a **secondary normalized index** built lazily on the first folded lookup (normalized key → ordinals), not a scan per query. Case folding is
-  `toLowerCase()`; diacritic folding removes combining marks U+0300–U+036F after decomposing Latin-1 Supplement and Latin Extended-A letters with a small built-in table
-  (no new dependencies). Composed and decomposed "ação" must both find "acao" and vice versa.
-- `suggest(String query, {int limit = 10})` returns headwords with the longest shared normalized prefix, in `.idx` order.
-- Everything synchronous and isolate-friendly (plain arguments, no closures over state), so the app can run it with `Isolate.run`.
-
-### T-15 · Safe definition text (depends on T-13)
-Convert a field to a small immutable rich-text model (`DefinitionBlock`/`DefinitionSpan`: paragraph, list item, line break, bold, italic).
-- `m`, `t`, `y`: plain text (newlines → line breaks). `g` (Pango markup): tags stripped to plain text.
-- `h` (HTML): keep `p`, `br`, `b`/`strong`, `i`/`em`, `ul`/`ol`/`li`. Discard `script` and `style` **with their content**; keep the visible text of links and every other tag.
-- `x` (XDXF): `k` → bold paragraph, `b` → bold, `i` and `ex` → italic, `abr` → italic, `c`, `kref`, `dtrn`, `co` → plain text, `blockquote` → paragraph; other tags keep their text.
-- Entities: the five XML ones, decimal and hex numeric references, and `nbsp`, `ndash`, `mdash`, `hellip`, `laquo`, `raquo`, `copy`; unknown entities stay literal.
-- Other types (binary, unknown) are skipped and counted as `unsupportedFields`, so the entry still shows its supported fields. Never fetch anything.
-- Tests with hostile input (`<script>`, unclosed tags, deep nesting, huge entities), and separately: script/style bodies dropped, link text kept.
-
-## Completed agent tasks
-T-01..T-10 (PRs #19–#28): PDF dates, annotation UUIDs, geometry, page transforms, study palette, pressure curve, arc smoothing, resampling/RDP,
-hit testing and partial erase, Dependabot. Their specs are in git history (`git log -p -- AGENTS.md`).
+Open tasks: `gh issue list --repo Frerol/doxa-pdf --state open --search 'T- in:title'`. Done tasks (T-01..T-13) and their old specs are in git history.
