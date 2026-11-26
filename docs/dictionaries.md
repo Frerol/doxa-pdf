@@ -24,12 +24,14 @@ it belongs to, with its SHA-256. Each `.zip` holds a `LICENSE.txt` with the sour
 
 | Pack | Source | Licence | Size | Download |
 |---|---|---|---|---|
-| English | [Open English WordNet](https://github.com/globalwordnet/english-wordnet) 2024: 153,724 headwords | CC BY 4.0 | 11.3 MB | with `1.0.0-alpha.1` |
-| Português | Wiktionary, via [Wiktextract](https://kaikki.org) | CC BY-SA 4.0 | to be measured | with `1.0.0-alpha.1` |
-| Português → English | English Wiktionary, via Wiktextract | CC BY-SA 4.0 | to be measured | with `1.0.0-alpha.1` |
+| English | English Wiktionary, via Wiktextract: 1,395,300 headwords | CC BY-SA 4.0 | 117.5 MB | with `1.0.0-alpha.1` |
+| Português | Portuguese Wiktionary, via [Wiktextract](https://kaikki.org): 382,824 headwords | CC BY-SA 4.0 | 20.7 MB | with `1.0.0-alpha.1` |
+| Português → English | English Wiktionary, via Wiktextract: 425,832 headwords | CC BY-SA 4.0 | 20.0 MB | with `1.0.0-alpha.1` |
 | English → Português | English Wiktionary translations, via Wiktextract | CC BY-SA 4.0 | to be measured | with `1.0.0-alpha.1` |
 
-The English WordNet pack lists irregular forms ("ran" finds "run"), but not regular ones: "dogs" does not find "dog".
+In the Wiktionary packs, an inflected form leads to its dictionary form: "comia" shows its note and the entry for "comer".
+A compact English pack (11.3 MB) can be built from [Open English WordNet](https://github.com/globalwordnet/english-wordnet) 2024 with the same tool.
+It lists irregular forms ("ran" finds "run"), but not regular ones: "dogs" does not find "dog".
 
 ## Other dictionaries
 
