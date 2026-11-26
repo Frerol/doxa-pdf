@@ -218,6 +218,8 @@ void main() {
     await tester.pumpWidget(
       DoxaApp(engine: () async => engine, devDocumentsDir: dir.path),
     );
+    await tester.tap(find.byTooltip('PDFs in the app folder (developer)'));
+    await tester.pumpAndSettle();
     expect(find.text('book.pdf'), findsOneWidget);
     expect(find.text('notes.txt'), findsNothing);
     await tester.tap(find.text('book.pdf'));

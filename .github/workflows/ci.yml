@@ -37,6 +37,13 @@ jobs:
         env:
           DOXA_FORBIDDEN_NAMES: ${{ secrets.DOXA_FORBIDDEN_NAMES }}
         run: tools/check.sh
+      - name: Drift code and schemas up to date
+        working-directory: app
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          dart run drift_dev make-migrations
+          git diff --exit-code -- . ':!pubspec.lock'
+          test -z "$(git status --porcelain -- .)"
       - name: Test repository checks and check pub dependency licenses
         run: |
           python3 -B -m unittest discover -s tools -p 'test_check_dependency_licenses.py'

@@ -2,12 +2,9 @@
 
 import 'dart:io';
 
-import 'package:doxa_engine/doxa_engine.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
-import '../reader/reader_page.dart';
-import '../settings/app_settings.dart';
 
 /// The app's own folder in shared storage on Android, where
 /// `adb push file.pdf <dir>` works without any permission.
@@ -18,17 +15,14 @@ const androidDevDocumentsDir =
 class DevDocuments extends StatefulWidget {
   const DevDocuments({
     super.key,
-    required this.engine,
     required this.directory,
-    this.settings,
+    required this.onOpen,
   });
 
-  /// App settings the reader opens with.
-  final SettingsController? settings;
-
-  /// Starts or returns the app's engine.
-  final Future<PdfEngine> Function() engine;
   final String directory;
+
+  /// Opens a listed file in the reader.
+  final ValueChanged<File> onOpen;
 
   @override
   State<DevDocuments> createState() => _DevDocumentsState();
@@ -93,16 +87,7 @@ class _DevDocumentsState extends State<DevDocuments> {
                 ListTile(
                   leading: const Icon(Icons.picture_as_pdf_outlined),
                   title: Text(file.uri.pathSegments.last),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => ReaderPage(
-                        engine: widget.engine(),
-                        source: FileSource(file.path),
-                        title: file.uri.pathSegments.last,
-                        settings: widget.settings,
-                      ),
-                    ),
-                  ),
+                  onTap: () => widget.onOpen(file),
                 ),
           ],
         ),

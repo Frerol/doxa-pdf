@@ -18,6 +18,8 @@ Future<(ReaderController, FakePdfEngine, FakeDecoder)> openReader(
   WidgetTester tester, {
   int pages = 50,
   int cacheBudgetBytes = 160 << 20,
+  ReaderOptions options = const ReaderOptions(),
+  ReadingPosition? initialPosition,
 }) async {
   final engine = FakePdfEngine({
     'book.pdf': FakeDocument(
@@ -33,6 +35,8 @@ Future<(ReaderController, FakePdfEngine, FakeDecoder)> openReader(
     info: opened.info,
     decoder: decoder.call,
     cacheBudgetBytes: cacheBudgetBytes,
+    options: options,
+    initialPosition: initialPosition,
   );
   addTearDown(controller.dispose);
   return (controller, engine, decoder);
@@ -53,6 +57,43 @@ void testReader(String description, WidgetTesterCallback body) =>
     });
 
 void main() {
+  group('reading position (FR-VIEW-006)', () {
+    for (final mode in [ReaderMode.continuous, ReaderMode.singlePage]) {
+      testReader('a saved position reopens at the same page and zoom '
+          '(${mode.name})', (tester) async {
+        final options = ReaderOptions(mode: mode);
+        final (first, _, _) = await openReader(tester, options: options);
+        first.resize(viewSize, 2);
+        first.goToPage(30);
+        first.zoomTo(2);
+        final saved = first.position!;
+
+        final (second, _, _) = await openReader(
+          tester,
+          options: options,
+          initialPosition: saved,
+        );
+        second.resize(viewSize, 2);
+        expect(second.currentPage, first.currentPage);
+        expect(second.zoom, closeTo(first.zoom, 1e-9));
+        expect(second.position!.page, saved.page);
+      });
+    }
+
+    testReader('a position past the end of the document starts at page 1', (
+      tester,
+    ) async {
+      final (controller, _, _) = await openReader(
+        tester,
+        pages: 10,
+        initialPosition: (page: 40, x: 0, y: 0, zoom: 3),
+      );
+      controller.resize(viewSize, 2);
+      expect(controller.currentPage, 0);
+      expect(controller.zoom, 1);
+    });
+  });
+
   testReader('requests visible previews first, then tiles, then nearby', (
     tester,
   ) async {

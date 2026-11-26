@@ -29,6 +29,22 @@ Future<bool> _openWithPlatform(String uri) => DoxaPlatform().openUri(uri);
 Future<void> _keepScreenOnWithPlatform(bool keepOn) =>
     DoxaPlatform().setKeepScreenOn(keepOn);
 
+/// Receives where the reader is (FR-VIEW-006): the position, the
+/// per-document right-to-left order (FR-VIEW-019) and the page count.
+typedef ReadingStateListener = void Function(
+  ReadingPosition position,
+  bool rightToLeft,
+  int pageCount,
+);
+
+/// Called once the document is open, with what is needed to render it
+/// (for example a library thumbnail).
+typedef DocumentOpenedListener = void Function(
+  PdfEngine engine,
+  DocumentHandle document,
+  DocumentInfo info,
+);
+
 /// Opens a document and shows it in the reader (issues #47, #48, #52).
 class ReaderPage extends StatefulWidget {
   const ReaderPage({
@@ -41,6 +57,10 @@ class ReaderPage extends StatefulWidget {
     this.settings,
     this.releaseSource,
     this.keepScreenOn = _keepScreenOnWithPlatform,
+    this.initialPosition,
+    this.initialRightToLeft = false,
+    this.onReadingState,
+    this.onOpened,
   });
 
   final Future<PdfEngine> engine;
@@ -57,6 +77,15 @@ class ReaderPage extends StatefulWidget {
 
   /// Keeps the screen on or lets it sleep (FR-VIEW-013); injectable.
   final Future<void> Function(bool keepOn) keepScreenOn;
+
+  /// Where to open the document, and in which page order (FR-VIEW-006).
+  final ReadingPosition? initialPosition;
+  final bool initialRightToLeft;
+
+  /// Called a moment after the page changes, when the app goes to the
+  /// background, and when the reader closes.
+  final ReadingStateListener? onReadingState;
+  final DocumentOpenedListener? onOpened;
 
   @override
   State<ReaderPage> createState() => _ReaderPageState();
@@ -82,10 +111,16 @@ class _ReaderPageState extends State<ReaderPage> {
   late Future<void> _opening;
   bool _promptPending = false;
   final FrameProbe? _probe = kReleaseMode ? null : FrameProbe();
+  Timer? _saveTimer;
+  late final AppLifecycleListener _lifecycle;
+
+  /// How long the page must stay the same before its state is saved.
+  static const _saveDelay = Duration(seconds: 1);
 
   @override
   void initState() {
     super.initState();
+    _lifecycle = AppLifecycleListener(onHide: _saveReadingState);
     _opening = _open();
     widget.settings?.addListener(_onSettings);
     _applyKeepScreenOn();
@@ -152,10 +187,14 @@ class _ReaderPageState extends State<ReaderPage> {
             options: ReaderOptions(
               mode: settings.readerMode,
               coverPage: settings.coverPage,
+              rightToLeft: widget.initialRightToLeft,
               tapZones: settings.tapZones,
               keepZoomOnTurn: settings.keepZoomOnTurn,
             ),
+            initialPosition: widget.initialPosition,
           );
+          controller.page.addListener(_scheduleSave);
+          widget.onOpened?.call(engine, handle, info);
           _controller = controller;
           _search = SearchSession(controller);
           _selection = TextSelectionController(controller);
@@ -205,8 +244,28 @@ class _ReaderPageState extends State<ReaderPage> {
     }
   }
 
+  void _scheduleSave() {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(_saveDelay, _saveReadingState);
+  }
+
+  void _saveReadingState() {
+    _saveTimer?.cancel();
+    final controller = _controller;
+    final listener = widget.onReadingState;
+    final position = controller?.position;
+    if (controller == null || listener == null || position == null) return;
+    listener(
+      position,
+      controller.options.rightToLeft,
+      controller.info.pageCount,
+    );
+  }
+
   @override
   void dispose() {
+    _saveReadingState();
+    _lifecycle.dispose();
     _search?.dispose();
     _selection?.dispose();
     final controller = _controller;
