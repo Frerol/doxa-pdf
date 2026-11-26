@@ -46,6 +46,7 @@ The short form of both, and the rules for coding agents, are in [AGENTS.md](../A
 | [0007](adr/0007-ocr-integration.md) | On-device OCR with Tesseract4Android | Accepted |
 | [0008](adr/0008-annotation-save-strategy.md) | Annotation save strategy (full save, AP-less markup, object-based ink AP) | Accepted |
 | [0009](adr/0009-offline-dictionary.md) | Built-in offline dictionary (StarDict, user-imported) | Accepted |
+| [0010](adr/0010-dictionary-downloads-in-app.md) | Dictionary packs downloaded in the app on request (amends 0009) | Proposed |
 
 New ADRs start from [the template](adr/0000-template.md).
 
