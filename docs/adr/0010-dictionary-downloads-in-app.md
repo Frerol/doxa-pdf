@@ -1,6 +1,6 @@
 # ADR-0010 — Dictionary packs downloaded in the app on request
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-26
 - **Amends:** [ADR-0009](0009-offline-dictionary.md) (decision 2 and the "online APIs" force)
 
