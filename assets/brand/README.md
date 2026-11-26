@@ -1,7 +1,9 @@
 # Doxa PDF brand assets
 
-The **provisional** identity: a lowercase delta (δ, for δόξα) drawn as one stroke in four study colours with hard joins.
-Its bowl closes by passing under the stem. A fuller branding will come later ([UX §5](../../docs/plan/05-ux-design.md#5-visual-design)).
+The **provisional** identity uses the italic lowercase delta (δ, for δόξα) from
+EB Garamond. Hard cuts separate magenta at the hook tip, green to the bowl
+junction, purple down the right and along the base, and orange on the return.
+A fuller branding will come later ([UX §5](../../docs/plan/05-ux-design.md#5-visual-design)).
 
 | File | Use |
 |---|---|
@@ -22,8 +24,23 @@ Its bowl closes by passing under the stem. A fuller branding will come later ([U
 | Ink (background) | `#161A23` |
 | Paper (light background) | `#F5F6FA` |
 
-Keep the stroke order (magenta → green → purple → orange), the hard joins and the colours. Do not add gradients, outlines or effects.
+Keep the colour order (magenta → green → purple → orange) and the hard cuts. Do not add gradients, outlines or effects.
 The wordmark in the PNGs is set in Noto Sans (SIL Open Font License 1.1).
+
+## Font
+
+- EB Garamond Italic variable font (`EBGaramond-Italic[wght].ttf`), name-table
+  version `Version 1.003`, instance `wght=600`, glyph `U+03B4`.
+- [Google Fonts repository source](https://github.com/google/fonts/blob/f8c1d3d6cc75e30d77130bdcbfbff27e3b6233fe/ofl/ebgaramond/EBGaramond-Italic%5Bwght%5D.ttf),
+  commit `f8c1d3d6cc75e30d77130bdcbfbff27e3b6233fe`.
+- SHA-256 `bba2c4499c93c9612b90b9825d32b07da52fce2fe57562a1eb6b833553f93c4e`.
+- SIL Open Font License 1.1.
+- `Copyright 2017 The EB Garamond Project Authors (https://github.com/octaviopardo/EBGaramond12)`
+
+The font file is not distributed. To regenerate the five brand SVGs, run
+`python3 tools/generate_brand_glyph.py --font <path>` from the repository
+root with fontTools installed. The generator verifies the font hash, extracts
+and normalises the delta, and applies the colour cuts.
 
 ## Generated app assets
 
