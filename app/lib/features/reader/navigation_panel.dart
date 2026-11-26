@@ -6,16 +6,28 @@ import 'package:material_ui/material_ui.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'reader_controller.dart';
 
-/// Side panel with the outline (FR-VIEW-007) and page thumbnails
-/// (FR-VIEW-008).
-class NavigationPanel extends StatelessWidget {
-  const NavigationPanel({
+/// What the reader's side panel shows. Only sections that are built are
+/// listed (UX §5): bookmarks and annotations join when they exist.
+enum PanelSection { pages, outline }
+
+/// The reader's side panel (docs/plan/05-ux-design.md §5): icons at its
+/// top pick its content, page thumbnails (FR-VIEW-008) or the outline
+/// (FR-VIEW-007). The reader opens and closes it with its app-bar button.
+class ReaderSidePanel extends StatelessWidget {
+  const ReaderSidePanel({
     super.key,
     required this.controller,
+    required this.section,
+    required this.onSection,
     required this.onFollow,
   });
 
+  /// The panel's width when it sits beside the page.
+  static const width = 296.0;
+
   final ReaderController controller;
+  final PanelSection section;
+  final ValueChanged<PanelSection> onSection;
 
   /// Called with the target of a tapped outline entry or thumbnail.
   final void Function(LinkTarget target) onFollow;
@@ -23,30 +35,76 @@ class NavigationPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Drawer(
-      width: 360,
-      child: SafeArea(
-        child: DefaultTabController(
-          length: 2,
-          child: Column(
-            children: [
-              TabBar(
-                tabs: [
-                  Tab(text: l10n.outlineTab),
-                  Tab(text: l10n.pagesTab),
-                ],
-              ),
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    _Outline(controller: controller, onFollow: onFollow),
-                    _Thumbnails(controller: controller, onFollow: onFollow),
-                  ],
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final sections = [
+      (PanelSection.pages, Icons.grid_view_outlined, l10n.pagesTab),
+      (PanelSection.outline, Icons.toc, l10n.outlineTab),
+    ];
+    final label = sections.firstWhere((s) => s.$1 == section).$3;
+    return Material(
+      color: scheme.surface,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: [
+                for (final (value, icon, name) in sections)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: IconButton(
+                        icon: Icon(icon),
+                        tooltip: name,
+                        isSelected: value == section,
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size.fromHeight(44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          backgroundColor: value == section
+                              ? scheme.secondaryContainer
+                              : null,
+                          foregroundColor: value == section
+                              ? scheme.onSecondaryContainer
+                              : scheme.onSurfaceVariant,
+                        ),
+                        onPressed: () => onSection(value),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: scheme.outlineVariant),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+            child: Semantics(
+              header: true,
+              child: Text(
+                label.toUpperCase(),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  letterSpacing: 0.8,
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+          Expanded(
+            child: switch (section) {
+              PanelSection.pages => _Thumbnails(
+                controller: controller,
+                onFollow: onFollow,
+              ),
+              PanelSection.outline => _Outline(
+                controller: controller,
+                onFollow: onFollow,
+              ),
+            },
+          ),
+        ],
       ),
     );
   }
@@ -174,15 +232,13 @@ class _Thumbnails extends StatelessWidget {
                             width: selected ? 3 : 1,
                           ),
                         ),
-                        // Repaints as previews arrive, cell by cell.
-                        child: ValueListenableBuilder(
-                          valueListenable: controller.repaint,
-                          builder: (context, _, _) {
-                            final image = controller.thumbnail(page);
-                            return image == null
-                                ? const SizedBox.expand()
-                                : RawImage(image: image, fit: BoxFit.fill);
-                          },
+                        // Repaints as previews arrive, cell by cell. A
+                        // painter, not a rebuild: the controller signals
+                        // repaints during layout too (a resize when the
+                        // panel opens), when widgets must not rebuild.
+                        child: CustomPaint(
+                          painter: _ThumbnailPainter(controller, page),
+                          child: const SizedBox.expand(),
                         ),
                       ),
                     ),
@@ -200,4 +256,30 @@ class _Thumbnails extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Paints page [page]'s preview once the controller has it.
+class _ThumbnailPainter extends CustomPainter {
+  _ThumbnailPainter(this.controller, this.page)
+    : super(repaint: controller.repaint);
+
+  final ReaderController controller;
+  final int page;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final image = controller.thumbnail(page);
+    if (image == null) return;
+    paintImage(
+      canvas: canvas,
+      rect: Offset.zero & size,
+      image: image,
+      fit: BoxFit.fill,
+      filterQuality: FilterQuality.medium,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ThumbnailPainter old) =>
+      old.controller != controller || old.page != page;
 }

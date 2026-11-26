@@ -9,6 +9,15 @@ import 'package:material_ui/material_ui.dart';
 /// keep their own fonts.
 const doxaFontFamily = 'Manrope';
 
+/// The four brand colours (UX §5). They mark folders and tabs, never text
+/// on their own.
+const brandColors = [
+  Color(0xFF7048E8),
+  Color(0xFFD6336C),
+  Color(0xFF2BAE66),
+  Color(0xFFF08C00),
+];
+
 /// Neutral surfaces of the Doxa look (UX §5), the same with or without
 /// dynamic colour: only the accent follows the wallpaper.
 @immutable

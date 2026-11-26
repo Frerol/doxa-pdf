@@ -395,7 +395,11 @@ class _ReaderViewState extends State<ReaderView>
                 size: size,
                 painter: ReaderPainter(
                   _controller,
-                  background: colors.surfaceContainerHighest,
+                  // Behind the page (UX §5): the deepest surface in the dark theme,
+                  // a soft grey in the light one.
+                  background: Theme.of(context).brightness == Brightness.dark
+                      ? colors.surfaceContainerLowest
+                      : colors.surfaceContainerHigh,
                   probe: widget.probe,
                   selection: widget.selection,
                   highlightColors: {

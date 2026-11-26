@@ -791,5 +791,9 @@
         "type": "int"
       }
     }
+  },
+  "sidePanel": "Side panel",
+  "@sidePanel": {
+    "description": "Tooltip of the reader button that opens and closes the side panel with thumbnails and outline (UX §5)."
   }
 }

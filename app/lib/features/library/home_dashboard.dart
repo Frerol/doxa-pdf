@@ -5,20 +5,13 @@ import 'dart:io';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import '../../src/doxa_theme.dart';
 import 'library_home.dart' show lastReadLabel;
 import 'library_repository.dart';
 import 'library_thumbnails.dart';
 
 /// The sections of the home screen; each "See all" opens its full list.
 enum HomeSection { recents, favorites, folders }
-
-/// The four brand colours (UX §5), which mark folders on the home screen.
-const brandColors = [
-  Color(0xFF7048E8),
-  Color(0xFFD6336C),
-  Color(0xFF2BAE66),
-  Color(0xFFF08C00),
-];
 
 /// The home screen's dashboard (docs/plan/05-ux-design.md §5): Continue
 /// reading, Favorites, Folders and Recents on one screen, each with "See
