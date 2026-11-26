@@ -228,17 +228,20 @@ are agreed with the maintainer outside the repo and recorded here only as generi
 
 ## 9. Getting a dictionary
 
-Maintainer decision (2026-11-25): within [ADR-0009](../adr/0009-offline-dictionary.md) (user-imported, never bundled), a student must
-never have to search the web for a dictionary. Getting the first one takes about three taps (FR-TEXT-008, FR-TEXT-009, FR-TEXT-012).
+Maintainer decision (2026-11-25), amended by [ADR-0010](../adr/0010-dictionary-downloads-in-app.md) (2026-11-26): dictionaries are never
+bundled, and a student must never have to search the web for one. Getting the first one takes two taps inside Doxa (FR-TEXT-008, FR-TEXT-009, FR-TEXT-012).
 
 1. **Empty state.** Tapping **Dictionary** with no dictionary installed opens the usual popup (bottom sheet on phones) with a short explanation
    and two actions: **Get dictionaries** and **Import file**. Settings → Dictionaries shows the same explanation and **Get dictionaries**
    action, with the import controls described below.
-2. **Get dictionaries** opens a Doxa project page in the browser with a short, curated list: Portuguese, English, Portuguese → English and
-   English → Portuguese at first. Each entry is one `.zip` with its size, source and license. The browser downloads it, so the app itself never
-   uses the network ([NFR-SEC-001](02-requirements.md#25-security--privacy-sec)).
-3. **Import in one step.** Opening the downloaded `.zip` offers Doxa in "Open with". Doxa imports, validates and enables it, then confirms with a
-   snackbar. **Import file** opens the system picker, which starts in Downloads when possible.
+2. **Get dictionaries** opens Doxa's own list of the packs it builds, fetched only when the list opens (ADR-0010). Portuguese and English come
+   first; translation packs belong to the separate Translate action (#100). Each entry gives its language, size, source and licence and says
+   whether it is installed. Without a network the list says so and still offers the import actions.
+3. **Download in one tap.** A tap shows the size and starts the download, asking first on a metered connection. The download shows its progress
+   and can be cancelled. Doxa checks the SHA-256, then imports, validates and enables the pack, and confirms with a snackbar.
+   No looked-up word ever leaves the device ([NFR-SEC-001](02-requirements.md#25-security--privacy-sec)).
+4. **Manual paths stay.** `docs/dictionaries.md` lists the same packs for the browser, and opening a downloaded `.zip` offers Doxa in
+   "Open with". **Import file** opens the system picker, which starts in Downloads when possible.
 
 The packs are **built by Doxa** from free sources (Wiktionary via Wiktextract, CC BY-SA; WordNet for a compact English option), converted to
 StarDict by a script in `tools/` and published as release assets with their SHA-256, attribution and license file. Built packs keep the
