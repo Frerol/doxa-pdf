@@ -140,6 +140,53 @@ class BuildDictionaryTest(unittest.TestCase):
         self.assertIn(f"idxfilesize={len(built.files['pt.idx'])}\n", info)
         self.assertIn("description=two lines\n", info)
 
+    def write_jsonl(self, name, records):
+        path = self.tmp / name
+        with gzip.open(path, "wt", encoding="utf-8") as f:
+            for record in records:
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        return path
+
+    def test_form_of_entries_also_lead_to_their_lemma(self):
+        # Issue #92: "comia" showed only "1st person ... of comer".
+        def form_of(word, lemma, note, lang="pt"):
+            return {"word": word, "lang_code": lang, "pos": "verb",
+                    "senses": [{"glosses": [note], "form_of": [{"word": lemma}],
+                                "tags": ["form-of"]}]}
+        path = self.write_jsonl("forms.jsonl.gz", [
+            # The form comes before its lemma, as in the dumps.
+            form_of("comia", "comer", "imperfeito de comer"),
+            {"word": "comer", "lang_code": "pt", "pos": "verb",
+             "senses": [{"glosses": ["ingerir alimentos"]}]},
+            # Its lemma is not in the pack: the form keeps its note only.
+            form_of("fui", "ir", "perfeito de ir"),
+            # Another language's form of the same spelling is ignored.
+            form_of("como", "comer", "x", lang="es"),
+            form_of("como", "comer", "presente de comer"),
+        ])
+        built = bd.build(bd.read_wiktextract(path, "pt"), "pt", "Sample", "")
+        words = [w for w, _, _ in parse_idx(built.files["pt.idx"])]
+        self.assertEqual(words, ["comer", "comia", "como", "fui"])
+        synonyms = [(a, words[o]) for a, o in parse_syn(built.files["pt.syn"])]
+        self.assertEqual(synonyms, [("comia", "comer"), ("como", "comer")])
+        data = gzip.decompress(built.files["pt.dict.dz"])
+        entries = {w: data[o : o + s].decode() for w, o, s in parse_idx(built.files["pt.idx"])}
+        self.assertIn("imperfeito de comer", entries["comia"])
+        self.assertIn("perfeito de ir", entries["fui"])
+
+    def test_translations_follow_form_of_entries(self):
+        path = self.write_jsonl("en.jsonl.gz", [
+            {"word": "checking", "lang_code": "en", "pos": "verb",
+             "senses": [{"glosses": ["present participle of check"],
+                         "form_of": [{"word": "check"}]}]},
+            {"word": "check", "lang_code": "en", "pos": "verb",
+             "senses": [{"glosses": ["inspect"]}],
+             "translations": [{"lang_code": "pt", "word": "verificar", "sense": "inspect"}]},
+        ])
+        built = bd.build(bd.read_translations(path, "pt"), "en-pt", "Sample", "")
+        self.assertEqual([w for w, _, _ in parse_idx(built.files["en-pt.idx"])], ["check"])
+        self.assertEqual(parse_syn(built.files["en-pt.syn"]), [("checking", 0)])
+
     def test_dictzip_chunks_inflate_alone(self):
         glossary = bd.Glossary()
         for i in range(3000):

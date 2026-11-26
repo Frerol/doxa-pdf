@@ -10,7 +10,10 @@ Sources, read as streams so large dumps fit in memory:
   and their glosses (in the language of the Wiktionary edition the dump
   came from); ``--translations pt`` turns English entries into an
   English → Portuguese dictionary from their translation tables.
-  Inflected forms become synonyms, so "ações" finds "ação".
+  Inflected forms become synonyms, so "ações" finds "ação", and an
+  entry that is a form of another word (Wiktextract's ``form_of``) also
+  leads to that word: "comia" shows its own note and the entry for
+  "comer" (issue #92).
 * ``oewn``: Open English WordNet in its WN-LMF XML release
   (https://github.com/globalwordnet/english-wordnet), for a compact
   English dictionary.
@@ -97,6 +100,9 @@ class Glossary:
 
     def __init__(self) -> None:
         self._entries: OrderedDict[str, Entry] = OrderedDict()
+        # (form, lemma) pairs from form-of senses. The lemma may come later
+        # in the dump, so they are resolved in build().
+        self._links: set[tuple[str, str]] = set()
 
     def add(self, headword: str, section: str, aliases: Iterable[str] = ()) -> None:
         headword = headword.strip()
@@ -109,6 +115,15 @@ class Glossary:
             alias = alias.strip()
             if alias and alias != headword and "\0" not in alias:
                 entry.aliases.add(alias)
+
+    def link(self, form: str, lemma: str) -> None:
+        """Makes [form] also find [lemma], when [lemma] is a headword."""
+        form, lemma = form.strip(), lemma.strip()
+        if form and lemma and form != lemma and "\0" not in form:
+            self._links.add((form, lemma))
+
+    def links(self) -> set[tuple[str, str]]:
+        return set(self._links)
 
     def __len__(self) -> int:
         return len(self._entries)
@@ -152,6 +167,15 @@ def _forms(record: dict) -> list[str]:
     return forms
 
 
+def _link_lemmas(glossary: Glossary, record: dict) -> None:
+    """Links a form-of entry ("comia") to the words it is a form of ("comer")."""
+    word = record.get("word") or ""
+    for sense in record.get("senses") or []:
+        for target in sense.get("form_of") or []:
+            if isinstance(target, dict):
+                glossary.link(word, target.get("word") or "")
+
+
 def _gloss(sense: dict) -> str | None:
     glosses = [g.strip() for g in sense.get("glosses") or [] if g and g.strip()]
     if not glosses:
@@ -176,6 +200,7 @@ def read_wiktextract(path: Path, lang: str) -> Glossary:
     for record in _records(path):
         if record.get("lang_code") != lang:
             continue
+        _link_lemmas(glossary, record)
         word = record.get("word") or ""
         senses = [g for s in record.get("senses") or [] if (g := _gloss(s))]
         if not senses:
@@ -192,6 +217,8 @@ def read_translations(path: Path, lang: str) -> Glossary:
     for record in _records(path):
         if record.get("lang_code") != "en":
             continue
+        # "checking" has no translations of its own, but leads to "check".
+        _link_lemmas(glossary, record)
         by_sense: OrderedDict[str, list[str]] = OrderedDict()
         for t in record.get("translations") or []:
             code = t.get("lang_code") or t.get("code")
@@ -339,14 +366,22 @@ def build(glossary: Glossary, name: str, title: str, description: str) -> Built:
         ordinals[entry.headword] = ordinal
     if len(dict_data) > MAX_DICT_SIZE:
         raise SystemExit("Definitions exceed 4 GiB")
+    pairs = {
+        (alias, ordinals[entry.headword])
+        for entry in entries
+        for alias in entry.aliases
+        # A form that is a headword itself is found directly.
+        if alias not in ordinals
+    }
+    # A form-of entry is a headword with only a grammatical note, so it also
+    # needs a synonym that leads to its lemma's entry.
+    pairs |= {
+        (form, ordinals[lemma])
+        for form, lemma in glossary.links()
+        if lemma in ordinals
+    }
     synonyms = sorted(
-        {
-            (alias, ordinals[entry.headword])
-            for entry in entries
-            for alias in entry.aliases
-            # A form that is a headword itself is found directly.
-            if alias not in ordinals
-        },
+        pairs,
         key=lambda pair: (stardict_key(pair[0].encode()), pair[1]),
     )
     syn = b"".join(a.encode() + b"\0" + struct.pack(">I", o) for a, o in synonyms)
