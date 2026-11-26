@@ -7,6 +7,7 @@ import 'package:doxa_platform/doxa_platform.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../features/dev/dev_documents.dart';
+import '../features/dictionary/dictionary_import.dart';
 import '../features/dictionary/dictionary_library.dart';
 import '../features/library/document_identity.dart';
 import '../features/library/library_home.dart';
@@ -47,6 +48,7 @@ class DoxaApp extends StatefulWidget {
     this.documentFiles,
     this.dictionaries,
     this.dictionaryLookup,
+    this.dictionaryImports,
     this.openUri,
   });
 
@@ -80,6 +82,10 @@ class DoxaApp extends StatefulWidget {
   final DictionaryLibrary? dictionaries;
   final DictionaryLookup? dictionaryLookup;
 
+  /// Gets dictionaries from the system picker and "Open with"
+  /// (FR-TEXT-009); the platform's on Android by default.
+  final DictionaryImports? dictionaryImports;
+
   /// Opens a web page in the browser; the platform's by default.
   final Future<bool> Function(String uri)? openUri;
 
@@ -93,6 +99,18 @@ class DoxaApp extends StatefulWidget {
 
 class _DoxaAppState extends State<DoxaApp> with WidgetsBindingObserver {
   SettingsController? _ownSettings;
+
+  late final DictionaryImporter? _importer = switch ((
+    widget.dictionaries,
+    widget.dictionaryImports ??
+        (Platform.isAndroid ? DoxaPlatform().dictionaryImports : null),
+  )) {
+    (final library?, final imports?) => DictionaryImporter(
+      library: library,
+      imports: imports,
+    ),
+    _ => null,
+  };
   Color? _accent;
 
   SettingsController get settings =>
@@ -159,11 +177,15 @@ class _DoxaAppState extends State<DoxaApp> with WidgetsBindingObserver {
         if (dictionaries == null || lookup == null || child == null) {
           return child ?? const SizedBox.shrink();
         }
+        final importer = _importer;
         return DictionaryScope(
           library: dictionaries,
           lookup: lookup,
           openUri: widget.openUri ?? DoxaPlatform().openUri,
-          child: child,
+          importer: importer,
+          child: importer == null
+              ? child
+              : IncomingDictionaries(importer: importer, child: child),
         );
       },
       home: LibraryHome(

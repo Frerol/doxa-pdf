@@ -147,5 +147,14 @@
   "dictionaryRemove": "Remover",
   "dictionaryRemoveTooltip": "Remover {name}",
   "dictionaryRemoveTitle": "Remover “{name}”?",
-  "dictionaryRemoveMessage": "Os arquivos dele são apagados do Doxa. Você pode importá-lo de novo depois."
+  "dictionaryRemoveMessage": "Os arquivos dele são apagados do Doxa. Você pode importá-lo de novo depois.",
+  "dictionaryImportFolder": "Importar pasta",
+  "dictionaryTooLarge": "Este arquivo é grande demais para importar como dicionário.",
+  "dictionaryNotZip": "Este arquivo não é um .zip válido.",
+  "dictionaryAdded": "“{name}” adicionado.",
+  "dictionaryAddedCount": "{count, plural, =1{1 dicionário adicionado.} other{{count} dicionários adicionados.}}",
+  "dictionaryAlreadyInstalled": "“{name}” já está instalado.",
+  "dictionaryMissingFile": "Está faltando “{file}”.",
+  "dictionaryInvalid": "“{file}” não é um dicionário StarDict válido.",
+  "dictionaryNoneFound": "Nenhum dicionário encontrado. Um dicionário StarDict tem um arquivo .ifo."
 }

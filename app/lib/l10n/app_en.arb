@@ -688,5 +688,66 @@
   "dictionaryRemoveMessage": "Its files are deleted from Doxa. You can import it again later.",
   "@dictionaryRemoveMessage": {
     "description": "Body of the confirmation before removing a dictionary."
+  },
+  "dictionaryImportFolder": "Import folder",
+  "@dictionaryImportFolder": {
+    "description": "Tooltip of the button that imports the dictionaries of a folder (FR-TEXT-009)."
+  },
+  "dictionaryTooLarge": "This file is too large to import as a dictionary.",
+  "@dictionaryTooLarge": {
+    "description": "Shown when an import passes 2 GiB or 4096 files."
+  },
+  "dictionaryNotZip": "This file is not a valid .zip.",
+  "@dictionaryNotZip": {
+    "description": "Shown when an imported .zip cannot be read."
+  },
+  "dictionaryAdded": "Added “{name}”.",
+  "@dictionaryAdded": {
+    "description": "Shown after one dictionary was imported.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryAddedCount": "{count, plural, =1{Added 1 dictionary.} other{Added {count} dictionaries.}}",
+  "@dictionaryAddedCount": {
+    "description": "Shown after several dictionaries were imported.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dictionaryAlreadyInstalled": "“{name}” is already installed.",
+  "@dictionaryAlreadyInstalled": {
+    "description": "Shown when the imported dictionary is already there.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryMissingFile": "“{file}” is missing.",
+  "@dictionaryMissingFile": {
+    "description": "Shown when an imported dictionary lacks a companion file; names the missing file.",
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryInvalid": "“{file}” is not a valid StarDict dictionary.",
+  "@dictionaryInvalid": {
+    "description": "Shown when an imported dictionary fails validation.",
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryNoneFound": "No dictionary found. A StarDict dictionary has an .ifo file.",
+  "@dictionaryNoneFound": {
+    "description": "Shown when an import holds no .ifo file."
   }
 }

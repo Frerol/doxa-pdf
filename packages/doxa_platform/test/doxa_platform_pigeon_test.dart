@@ -53,6 +53,30 @@ void main() {
     );
   });
 
+  test('staging failures keep their cause (FR-TEXT-009)', () async {
+    final api = FakeDoxaPlatformPluginApi(platformVersion: '42');
+    final imports = PigeonDoxaPlatform(api: api).dictionaryImports;
+    api.staged = '/cache/staged';
+    expect(await imports.pickFiles(), '/cache/staged');
+    for (final (code, error) in [
+      ('tooLarge', DictionaryImportError.tooLarge),
+      ('notDictionary', DictionaryImportError.notDictionary),
+      ('somethingNew', DictionaryImportError.unreadable),
+    ]) {
+      api.stageError = code;
+      await expectLater(
+        imports.takeIncoming(),
+        throwsA(
+          isA<DictionaryImportException>().having(
+            (e) => e.error,
+            'error',
+            error,
+          ),
+        ),
+      );
+    }
+  });
+
   test('only documents inside a folder tree can be moved', () {
     const tree =
         'content://com.android.externalstorage.documents/tree/primary%3ABooks';
@@ -217,6 +241,21 @@ class FakeDoxaPlatformPluginApi implements DoxaPlatformPluginApi {
   @override
   Future<void> deleteDocument(String uri) =>
       throw PlatformException(code: fileError);
+
+  String? staged;
+  String? stageError;
+
+  Future<String?> _stage() async =>
+      stageError == null ? staged : throw PlatformException(code: stageError!);
+
+  @override
+  Future<String?> pickDictionaryFiles() => _stage();
+
+  @override
+  Future<String?> pickDictionaryFolder() => _stage();
+
+  @override
+  Future<String?> takeIncomingDictionary() => _stage();
 
   @override
   // ignore: non_constant_identifier_names

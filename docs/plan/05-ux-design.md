@@ -128,5 +128,6 @@ StarDict by a script in `tools/` and published as release assets with their SHA-
 quality, the links and the attribution under our control. Users can still import any other StarDict dictionary.
 
 Import is forgiving: a `.zip` with nested folders, a folder, or loose files all work, and a missing companion file (`.idx`, `.dict`) is
-named in a clear error. Settings → Dictionaries lists each dictionary with its name, size and source, and lets the user enable, disable,
+named in a clear error. **Import file** takes a `.zip` or several loose files. Settings → Dictionaries adds **Import folder** to its app bar,
+for a dictionary that is not in a `.zip`. Each import ends with one snackbar: what was added, then the first problem. Settings → Dictionaries lists each dictionary with its name, size and source, and lets the user enable, disable,
 reorder and remove it.

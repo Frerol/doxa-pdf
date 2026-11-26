@@ -1098,7 +1098,7 @@ class _SelectionBar extends StatelessWidget {
         library: scope.library,
         lookup: scope.lookup,
         openUri: scope.openUri,
-        onImport: scope.onImport,
+        importer: scope.importer,
       ),
     );
   }
