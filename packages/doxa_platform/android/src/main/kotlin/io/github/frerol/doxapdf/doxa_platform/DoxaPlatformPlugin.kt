@@ -245,7 +245,7 @@ class DoxaPlatformPlugin :
             imports.stageTree(tree, callback)
             return
         }
-        val uris = buildList {
+        val uris = buildList<Uri> {
             val clips = data.clipData
             if (clips != null) {
                 for (i in 0 until clips.itemCount) clips.getItemAt(i).uri?.let(::add)

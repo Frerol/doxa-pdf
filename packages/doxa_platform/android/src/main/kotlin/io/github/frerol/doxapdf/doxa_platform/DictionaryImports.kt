@@ -142,15 +142,17 @@ internal class DictionaryImports(context: Context) {
         if (depth > 8) return
         val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, documentId)
         val columns = arrayOf(Document.COLUMN_DOCUMENT_ID, Document.COLUMN_DISPLAY_NAME, Document.COLUMN_MIME_TYPE)
-        val entries = resolver.query(children, columns, null, null, null)?.use { cursor ->
-            buildList {
-                while (cursor.moveToNext()) {
-                    val id = cursor.getString(0) ?: continue
-                    val name = cursor.getString(1) ?: continue
-                    add(Triple(id, name, cursor.getString(2)))
-                }
+        val entries = ArrayList<Triple<String, String, String?>>()
+        val cursor = resolver.query(children, columns, null, null, null)
+            ?: throw FileNotFoundException(children.toString())
+        cursor.use {
+            while (it.moveToNext()) {
+                val id: String = it.getString(0) ?: continue
+                val name: String = it.getString(1) ?: continue
+                val mime: String? = it.getString(2)
+                entries.add(Triple(id, name, mime))
             }
-        } ?: throw FileNotFoundException(children.toString())
+        }
         for ((id, name, mime) in entries) {
             if (name.startsWith(".") || name.contains('/')) continue
             if (mime == Document.MIME_TYPE_DIR) {
