@@ -3,6 +3,7 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'doxa_platform_pigeon.dart';
+import 'library_folders.dart';
 import 'pdf_documents.dart';
 
 abstract class DoxaPlatformPlatform extends PlatformInterface {
@@ -28,6 +29,9 @@ abstract class DoxaPlatformPlatform extends PlatformInterface {
 
   PdfDocuments get pdfDocuments =>
       throw UnsupportedError('PDF document access is not available.');
+
+  LibraryFolders get libraryFolders =>
+      throw UnsupportedError('Library folders are not available.');
 
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');

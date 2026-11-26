@@ -53,11 +53,46 @@ class FakePdfDocuments implements PdfDocuments {
   Future<void> releasePdf(int leaseId) async => released.add(leaseId);
 }
 
+class FakeLibraryFolders implements LibraryFolders {
+  PlatformFolder? picked;
+  final listings = <String?, List<PlatformFolderEntry>>{};
+  PdfAccessError? listError;
+  final released = <String>[];
+
+  @override
+  Future<PlatformFolder?> pickFolder() async => picked;
+
+  @override
+  Future<List<PlatformFolderEntry>> listFolder(
+    String treeUri, {
+    String? documentId,
+  }) async {
+    if (listError case final error?) throw PdfAccessException(error);
+    return listings[documentId] ?? const [];
+  }
+
+  @override
+  Future<void> releaseFolder(String treeUri) async => released.add(treeUri);
+}
+
+const tree = 'content://storage/tree/books';
+
+PlatformFolderEntry folderEntry(String id, String name, {bool dir = false}) =>
+    PlatformFolderEntry(
+      documentId: id,
+      uri: '$tree/document/$id',
+      name: name,
+      isDirectory: dir,
+      size: dir ? null : 2400000,
+      lastModified: DateTime(2026, 11, 20).millisecondsSinceEpoch,
+    );
+
 void main() {
   late LibraryDatabase db;
   late LibraryRepository library;
   late FakePdfDocuments documents;
   late FakePdfEngine engine;
+  late FakeLibraryFolders folders;
   final now = DateTime(2026, 11, 26, 10);
 
   setUp(() {
@@ -69,6 +104,7 @@ void main() {
     );
     library = LibraryRepository(db, clock: () => now);
     documents = FakePdfDocuments();
+    folders = FakeLibraryFolders();
     engine = FakePdfEngine({
       for (final id in [1, 2])
         pdf(id, '').path: FakeDocument(
@@ -91,6 +127,7 @@ void main() {
         library: library,
         // One identity per path: the fake paths are not real files.
         identify: (path) async => 'id:$path',
+        libraryFolders: folders,
       ),
     );
     await tester.pumpAndSettle();
@@ -210,6 +247,92 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(ReaderPage), findsNothing);
       expect(find.textContaining('no longer be opened'), findsOneWidget);
+    });
+  });
+
+  group('library folders (FR-FILE-006)', () {
+    Future<void> addBooksFolder(WidgetTester tester) async {
+      folders.picked = PlatformFolder(treeUri: tree, displayName: 'Books');
+      await tester.tap(find.text('Folders'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add folder'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('an added folder is browsed level by level', (tester) async {
+      final inside = pdf(2, 'Algebra.pdf');
+      folders.listings[null] = [
+        folderEntry('calc', 'Calculus.pdf'),
+        folderEntry('sem', 'Semester 1', dir: true),
+        folderEntry('img', 'Notes.pdf'),
+      ];
+      folders.listings['sem'] = [folderEntry('alg', 'Algebra.pdf')];
+      documents.persisted['$tree/document/alg'] = inside;
+
+      await launch(tester);
+      await addBooksFolder(tester);
+      await tester.tap(find.text('Books'));
+      await tester.pumpAndSettle();
+      // Folders first, then PDFs by name.
+      final titles = tester
+          .widgetList<ListTile>(find.byType(ListTile))
+          .map((t) => (t.title! as Text).data)
+          .toList();
+      expect(titles, ['Semester 1', 'Calculus.pdf', 'Notes.pdf']);
+      expect(find.textContaining('2.4 MB'), findsWidgets);
+
+      await tester.tap(find.text('Semester 1'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Algebra.pdf'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ReaderPage), findsOneWidget);
+      await closeReader(tester);
+
+      // Opened through the folder, the document is in recents and keeps
+      // the folder's document URI for reopening.
+      final recents = await tester.runAsync(() => library.watchRecents().first);
+      expect(recents!.single.displayName, 'Algebra.pdf');
+      expect(recents.single.uri, inside.uri);
+    });
+
+    testWidgets('the name filter narrows a folder', (tester) async {
+      folders.listings[null] = [
+        folderEntry('calc', 'Cálculo.pdf'),
+        folderEntry('phys', 'Physics.pdf'),
+      ];
+      await launch(tester);
+      await addBooksFolder(tester);
+      await tester.tap(find.text('Books'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Search by name'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'calc');
+      await tester.pumpAndSettle();
+      expect(find.text('Cálculo.pdf'), findsOneWidget);
+      expect(find.text('Physics.pdf'), findsNothing);
+    });
+
+    testWidgets('a lost grant explains what to do', (tester) async {
+      folders.listError = PdfAccessError.permissionLost;
+      await launch(tester);
+      await addBooksFolder(tester);
+      await tester.tap(find.text('Books'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Access to this folder was lost'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('removing a folder releases its grant', (tester) async {
+      await launch(tester);
+      await addBooksFolder(tester);
+      await tester.tap(find.byTooltip('Show menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from library'));
+      await tester.pumpAndSettle();
+      expect(find.text('Books'), findsNothing);
+      expect(folders.released, [tree]);
     });
   });
 

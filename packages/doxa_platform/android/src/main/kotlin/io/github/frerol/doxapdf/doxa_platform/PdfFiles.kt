@@ -56,7 +56,11 @@ internal class PdfFiles(private val context: Context) {
             val result = runCatching {
                 if (!isContentUri(uri.scheme, uri.authority)) throw FlutterError("unreadable")
                 persist(uri, flags)
-                val grant = resolver.persistedUriPermissions.firstOrNull { it.uri == uri }
+                // A file in a library folder is covered by the folder's grant.
+                val target = uri.toString()
+                val grants = resolver.persistedUriPermissions
+                    .filter { grantCovers(it.uri.toString(), target) }
+                val grant = grants.firstOrNull { it.uri == uri } ?: grants.firstOrNull()
                 if (persistedOnly && grant?.isReadPermission != true) {
                     throw FlutterError("permissionLost")
                 }

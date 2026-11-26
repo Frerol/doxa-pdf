@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 
+import 'library_database.steps.dart';
+
 part 'library_database.g.dart';
 
 /// Documents the user has opened (docs/plan/03-architecture.md §7): where
@@ -50,7 +52,22 @@ class Documents extends Table {
   DateTimeColumn get lastOpenedAt => dateTime()();
 }
 
-@DriftDatabase(tables: [Documents])
+/// Folders the user added to the library (FR-FILE-006), each a folder tree
+/// with a persisted grant on Android.
+@DataClassName('LibraryFolderRow')
+class Folders extends Table {
+  @override
+  String get tableName => 'library_folders';
+
+  IntColumn get id => integer().autoIncrement()();
+
+  /// The tree URI the folder picker returned.
+  TextColumn get treeUri => text().unique()();
+  TextColumn get displayName => text()();
+  DateTimeColumn get addedAt => dateTime()();
+}
+
+@DriftDatabase(tables: [Documents, Folders])
 class LibraryDatabase extends _$LibraryDatabase {
   LibraryDatabase(super.executor);
 
@@ -66,5 +83,12 @@ class LibraryDatabase extends _$LibraryDatabase {
   /// `dart run drift_dev make-migrations` in `app/` to save the new schema
   /// for the migration tests.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: stepByStep(
+      from1To2: (m, schema) => m.createTable(schema.libraryFolders),
+    ),
+  );
 }

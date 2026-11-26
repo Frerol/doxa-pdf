@@ -255,12 +255,133 @@ data class PlatformPdf (
     return "PlatformPdf(leaseId=$leaseId, uri=$uri, displayName=$displayName, path=$path, persistedRead=$persistedRead, persistedWrite=$persistedWrite)"
   }
 }
+
+/**
+ * A folder tree the user granted with the system folder picker
+ * (FR-FILE-006). [treeUri] keeps a persisted grant until released.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class PlatformFolder (
+  val treeUri: String,
+  val displayName: String
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): PlatformFolder {
+      val treeUri = pigeonVar_list[0] as String
+      val displayName = pigeonVar_list[1] as String
+      return PlatformFolder(treeUri, displayName)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      treeUri,
+      displayName,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as PlatformFolder
+    return MessagesPigeonUtils.deepEquals(this.treeUri, other.treeUri) && MessagesPigeonUtils.deepEquals(this.displayName, other.displayName)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.treeUri)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.displayName)
+    return result
+  }
+  override fun toString(): String {
+    return "PlatformFolder(treeUri=$treeUri, displayName=$displayName)"
+  }
+}
+
+/**
+ * A PDF or a subfolder inside a granted folder tree.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class PlatformFolderEntry (
+  /** Pass to [DoxaPlatformPluginApi.listFolder] to open a subfolder. */
+  val documentId: String,
+  /** Document URI under the tree; opens a PDF with `openPersistedPdf`. */
+  val uri: String,
+  val name: String,
+  val isDirectory: Boolean,
+  /** Bytes, or null when the provider does not say (and for folders). */
+  val size: Long? = null,
+  /** Milliseconds since the epoch, or null when unknown. */
+  val lastModified: Long? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): PlatformFolderEntry {
+      val documentId = pigeonVar_list[0] as String
+      val uri = pigeonVar_list[1] as String
+      val name = pigeonVar_list[2] as String
+      val isDirectory = pigeonVar_list[3] as Boolean
+      val size = pigeonVar_list[4] as Long?
+      val lastModified = pigeonVar_list[5] as Long?
+      return PlatformFolderEntry(documentId, uri, name, isDirectory, size, lastModified)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      documentId,
+      uri,
+      name,
+      isDirectory,
+      size,
+      lastModified,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as PlatformFolderEntry
+    return MessagesPigeonUtils.deepEquals(this.documentId, other.documentId) && MessagesPigeonUtils.deepEquals(this.uri, other.uri) && MessagesPigeonUtils.deepEquals(this.name, other.name) && MessagesPigeonUtils.deepEquals(this.isDirectory, other.isDirectory) && MessagesPigeonUtils.deepEquals(this.size, other.size) && MessagesPigeonUtils.deepEquals(this.lastModified, other.lastModified)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.documentId)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.uri)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.name)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.isDirectory)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.size)
+    result = 31 * result + MessagesPigeonUtils.deepHash(this.lastModified)
+    return result
+  }
+  override fun toString(): String {
+    return "PlatformFolderEntry(documentId=$documentId, uri=$uri, name=$name, isDirectory=$isDirectory, size=$size, lastModified=$lastModified)"
+  }
+}
 private open class MessagesPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
       129.toByte() -> {
         (readValue(buffer) as? List<Any?>)?.let {
           PlatformPdf.fromList(it)
+        }
+      }
+      130.toByte() -> {
+        (readValue(buffer) as? List<Any?>)?.let {
+          PlatformFolder.fromList(it)
+        }
+      }
+      131.toByte() -> {
+        (readValue(buffer) as? List<Any?>)?.let {
+          PlatformFolderEntry.fromList(it)
         }
       }
       else -> super.readValueOfType(type, buffer)
@@ -270,6 +391,14 @@ private open class MessagesPigeonCodec : StandardMessageCodec() {
     when (value) {
       is PlatformPdf -> {
         stream.write(129)
+        writeValue(stream, value.toList())
+      }
+      is PlatformFolder -> {
+        stream.write(130)
+        writeValue(stream, value.toList())
+      }
+      is PlatformFolderEntry -> {
+        stream.write(131)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -300,6 +429,19 @@ interface DoxaPlatformPluginApi {
   fun openPersistedPdf(uri: String, callback: (Result<PlatformPdf>) -> Unit)
   fun takeIncomingPdf(callback: (Result<PlatformPdf?>) -> Unit)
   fun releasePdf(leaseId: Long)
+  /**
+   * Asks the user for a folder and keeps read and write access to it
+   * (FR-FILE-006). Null when the picker is cancelled.
+   */
+  fun pickFolder(callback: (Result<PlatformFolder?>) -> Unit)
+  /**
+   * The PDFs and subfolders directly inside [documentId] of the tree
+   * [treeUri], or inside its root when [documentId] is null. Fails with
+   * `permissionLost` or `missing`.
+   */
+  fun listFolder(treeUri: String, documentId: String?, callback: (Result<List<PlatformFolderEntry>>) -> Unit)
+  /** Gives up the persisted grant of a folder the user removed. */
+  fun releaseFolder(treeUri: String)
 
   companion object {
     /** The codec used by DoxaPlatformPluginApi. */
@@ -454,6 +596,63 @@ interface DoxaPlatformPluginApi {
             val leaseIdArg = args[0] as Long
             val wrapped: List<Any?> = try {
               api.releasePdf(leaseIdArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.pickFolder$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.pickFolder{ result: Result<PlatformFolder?> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(MessagesPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(MessagesPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.listFolder$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val treeUriArg = args[0] as String
+            val documentIdArg = args[1] as String?
+            api.listFolder(treeUriArg, documentIdArg) { result: Result<List<PlatformFolderEntry>> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(MessagesPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(MessagesPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.releaseFolder$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val treeUriArg = args[0] as String
+            val wrapped: List<Any?> = try {
+              api.releaseFolder(treeUriArg)
               listOf(null)
             } catch (exception: Throwable) {
               MessagesPigeonUtils.wrapError(exception)

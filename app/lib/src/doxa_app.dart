@@ -42,6 +42,7 @@ class DoxaApp extends StatefulWidget {
     this.library,
     this.thumbnails,
     this.identify,
+    this.libraryFolders,
   });
 
   final Future<PdfEngine> Function() engine;
@@ -50,6 +51,9 @@ class DoxaApp extends StatefulWidget {
   /// The library database; documents are not recorded when null (tests).
   final LibraryRepository? library;
   final ThumbnailStore? thumbnails;
+
+  /// Library folder access; the platform's on Android by default.
+  final LibraryFolders? libraryFolders;
 
   /// Computes document identities; `documentIdentity` by default.
   final DocumentIdentifier? identify;
@@ -140,6 +144,9 @@ class _DoxaAppState extends State<DoxaApp> with WidgetsBindingObserver {
         settings: settings,
         library: widget.library,
         thumbnails: widget.thumbnails,
+        libraryFolders:
+            widget.libraryFolders ??
+            (Platform.isAndroid ? DoxaPlatform().libraryFolders : null),
         identify: widget.identify ?? documentIdentity,
         devDocumentsDir:
             widget.devDocumentsDir ??

@@ -32,3 +32,26 @@ internal class PdfFilesTest {
         assertEquals(read or write, persistableModes(persistable or read or write))
     }
 }
+
+internal class LibraryFoldersTest {
+    private val tree = "content://com.android.externalstorage.documents/tree/primary%3ABooks"
+
+    @Test
+    fun folderGrantCoversOnlyDocumentsInsideItsTree() {
+        assertTrue(grantCovers(tree, "$tree/document/primary%3ABooks%2FCalculus.pdf"))
+        assertTrue(grantCovers("content://p/doc/1", "content://p/doc/1"))
+        // A sibling tree whose name starts the same is a different grant.
+        assertFalse(grantCovers(tree, "${tree}2/document/primary%3ABooks2%2Fx.pdf"))
+        // A single-document grant does not cover other documents.
+        assertFalse(grantCovers("content://p/doc/1", "content://p/doc/1/document/2"))
+    }
+
+    @Test
+    fun listsFoldersAndPdfsOnly() {
+        assertTrue(isListed("vnd.android.document/directory", "Semester 1"))
+        assertTrue(isListed("application/pdf", "Calculus"))
+        assertTrue(isListed("application/octet-stream", "Notes.PDF"))
+        assertFalse(isListed("image/png", "cover.png"))
+        assertFalse(isListed(null, "readme.txt"))
+    }
+}

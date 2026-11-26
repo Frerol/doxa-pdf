@@ -759,15 +759,325 @@ class DocumentsCompanion extends UpdateCompanion<DocumentRow> {
   }
 }
 
+class $FoldersTable extends Folders
+    with TableInfo<$FoldersTable, LibraryFolderRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FoldersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _treeUriMeta = const VerificationMeta(
+    'treeUri',
+  );
+  @override
+  late final GeneratedColumn<String> treeUri = GeneratedColumn<String>(
+    'tree_uri',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _addedAtMeta = const VerificationMeta(
+    'addedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> addedAt = GeneratedColumn<DateTime>(
+    'added_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, treeUri, displayName, addedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'library_folders';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LibraryFolderRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('tree_uri')) {
+      context.handle(
+        _treeUriMeta,
+        treeUri.isAcceptableOrUnknown(data['tree_uri']!, _treeUriMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_treeUriMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_displayNameMeta);
+    }
+    if (data.containsKey('added_at')) {
+      context.handle(
+        _addedAtMeta,
+        addedAt.isAcceptableOrUnknown(data['added_at']!, _addedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_addedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LibraryFolderRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LibraryFolderRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      treeUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tree_uri'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      )!,
+      addedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}added_at'],
+      )!,
+    );
+  }
+
+  @override
+  $FoldersTable createAlias(String alias) {
+    return $FoldersTable(attachedDatabase, alias);
+  }
+}
+
+class LibraryFolderRow extends DataClass
+    implements Insertable<LibraryFolderRow> {
+  final int id;
+
+  /// The tree URI the folder picker returned.
+  final String treeUri;
+  final String displayName;
+  final DateTime addedAt;
+  const LibraryFolderRow({
+    required this.id,
+    required this.treeUri,
+    required this.displayName,
+    required this.addedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['tree_uri'] = Variable<String>(treeUri);
+    map['display_name'] = Variable<String>(displayName);
+    map['added_at'] = Variable<DateTime>(addedAt);
+    return map;
+  }
+
+  FoldersCompanion toCompanion(bool nullToAbsent) {
+    return FoldersCompanion(
+      id: Value(id),
+      treeUri: Value(treeUri),
+      displayName: Value(displayName),
+      addedAt: Value(addedAt),
+    );
+  }
+
+  factory LibraryFolderRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LibraryFolderRow(
+      id: serializer.fromJson<int>(json['id']),
+      treeUri: serializer.fromJson<String>(json['treeUri']),
+      displayName: serializer.fromJson<String>(json['displayName']),
+      addedAt: serializer.fromJson<DateTime>(json['addedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'treeUri': serializer.toJson<String>(treeUri),
+      'displayName': serializer.toJson<String>(displayName),
+      'addedAt': serializer.toJson<DateTime>(addedAt),
+    };
+  }
+
+  LibraryFolderRow copyWith({
+    int? id,
+    String? treeUri,
+    String? displayName,
+    DateTime? addedAt,
+  }) => LibraryFolderRow(
+    id: id ?? this.id,
+    treeUri: treeUri ?? this.treeUri,
+    displayName: displayName ?? this.displayName,
+    addedAt: addedAt ?? this.addedAt,
+  );
+  LibraryFolderRow copyWithCompanion(FoldersCompanion data) {
+    return LibraryFolderRow(
+      id: data.id.present ? data.id.value : this.id,
+      treeUri: data.treeUri.present ? data.treeUri.value : this.treeUri,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      addedAt: data.addedAt.present ? data.addedAt.value : this.addedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LibraryFolderRow(')
+          ..write('id: $id, ')
+          ..write('treeUri: $treeUri, ')
+          ..write('displayName: $displayName, ')
+          ..write('addedAt: $addedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, treeUri, displayName, addedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LibraryFolderRow &&
+          other.id == this.id &&
+          other.treeUri == this.treeUri &&
+          other.displayName == this.displayName &&
+          other.addedAt == this.addedAt);
+}
+
+class FoldersCompanion extends UpdateCompanion<LibraryFolderRow> {
+  final Value<int> id;
+  final Value<String> treeUri;
+  final Value<String> displayName;
+  final Value<DateTime> addedAt;
+  const FoldersCompanion({
+    this.id = const Value.absent(),
+    this.treeUri = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.addedAt = const Value.absent(),
+  });
+  FoldersCompanion.insert({
+    this.id = const Value.absent(),
+    required String treeUri,
+    required String displayName,
+    required DateTime addedAt,
+  }) : treeUri = Value(treeUri),
+       displayName = Value(displayName),
+       addedAt = Value(addedAt);
+  static Insertable<LibraryFolderRow> custom({
+    Expression<int>? id,
+    Expression<String>? treeUri,
+    Expression<String>? displayName,
+    Expression<DateTime>? addedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (treeUri != null) 'tree_uri': treeUri,
+      if (displayName != null) 'display_name': displayName,
+      if (addedAt != null) 'added_at': addedAt,
+    });
+  }
+
+  FoldersCompanion copyWith({
+    Value<int>? id,
+    Value<String>? treeUri,
+    Value<String>? displayName,
+    Value<DateTime>? addedAt,
+  }) {
+    return FoldersCompanion(
+      id: id ?? this.id,
+      treeUri: treeUri ?? this.treeUri,
+      displayName: displayName ?? this.displayName,
+      addedAt: addedAt ?? this.addedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (treeUri.present) {
+      map['tree_uri'] = Variable<String>(treeUri.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (addedAt.present) {
+      map['added_at'] = Variable<DateTime>(addedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FoldersCompanion(')
+          ..write('id: $id, ')
+          ..write('treeUri: $treeUri, ')
+          ..write('displayName: $displayName, ')
+          ..write('addedAt: $addedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$LibraryDatabase extends GeneratedDatabase {
   _$LibraryDatabase(QueryExecutor e) : super(e);
   $LibraryDatabaseManager get managers => $LibraryDatabaseManager(this);
   late final $DocumentsTable documents = $DocumentsTable(this);
+  late final $FoldersTable folders = $FoldersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [documents];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [documents, folders];
 }
 
 typedef $$DocumentsTableCreateCompanionBuilder = DocumentsCompanion Function({
@@ -1129,10 +1439,196 @@ typedef $$DocumentsTableProcessedTableManager =
       DocumentRow,
       PrefetchHooks Function()
     >;
+typedef $$FoldersTableCreateCompanionBuilder = FoldersCompanion Function({
+  Value<int> id,
+  required String treeUri,
+  required String displayName,
+  required DateTime addedAt,
+});
+typedef $$FoldersTableUpdateCompanionBuilder = FoldersCompanion Function({
+  Value<int> id,
+  Value<String> treeUri,
+  Value<String> displayName,
+  Value<DateTime> addedAt,
+});
+
+class $$FoldersTableFilterComposer
+    extends Composer<_$LibraryDatabase, $FoldersTable> {
+  $$FoldersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get treeUri => $composableBuilder(
+    column: $table.treeUri,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get addedAt => $composableBuilder(
+    column: $table.addedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FoldersTableOrderingComposer
+    extends Composer<_$LibraryDatabase, $FoldersTable> {
+  $$FoldersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get treeUri => $composableBuilder(
+    column: $table.treeUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get addedAt => $composableBuilder(
+    column: $table.addedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FoldersTableAnnotationComposer
+    extends Composer<_$LibraryDatabase, $FoldersTable> {
+  $$FoldersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get treeUri =>
+      $composableBuilder(column: $table.treeUri, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get addedAt =>
+      $composableBuilder(column: $table.addedAt, builder: (column) => column);
+}
+
+class $$FoldersTableTableManager
+    extends
+        RootTableManager<
+          _$LibraryDatabase,
+          $FoldersTable,
+          LibraryFolderRow,
+          $$FoldersTableFilterComposer,
+          $$FoldersTableOrderingComposer,
+          $$FoldersTableAnnotationComposer,
+          $$FoldersTableCreateCompanionBuilder,
+          $$FoldersTableUpdateCompanionBuilder,
+          (
+            LibraryFolderRow,
+            BaseReferences<_$LibraryDatabase, $FoldersTable, LibraryFolderRow>,
+          ),
+          LibraryFolderRow,
+          PrefetchHooks Function()
+        > {
+  $$FoldersTableTableManager(_$LibraryDatabase db, $FoldersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FoldersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FoldersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FoldersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> treeUri = const Value.absent(),
+                Value<String> displayName = const Value.absent(),
+                Value<DateTime> addedAt = const Value.absent(),
+              }) => FoldersCompanion(
+                id: id,
+                treeUri: treeUri,
+                displayName: displayName,
+                addedAt: addedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String treeUri,
+                required String displayName,
+                required DateTime addedAt,
+              }) => FoldersCompanion.insert(
+                id: id,
+                treeUri: treeUri,
+                displayName: displayName,
+                addedAt: addedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$FoldersTable, LibraryFolderRow>(table),
+                  BaseReferences<
+                    _$LibraryDatabase,
+                    $FoldersTable,
+                    LibraryFolderRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FoldersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LibraryDatabase,
+      $FoldersTable,
+      LibraryFolderRow,
+      $$FoldersTableFilterComposer,
+      $$FoldersTableOrderingComposer,
+      $$FoldersTableAnnotationComposer,
+      $$FoldersTableCreateCompanionBuilder,
+      $$FoldersTableUpdateCompanionBuilder,
+      (
+        LibraryFolderRow,
+        BaseReferences<_$LibraryDatabase, $FoldersTable, LibraryFolderRow>,
+      ),
+      LibraryFolderRow,
+      PrefetchHooks Function()
+    >;
 
 class $LibraryDatabaseManager {
   final _$LibraryDatabase _db;
   $LibraryDatabaseManager(this._db);
   $$DocumentsTableTableManager get documents =>
       $$DocumentsTableTableManager(_db, _db.documents);
+  $$FoldersTableTableManager get folders =>
+      $$FoldersTableTableManager(_db, _db.folders);
 }

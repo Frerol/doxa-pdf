@@ -24,6 +24,8 @@ class DoxaPlatformPlugin :
     private var activityBinding: ActivityPluginBinding? = null
     private val activity: Activity? get() = activityBinding?.activity
     private var pdfFiles: PdfFiles? = null
+    private var folders: LibraryFolders? = null
+    private var pendingFolder: ((Result<PlatformFolder?>) -> Unit)? = null
     private var pdfIntents: PdfIntentApi? = null
     private var pendingPicker: ((Result<PlatformPdf?>) -> Unit)? = null
     private val incoming = ArrayDeque<Intent>()
@@ -33,6 +35,7 @@ class DoxaPlatformPlugin :
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
         pdfFiles = PdfFiles(flutterPluginBinding.applicationContext)
+        folders = LibraryFolders(flutterPluginBinding.applicationContext)
         pdfIntents = PdfIntentApi(flutterPluginBinding.binaryMessenger)
         DoxaPlatformPluginApi.setUp(flutterPluginBinding.binaryMessenger, this)
     }
@@ -100,7 +103,70 @@ class DoxaPlatformPlugin :
         }
     }
 
+    override fun pickFolder(callback: (Result<PlatformFolder?>) -> Unit) {
+        val host = activity
+        if (host == null || pendingFolder != null) {
+            callback(Result.failure(FlutterError("unreadable")))
+            return
+        }
+        val picker = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+            addFlags(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                    Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION,
+            )
+        }
+        pendingFolder = callback
+        try {
+            @Suppress("DEPRECATION")
+            host.startActivityForResult(picker, PICK_FOLDER)
+        } catch (error: RuntimeException) {
+            pendingFolder = null
+            callback(Result.failure(FlutterError("unreadable")))
+        }
+    }
+
+    private fun onFolderResult(resultCode: Int, data: Intent?) {
+        val callback = pendingFolder ?: return
+        pendingFolder = null
+        val tree = data?.data
+        if (resultCode != Activity.RESULT_OK || tree == null) {
+            callback(Result.success(null))
+            return
+        }
+        val library = folders
+        if (library == null) {
+            callback(Result.failure(FlutterError("unreadable")))
+            return
+        }
+        callback(
+            runCatching { library.persist(tree, data.flags) }
+                .recoverCatching { throw FlutterError("unreadable") },
+        )
+    }
+
+    override fun listFolder(
+        treeUri: String,
+        documentId: String?,
+        callback: (Result<List<PlatformFolderEntry>>) -> Unit,
+    ) {
+        val library = folders
+        if (library == null) {
+            callback(Result.failure(FlutterError("unreadable")))
+        } else {
+            library.list(treeUri, documentId, callback)
+        }
+    }
+
+    override fun releaseFolder(treeUri: String) {
+        folders?.release(treeUri)
+    }
+
     private fun onPickerResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        if (requestCode == PICK_FOLDER) {
+            onFolderResult(resultCode, data)
+            return true
+        }
         if (requestCode != PICK_PDF) return false
         val callback = pendingPicker ?: return false
         pendingPicker = null
@@ -199,6 +265,8 @@ class DoxaPlatformPlugin :
         detachActivity()
         pendingPicker?.invoke(Result.success(null))
         pendingPicker = null
+        pendingFolder?.invoke(Result.success(null))
+        pendingFolder = null
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -207,11 +275,14 @@ class DoxaPlatformPlugin :
         incoming.clear()
         pdfFiles?.close()
         pdfFiles = null
+        folders?.close()
+        folders = null
         context = null
     }
 
     companion object {
         private const val PICK_PDF = 0xD049
+        private const val PICK_FOLDER = 0xD04A
         val OPENABLE_SCHEMES = setOf("http", "https", "mailto")
     }
 }

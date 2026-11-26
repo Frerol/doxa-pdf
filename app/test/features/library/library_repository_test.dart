@@ -109,4 +109,26 @@ void main() {
       expect(favorites.map((d) => d.displayName), ['A']);
     });
   });
+
+  group('library folders (FR-FILE-006)', () {
+    test('are listed by name, and adding one again renames it', () async {
+      await library.addFolder(treeUri: 'content://t/2', displayName: 'zoology');
+      await library.addFolder(
+        treeUri: 'content://t/1',
+        displayName: 'Articles',
+      );
+      await library.addFolder(treeUri: 'content://t/2', displayName: 'Biology');
+      final folders = await library.watchFolders().first;
+      expect(folders.map((f) => f.displayName), ['Articles', 'Biology']);
+    });
+
+    test('removing a folder keeps the documents opened from it', () async {
+      await library.addFolder(treeUri: 'content://t/1', displayName: 'Books');
+      await open('a', uri: 'content://t/1/document/a');
+      final folder = (await library.watchFolders().first).single;
+      await library.removeFolder(folder.id);
+      expect(await library.watchFolders().first, isEmpty);
+      expect(await library.watchRecents().first, hasLength(1));
+    });
+  });
 }
