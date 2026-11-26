@@ -118,8 +118,8 @@ class _ReaderPageState extends State<ReaderPage> {
 
   PageColorMode _localColorMode = PageColorMode.normal;
 
-  /// Full screen (FR-VIEW-012): toolbars and system bars hidden; a tap in
-  /// the middle of the page shows the toolbars until the next tap.
+  /// Full screen (FR-VIEW-012): the document opens with the bars hidden,
+  /// and they are drawn over the page instead of resizing it.
   bool _fullscreen = false;
 
   /// The side panel (UX §5): whether it is open and what it shows.
@@ -128,6 +128,9 @@ class _ReaderPageState extends State<ReaderPage> {
 
   /// Widths from which the panel sits beside the page instead of over it.
   static const _panelBesideWidth = 600.0;
+
+  /// Whether the app bar, tab row and scrubber show. A tap in the middle of
+  /// the page toggles them, with the system bars, in every mode (UX §7).
   bool _barsShown = true;
   bool _keptScreenOn = false;
   _Failure? _failure;
@@ -165,21 +168,22 @@ class _ReaderPageState extends State<ReaderPage> {
   }
 
   void _setFullscreen(bool on) {
-    setState(() {
-      _fullscreen = on;
-      _barsShown = !on;
-    });
+    setState(() => _fullscreen = on);
+    _showBars(!on);
+  }
+
+  /// Shows or hides the reader's bars and the system bars together.
+  void _showBars(bool shown) {
+    setState(() => _barsShown = shown);
     unawaited(
       SystemChrome.setEnabledSystemUIMode(
-        on ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
+        shown ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky,
       ),
     );
   }
 
-  /// A tap on the page away from links and edge zones.
-  void _onPageTap() {
-    if (_fullscreen) setState(() => _barsShown = !_barsShown);
-  }
+  /// A tap on the page away from links and edge zones (#95).
+  void _onPageTap() => _showBars(!_barsShown);
 
   Future<void> _open([String? password]) async {
     OpenResult result;
@@ -303,7 +307,7 @@ class _ReaderPageState extends State<ReaderPage> {
     _probe?.dispose();
     widget.settings?.removeListener(_onSettings);
     if (_keptScreenOn) unawaited(widget.keepScreenOn(false));
-    if (_fullscreen) {
+    if (!_barsShown) {
       unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
     }
     super.dispose();
@@ -410,7 +414,7 @@ class _ReaderPageState extends State<ReaderPage> {
     final controller = _controller;
     final settings = widget.settings?.value;
     final colorMode = settings?.colorMode ?? _localColorMode;
-    final showBars = !_fullscreen || _barsShown || _searchOpen;
+    final showBars = _barsShown || _searchOpen;
     final canPop = Navigator.of(context).canPop();
     final hasPanel = controller != null && controller.info.pageCount > 0;
     final body = Scaffold(
@@ -488,7 +492,8 @@ class _ReaderPageState extends State<ReaderPage> {
       body: switch ((controller, _failure)) {
         (final ReaderController c, _) => _withPanel(
           c,
-          showPanel: hasPanel && _panelOpen && showBars,
+          // The panel stays when the bars hide (UX §7).
+          showPanel: hasPanel && _panelOpen,
           child: Stack(
             children: [
               Positioned.fill(

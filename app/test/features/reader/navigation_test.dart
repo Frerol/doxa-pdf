@@ -473,5 +473,79 @@ void main() {
         findsOneWidget,
       );
     });
+
+    group('a tap in the middle of the page (#95)', () {
+      late List<String> modes;
+
+      setUp(() {
+        modes = [];
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+              if (call.method == 'SystemChrome.setEnabledSystemUIMode') {
+                modes.add(call.arguments as String);
+              }
+              return null;
+            });
+      });
+
+      tearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+
+      Future<void> tapMiddle(WidgetTester tester) async {
+        await tester.tapAt(tester.getCenter(find.byType(ReaderView)));
+        await settle(tester);
+      }
+
+      testWidgets('hides and shows the bars outside full screen', (
+        tester,
+      ) async {
+        await show(tester);
+        final shownHeight = tester.getSize(find.byType(ReaderView)).height;
+        expect(find.byType(AppBar), findsOneWidget);
+
+        await tapMiddle(tester);
+        expect(find.byType(AppBar), findsNothing);
+        expect(modes.last, SystemUiMode.immersiveSticky.toString());
+        // The page gets the room the bars leave.
+        expect(
+          tester.getSize(find.byType(ReaderView)).height,
+          greaterThan(shownHeight),
+        );
+
+        await tapMiddle(tester);
+        expect(find.byType(AppBar), findsOneWidget);
+        expect(modes.last, SystemUiMode.edgeToEdge.toString());
+        expect(tester.getSize(find.byType(ReaderView)).height, shownHeight);
+      });
+
+      testWidgets('a tap on a link follows it and keeps the bars', (
+        tester,
+      ) async {
+        await show(tester);
+        controllerOf(tester).goToPage(2);
+        await settle(tester);
+        final reader = tester.getTopLeft(find.byType(ReaderView));
+        await tester.tapAt(reader + const Offset(200, 150)); // To page 7.
+        await settle(tester);
+        expect(find.text('6 (8 of 10)'), findsOneWidget);
+        expect(modes, isEmpty);
+      });
+
+      testWidgets('the side panel stays open while the bars hide', (
+        tester,
+      ) async {
+        await show(tester);
+        tester.view.physicalSize = const Size(1280, 800);
+        await settle(tester);
+        await tester.tap(find.byTooltip('Side panel'));
+        await settle(tester);
+
+        await tapMiddle(tester);
+        expect(find.byType(AppBar), findsNothing);
+        expect(find.byType(ReaderSidePanel), findsOneWidget);
+      });
+    });
   });
 }
