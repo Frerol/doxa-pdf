@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:io';
+
 import 'package:doxa_engine/doxa_engine.dart';
 import 'package:doxa_engine/testing.dart';
+import 'package:doxa_pdf/features/dictionary/dictionary_library.dart';
 import 'package:doxa_pdf/features/reader/reader_controller.dart';
 import 'package:doxa_pdf/features/reader/reader_geometry.dart';
 import 'package:doxa_pdf/features/reader/reader_page.dart';
@@ -171,7 +174,7 @@ void main() {
   });
 
   group('page', () {
-    Future<void> show(WidgetTester tester) async {
+    Future<void> show(WidgetTester tester, {TransitionBuilder? builder}) async {
       tester.view
         ..physicalSize = const Size(612, 1000)
         ..devicePixelRatio = 1;
@@ -185,6 +188,7 @@ void main() {
           ],
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('en'),
+          builder: builder,
           home: ReaderPage(
             engine: Future.value(FakePdfEngine({'doc.pdf': doc()})),
             source: const FileSource('doc.pdf'),
@@ -266,6 +270,33 @@ void main() {
       expect(find.text('Copy'), findsNothing);
     });
 
+    testWidgets('Dictionary looks the selection up (FR-TEXT-008)', (
+      tester,
+    ) async {
+      final root = Directory.systemTemp.createTempSync('doxa-reader-dict-');
+      addTearDown(() => root.deleteSync(recursive: true));
+      final library = DictionaryLibrary(root.path);
+      await tester.runAsync(library.load);
+      final lookup = _RecordingLookup();
+      await show(
+        tester,
+        builder: (context, child) => DictionaryScope(
+          library: library,
+          lookup: lookup,
+          openUri: (_) async => true,
+          child: child!,
+        ),
+      );
+      final origin = tester.getTopLeft(find.byType(ReaderView));
+      await tester.longPressAt(origin + charCentre(7));
+      await settle(tester);
+      await tester.tap(find.text('Dictionary'));
+      await settle(tester);
+      // No dictionary is installed yet, so the popup explains how to get one.
+      expect(find.text('Get dictionaries'), findsOneWidget);
+      expect(find.text('Copy'), findsNothing);
+    });
+
     testWidgets('dragging a handle extends; a tap clears', (tester) async {
       await show(tester);
       final origin = tester.getTopLeft(find.byType(ReaderView));
@@ -288,4 +319,20 @@ void main() {
       expect(selection.hasSelection, isFalse);
     });
   });
+}
+
+class _RecordingLookup implements DictionaryLookup {
+  final queries = <String>[];
+
+  @override
+  Future<List<LookupGroup>> lookup(
+    String query,
+    List<InstalledDictionary> dictionaries,
+  ) async {
+    queries.add(query);
+    return const [];
+  }
+
+  @override
+  Future<void> close() async {}
 }

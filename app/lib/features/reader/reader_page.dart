@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import '../dictionary/dictionary_library.dart';
+import '../dictionary/dictionary_popup.dart';
 import '../settings/app_settings.dart';
 import '../settings/settings_page.dart';
 import 'color_mode.dart';
@@ -1085,6 +1087,22 @@ class _SelectionBar extends StatelessWidget {
     messenger.showSnackBar(SnackBar(content: Text(l10n.selectionCopied)));
   }
 
+  /// Looks the selection up in the dictionaries (FR-TEXT-008).
+  void _lookUp(BuildContext context, DictionaryScope scope) {
+    final query = selection.text;
+    selection.clear();
+    unawaited(
+      showDictionaryLookup(
+        context,
+        query: query,
+        library: scope.library,
+        lookup: scope.lookup,
+        openUri: scope.openUri,
+        onImport: scope.onImport,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -1115,6 +1133,12 @@ class _SelectionBar extends StatelessWidget {
                       label: Text(l10n.selectionCopy),
                       onPressed: () => _copy(context),
                     ),
+                    if (DictionaryScope.maybeOf(context) case final scope?)
+                      TextButton.icon(
+                        icon: const Icon(Icons.menu_book_outlined),
+                        label: Text(l10n.dictionaryAction),
+                        onPressed: () => _lookUp(context, scope),
+                      ),
                     IconButton(
                       icon: const Icon(Icons.close),
                       tooltip: l10n.selectionClose,

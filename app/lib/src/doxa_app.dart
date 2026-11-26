@@ -7,6 +7,7 @@ import 'package:doxa_platform/doxa_platform.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../features/dev/dev_documents.dart';
+import '../features/dictionary/dictionary_library.dart';
 import '../features/library/document_identity.dart';
 import '../features/library/library_home.dart';
 import '../features/library/library_repository.dart';
@@ -44,6 +45,9 @@ class DoxaApp extends StatefulWidget {
     this.identify,
     this.libraryFolders,
     this.documentFiles,
+    this.dictionaries,
+    this.dictionaryLookup,
+    this.openUri,
   });
 
   final Future<PdfEngine> Function() engine;
@@ -70,6 +74,14 @@ class DoxaApp extends StatefulWidget {
   /// whenever the app comes back to the foreground (the wallpaper may have
   /// changed).
   final AccentColorLoader? accentColor;
+
+  /// Installed dictionaries and their lookup (FR-TEXT-008); the reader's
+  /// Dictionary action and Settings → Dictionaries are hidden without them.
+  final DictionaryLibrary? dictionaries;
+  final DictionaryLookup? dictionaryLookup;
+
+  /// Opens a web page in the browser; the platform's by default.
+  final Future<bool> Function(String uri)? openUri;
 
   /// Folder listed by the temporary developer document list; by default the
   /// app's own folder on Android, and none elsewhere.
@@ -141,6 +153,19 @@ class _DoxaAppState extends State<DoxaApp> with WidgetsBindingObserver {
         ...GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) {
+        final dictionaries = widget.dictionaries;
+        final lookup = widget.dictionaryLookup;
+        if (dictionaries == null || lookup == null || child == null) {
+          return child ?? const SizedBox.shrink();
+        }
+        return DictionaryScope(
+          library: dictionaries,
+          lookup: lookup,
+          openUri: widget.openUri ?? DoxaPlatform().openUri,
+          child: child,
+        );
+      },
       home: LibraryHome(
         engine: widget.engine,
         pdfDocuments:
