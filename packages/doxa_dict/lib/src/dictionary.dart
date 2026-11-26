@@ -59,9 +59,16 @@ final class Dictionary {
         gzip: gzip,
       );
       final syn = File('$base.syn');
+      final synDz = File('$base.syn.dz');
       final StarDictSynonyms? synonyms;
       if (_present(syn)) {
         synonyms = StarDictSynonyms.parse(syn.readAsBytesSync(), info);
+      } else if (_present(synDz)) {
+        synonyms = StarDictSynonyms.parse(
+          synDz.readAsBytesSync(),
+          info,
+          gzip: true,
+        );
       } else {
         if ((info.synWordCount ?? 0) > 0) {
           throw const DictionaryFormatException('Missing declared .syn file');
