@@ -254,10 +254,53 @@ void main() {
       await tester.tap(find.text('Go'));
       await settle(tester);
       expect(find.text('5 (7 of 10)'), findsOneWidget);
-      // The jump can be undone, also with the system back gesture.
-      await tester.binding.handlePopRoute();
+      // The jump can be undone (FR-VIEW-011).
+      await tester.tap(find.byTooltip('Back to previous position'));
       await settle(tester);
       expect(find.text('i (1 of 10)'), findsOneWidget);
+    });
+
+    testWidgets('back leaves the document even after a jump', (tester) async {
+      tester.view
+        ..physicalSize = const Size(800, 1200)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final decoder = await FakeDecoder.create(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            ...GlobalMaterialLocalizations.delegates,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ReaderPage(
+                    engine: Future.value(FakePdfEngine({'book.pdf': book()})),
+                    source: const FileSource('book.pdf'),
+                    title: 'book.pdf',
+                    decoder: decoder.call,
+                  ),
+                ),
+              ),
+              child: const Text('Home'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Home'));
+      await settle(tester);
+      controllerOf(tester).goToPage(6, record: true);
+      await settle(tester);
+      expect(controllerOf(tester).canGoBack, isTrue);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(ReaderPage), findsNothing);
+      expect(find.text('Home'), findsOneWidget);
     });
 
     testWidgets('the outline and thumbnails navigate (FR-VIEW-007/008)', (
