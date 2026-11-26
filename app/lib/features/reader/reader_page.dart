@@ -407,25 +407,19 @@ class _ReaderPageState extends State<ReaderPage> {
       },
     );
     if (controller == null) return body;
-    // The system back gesture first closes search, then walks back through
-    // link jumps (FR-VIEW-011), then leaves the document.
-    return ValueListenableBuilder(
-      valueListenable: controller.history,
-      builder: (context, _, child) => PopScope(
-        canPop: !_searchOpen && !controller.canGoBack,
-        onPopInvokedWithResult: (didPop, _) {
-          if (didPop) return;
-          if (_searchOpen) {
-            setState(() {
-              _search?.close();
-              _searchOpen = false;
-            });
-          } else {
-            controller.goBack();
-          }
-        },
-        child: child!,
-      ),
+    // Back closes search first, then leaves the document. Jumps (FR-VIEW-011)
+    // are undone only with the history buttons: walking back through them
+    // first sent readers to page 1 when they wanted to leave (maintainer
+    // decision after the tablet check of #50).
+    return PopScope(
+      canPop: !_searchOpen,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || !_searchOpen) return;
+        setState(() {
+          _search?.close();
+          _searchOpen = false;
+        });
+      },
       child: body,
     );
   }
