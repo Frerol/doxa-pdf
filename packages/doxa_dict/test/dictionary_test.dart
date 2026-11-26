@@ -162,6 +162,27 @@ void main() {
       expect(() => Dictionary.open(ifo), _formatError);
     });
 
+    test('reads a gzip-compressed .syn.dz in place of .syn', () {
+      final syn = companion('syn');
+      final aliases = Dictionary.open(ifo);
+      final expected = _words(aliases.lookup('Alvo')).toList();
+      aliases.close();
+      companion('syn.dz').writeAsBytesSync(gzip.encode(syn.readAsBytesSync()));
+      syn.deleteSync();
+      final dictionary = Dictionary.open(ifo);
+      addTearDown(dictionary.close);
+      expect(_words(dictionary.lookup('Alvo')), expected);
+    });
+
+    test('rejects a damaged .syn.dz', () {
+      final syn = companion('syn');
+      final packed = gzip.encode(syn.readAsBytesSync());
+      syn.deleteSync();
+      companion('syn.dz')
+          .writeAsBytesSync(packed.sublist(0, packed.length - 6));
+      expect(() => Dictionary.open(ifo), _formatError);
+    });
+
     test('reports bad UTF-8 when its definition is read', () {
       final dict = companion('dict');
       final bytes = dict.readAsBytesSync()..[0] = 0xff;
