@@ -100,6 +100,10 @@
   "@outlineTab": {
     "description": "Panel tab with the document's table of contents."
   },
+  "thumbnails": "Thumbnails",
+  "@thumbnails": {
+    "description": "Title of the full-screen thumbnail grid and tooltip of the button that opens it."
+  },
   "pagesTab": "Pages",
   "@pagesTab": {
     "description": "Panel tab with page thumbnails."

@@ -22,6 +22,7 @@ import 'reader_geometry.dart';
 import 'reader_view.dart';
 import 'search_session.dart';
 import 'text_selection.dart';
+import 'thumbnail_grid.dart';
 
 /// Opens external links in another app; injectable for tests.
 typedef UriOpener = Future<bool> Function(String uri);
@@ -387,6 +388,17 @@ class _ReaderPageState extends State<ReaderPage> {
     }
   }
 
+  Future<void> _openThumbnails(ReaderController controller) async {
+    final page = await Navigator.of(context).push<int>(
+      MaterialPageRoute(builder: (_) => ThumbnailGrid(controller: controller)),
+    );
+    if (page != null && mounted && identical(controller, _controller)) {
+      controller.goToPage(page, record: true);
+    }
+  }
+
+  /// The page with the side panel: beside it on wide screens, over it on
+  /// phones, where picking an entry closes it.
   Widget _withPanel(
     ReaderController controller, {
     required bool showPanel,
@@ -449,6 +461,7 @@ class _ReaderPageState extends State<ReaderPage> {
         hasPanel &&
         _panelOpen &&
         MediaQuery.sizeOf(context).width >= _panelBesideWidth;
+    final leadingWidth = (canPop ? 48.0 : 0.0) + (hasPanel ? 96.0 : 0.0) + 8;
     final body = Scaffold(
       // In full screen the page keeps its size while the bars come and go:
       // the bars are drawn over it instead of resizing it.
@@ -466,7 +479,7 @@ class _ReaderPageState extends State<ReaderPage> {
             )
           : AppBar(
               automaticallyImplyLeading: false,
-              leadingWidth: (canPop ? 48.0 : 0) + (hasPanel ? 48.0 : 0) + 8,
+              leadingWidth: leadingWidth,
               leading: Row(
                 children: [
                   const SizedBox(width: 4),
@@ -478,6 +491,12 @@ class _ReaderPageState extends State<ReaderPage> {
                       tooltip: l10n.sidePanel,
                       isSelected: dockPanel,
                       onPressed: () => _togglePanel(controller),
+                    ),
+                  if (hasPanel)
+                    IconButton(
+                      icon: const Icon(Icons.grid_view_outlined),
+                      tooltip: l10n.thumbnails,
+                      onPressed: () => _openThumbnails(controller),
                     ),
                 ],
               ),
