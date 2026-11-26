@@ -18,6 +18,16 @@ Iterable<String> _words(List<DictionaryEntry> entries) =>
     entries.map((entry) => entry.headword);
 
 void main() {
+  test('FR-TEXT-010 ranks distinct suggestions on folded, trimmed forms', () {
+    expect(
+      closestSuggestion(' “INTANGÍVEIS!” ', ['intangível', 'intangivelmente']),
+      'intangível',
+    );
+    expect(closestSuggestion('cas', ['cat', 'car', 'cat']), isNull);
+    expect(closestSuggestion(' “cás!” ', ['cas', 'cás']), isNull);
+    expect(closestSuggestion('cats', ['cat', 'cat']), 'cat');
+  });
+
   group('StarDict sets (FR-TEXT-009)', () {
     test('prefers .idx and .dict when both companions are present', () {
       final dictionary = _open('study');

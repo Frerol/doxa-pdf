@@ -84,7 +84,7 @@ class DictionaryLookupView extends StatefulWidget {
 
 class _DictionaryLookupViewState extends State<DictionaryLookupView> {
   late String _query = widget.query.trim();
-  Future<List<LookupGroup>>? _results;
+  Future<LookupResult>? _results;
 
   @override
   void initState() {
@@ -132,17 +132,19 @@ class _DictionaryLookupViewState extends State<DictionaryLookupView> {
         importer: widget.importer,
       );
     }
-    return FutureBuilder<List<LookupGroup>>(
+    return FutureBuilder<LookupResult>(
       future: results,
       builder: (context, snapshot) {
-        final groups = snapshot.data;
+        final result = snapshot.connectionState == ConnectionState.done
+            ? snapshot.data
+            : null;
+        final shownWord = result?.shownWord;
         final found = [
-          for (final g in groups ?? const <LookupGroup>[])
+          for (final g in result?.groups ?? const <LookupGroup>[])
             if (g.entries.isNotEmpty) g,
         ];
-        final suggestions = {
-          for (final g in groups ?? const <LookupGroup>[]) ...g.suggestions,
-        }.take(8).toList();
+        final suggestions =
+            result?.suggestions.take(8).toList() ?? const <String>[];
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -169,8 +171,12 @@ class _DictionaryLookupViewState extends State<DictionaryLookupView> {
             ),
             Flexible(
               child: switch (snapshot) {
-                AsyncSnapshot(hasError: true) => _Note(l10n.dictionaryFailed),
-                AsyncSnapshot(data: null) => const Padding(
+                AsyncSnapshot(
+                  connectionState: ConnectionState.done,
+                  hasError: true,
+                ) =>
+                  _Note(l10n.dictionaryFailed),
+                _ when result == null => const Padding(
                   padding: EdgeInsets.all(32),
                   child: Center(child: CircularProgressIndicator()),
                 ),
@@ -183,6 +189,8 @@ class _DictionaryLookupViewState extends State<DictionaryLookupView> {
                   shrinkWrap: true,
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                   children: [
+                    if (shownWord != null)
+                      Text(l10n.dictionaryShowing(shownWord)),
                     for (final group in found) ...[
                       Padding(
                         padding: const EdgeInsets.only(top: 12, bottom: 4),
@@ -201,6 +209,8 @@ class _DictionaryLookupViewState extends State<DictionaryLookupView> {
                         DefinitionText(entry.definition),
                       ],
                     ],
+                    if (suggestions.isNotEmpty)
+                      _Suggestions(words: suggestions, onLookUp: _lookUp),
                   ],
                 ),
               },
@@ -289,26 +299,37 @@ class _NotFound extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(l10n.dictionaryNotFound(query)),
-          if (suggestions.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(l10n.dictionarySuggestions),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final word in suggestions)
-                  ActionChip(
-                    label: Text(word),
-                    onPressed: () => onLookUp(word),
-                  ),
-              ],
-            ),
-          ],
+          if (suggestions.isNotEmpty)
+            _Suggestions(words: suggestions, onLookUp: onLookUp),
         ],
       ),
     );
   }
+}
+
+class _Suggestions extends StatelessWidget {
+  const _Suggestions({required this.words, required this.onLookUp});
+
+  final List<String> words;
+  final ValueChanged<String> onLookUp;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 12),
+      Text(AppLocalizations.of(context).dictionarySuggestions),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final word in words)
+            ActionChip(label: Text(word), onPressed: () => onLookUp(word)),
+        ],
+      ),
+    ],
+  );
 }
 
 /// What to do with no dictionary installed (FR-TEXT-012, UX §9): a short

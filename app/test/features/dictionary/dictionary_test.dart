@@ -191,14 +191,18 @@ void main() {
       addTearDown(lookup.close);
       final [alpha, beta] = library.all;
 
-      final groups = await lookup.lookup('Cat.', [beta, alpha]);
+      final result = await lookup.lookup('Cat.', [beta, alpha]);
+      final groups = result.groups;
+      expect(result.shownWord, isNull);
+      expect(result.suggestions, isEmpty);
       expect(groups.map((g) => g.dictionary), ['Beta', 'Alpha']);
       expect(groups.first.entries.single.headword, 'cat');
       expect(lookupText(groups), contains('feline'));
 
       final missing = await lookup.lookup('cas', [beta]);
-      expect(missing.single.entries, isEmpty);
-      expect(missing.single.suggestions, containsAll(['car', 'cat']));
+      expect(missing.groups.single.entries, isEmpty);
+      expect(missing.shownWord, isNull);
+      expect(missing.suggestions, containsAll(['car', 'cat']));
 
       File('${root.path}/a/Alpha.idx').writeAsBytesSync([1, 2, 3]);
       final damaged = InstalledDictionary(
@@ -209,10 +213,34 @@ void main() {
         sizeBytes: 0,
       );
       final mixed = await lookup.lookup('cat', [damaged, beta]);
-      expect(mixed.first.failed, isTrue);
-      expect(mixed.last.entries.single.headword, 'cat');
+      expect(mixed.groups.first.failed, isTrue);
+      expect(mixed.groups.last.entries.single.headword, 'cat');
     });
   });
+
+  test(
+    'FR-TEXT-010 opens the unique closest suggestion across packs',
+    () async {
+      writeSet(Directory('${root.path}/a'), 'Alpha', {'carton': 'box'});
+      writeSet(Directory('${root.path}/b'), 'Beta', {'cart': 'wagon'});
+      writeSet(Directory('${root.path}/c'), 'Gamma', {'cart': 'trolley'});
+      final library = DictionaryLibrary(root.path);
+      await library.load();
+      final lookup = IsolateDictionaryLookup();
+      addTearDown(lookup.close);
+
+      final result = await lookup.lookup('carts', library.enabled);
+      expect(result.shownWord, 'cart');
+      expect(result.suggestions, ['carton']);
+      expect(lookupText(result.groups), contains('wagon'));
+      expect(lookupText(result.groups), contains('trolley'));
+
+      final exact = await lookup.lookup('carton', library.enabled);
+      expect(exact.shownWord, isNull);
+      expect(exact.suggestions, isEmpty);
+      expect(lookupText(exact.groups), contains('box'));
+    },
+  );
 
   group('lookup popup (FR-TEXT-008, FR-TEXT-012)', () {
     Future<void> pump(WidgetTester tester, Widget child) async {
@@ -291,6 +319,29 @@ void main() {
       expect(find.textContaining('feline animal'), findsOneWidget);
     });
 
+    testWidgets('FR-TEXT-010 shows the opened suggestion and alternate chips', (
+      tester,
+    ) async {
+      writeSet(Directory('${root.path}/a'), 'Alpha', {'cat': 'animal'});
+      final library = DictionaryLibrary(root.path);
+      await tester.runAsync(library.load);
+      final lookup = _FakeLookup();
+      await pump(
+        tester,
+        DictionaryLookupView(
+          query: 'cats',
+          library: library,
+          lookup: lookup,
+          openUri: (_) async => true,
+        ),
+      );
+      expect(find.text('Showing “cat”'), findsOneWidget);
+      expect(find.textContaining('feline animal'), findsOneWidget);
+      expect(find.widgetWithText(ActionChip, 'cater'), findsOneWidget);
+      expect(find.widgetWithText(ActionChip, 'cat'), findsNothing);
+      expect(lookup.queries, ['cats']);
+    });
+
     testWidgets('groups results by dictionary and follows suggestions', (
       tester,
     ) async {
@@ -308,6 +359,8 @@ void main() {
         ),
       );
       expect(find.text('No entry for “cas”.'), findsOneWidget);
+      expect(find.widgetWithText(ActionChip, 'car'), findsOneWidget);
+      expect(find.byType(DefinitionText), findsNothing);
       await tester.tap(find.widgetWithText(ActionChip, 'cat'));
       await tester.pumpAndSettle();
       expect(lookup.queries, ['cas', 'cat']);
@@ -439,32 +492,40 @@ class _FakeLookup implements DictionaryLookup {
   final queries = <String>[];
 
   @override
-  Future<List<LookupGroup>> lookup(
+  Future<LookupResult> lookup(
     String query,
     List<InstalledDictionary> dictionaries,
   ) async {
     queries.add(query);
-    final hit = query == 'cat';
-    return [
-      for (final d in dictionaries)
-        (
-          dictionary: d.name,
-          entries: hit
-              ? [
-                  (
-                    headword: 'cat',
-                    definition: DefinitionResult([
-                      DefinitionBlock(DefinitionBlockKind.paragraph, const [
-                        DefinitionSpan('feline animal'),
-                      ]),
-                    ], unsupportedFields: 0),
-                  ),
-                ]
-              : const <({String headword, DefinitionResult definition})>[],
-          suggestions: hit ? const <String>[] : const ['cat'],
-          failed: false,
-        ),
-    ];
+    final fallback = query == 'cats';
+    final hit = query == 'cat' || fallback;
+    return LookupResult(
+      [
+        for (final d in dictionaries)
+          (
+            dictionary: d.name,
+            entries: hit
+                ? [
+                    (
+                      headword: 'cat',
+                      definition: DefinitionResult([
+                        DefinitionBlock(DefinitionBlockKind.paragraph, const [
+                          DefinitionSpan('feline animal'),
+                        ]),
+                      ], unsupportedFields: 0),
+                    ),
+                  ]
+                : const <({String headword, DefinitionResult definition})>[],
+            failed: false,
+          ),
+      ],
+      suggestions: fallback
+          ? const ['cater']
+          : hit
+          ? const []
+          : const ['cat', 'car'],
+      shownWord: fallback ? 'cat' : null,
+    );
   }
 
   @override

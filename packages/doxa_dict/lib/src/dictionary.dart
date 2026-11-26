@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'dart:io';
+import 'dart:math';
 
 import 'dictionary_data.dart';
 import 'dictionary_field.dart';
@@ -21,6 +22,41 @@ typedef DictionaryDiscovery = ({
   List<({File ifo, StarDictInfo info})> valid,
   List<({File ifo, DictionaryFormatException error})> invalid,
 });
+
+/// The unique nearest of the supplied suggestions by Levenshtein distance.
+/// The query is trimmed, and both sides use the same case and diacritic
+/// folding as [Dictionary.suggest]. Repeated headwords count only once.
+String? closestSuggestion(String query, Iterable<String> suggestions) {
+  final key = foldDiacritics(trimLookupQuery(query)).runes.toList();
+  String? closest;
+  int? bestDistance;
+  for (final word in suggestions.toSet()) {
+    final distance = _editDistance(key, foldDiacritics(word).runes);
+    if (bestDistance == null || distance < bestDistance) {
+      bestDistance = distance;
+      closest = word;
+    } else if (distance == bestDistance) {
+      closest = null;
+    }
+  }
+  return closest;
+}
+
+int _editDistance(List<int> key, Iterable<int> word) {
+  final row = List.generate(key.length + 1, (i) => i);
+  for (final rune in word) {
+    var diagonal = row[0]++;
+    for (var i = 1; i < row.length; i++) {
+      final above = row[i];
+      row[i] = min(
+        diagonal + (rune == key[i - 1] ? 0 : 1),
+        1 + min(above, row[i - 1]),
+      );
+      diagonal = above;
+    }
+  }
+  return row.last;
+}
 
 /// A synchronous StarDict reader. Open, use and close it in the same isolate.
 final class Dictionary {
