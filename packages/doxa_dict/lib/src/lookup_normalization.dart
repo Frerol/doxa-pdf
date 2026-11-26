@@ -37,6 +37,8 @@ final _latinBases = {
     for (final rune in group.value.runes) rune: group.key,
 };
 
+/// [word] lower-cased, with Latin diacritics and combining marks removed:
+/// "Ação" and "acao" fold to the same key.
 String foldDiacritics(String word) {
   final folded = StringBuffer();
   for (final rune in word.runes) {

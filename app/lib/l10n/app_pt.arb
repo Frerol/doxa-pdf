@@ -164,5 +164,21 @@
   "seeAllRecents": "Ver todos os recentes",
   "percentRead": "{percent}% lido",
   "homePage": "p. {page} de {count}",
-  "sidePanel": "Painel lateral"
+  "sidePanel": "Painel lateral",
+  "settingsSearchHint": "Buscar nas configurações",
+  "settingsNoResults": "Nenhuma configuração corresponde a “{query}”",
+  "settingsGeneral": "Geral",
+  "settingsGeneralSummary": "Tema, idioma e tela",
+  "settingsViewing": "Visualização",
+  "settingsViewingSummary": "Cores da página e mudança de página",
+  "settingsDictionariesSummary": "Dicionários offline para consultar palavras",
+  "settingsTheme": "Tema",
+  "settingsThemeHint": "Claro, escuro ou igual ao do sistema",
+  "settingsLanguageHint": "O idioma dos menus e mensagens do Doxa",
+  "settingsScreen": "Tela",
+  "settingsKeepScreenOnHint": "A tela não apaga enquanto um documento está aberto",
+  "settingsPageColorsHint": "Normal, noturno, sépia ou cores suas",
+  "settingsPageTurning": "Mudança de página",
+  "optionTapZonesHint": "Nos layouts página a página, um toque perto da borda esquerda ou direita muda a página",
+  "optionKeepZoomHint": "A próxima página abre com o mesmo zoom"
 }
