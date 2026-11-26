@@ -33,3 +33,10 @@ flutter:
   generate: true
   assets:
     - assets/brand/doxa-glyph.png
+    - assets/fonts/Manrope-OFL.txt
+  # The interface font (docs/plan/05-ux-design.md §5); source and licence in
+  # assets/fonts/README.md.
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-Variable.ttf

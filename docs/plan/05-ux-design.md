@@ -64,10 +64,41 @@ Default desktop shortcuts: `H` highlight, `U` underline, `P` pen, `E` eraser, `L
 
 - Material 3 with a **Doxa purple seed color** (`#7048E8`) and dynamic color on Android 12+.
 - Default palette for study markup, chosen for legibility under multiply blend and tuned for color-vision deficiencies: yellow, green, blue, pink, orange, purple. Users can relabel colors (for example "Definition", "Exam", "Doubt"), and the labels drive review-panel filtering.
-- App icon and brand assets are original. The **provisional icon** is a lowercase delta (δ, for δόξα) drawn as one stroke in four
-  colours, magenta → green → purple → orange, with hard joins; its bowl closes by passing under the stem. Sources are in
-  [`assets/brand/`](../../assets/brand/) (dark, light, transparent, Android adaptive foreground, single-colour). The full branding
-  will be revisited later; a designer contribution is welcome.
+- App icon and brand assets are original. The icon is the italic lowercase delta (δ, for δόξα) of EB Garamond (weight 600),
+  in four colours, magenta → green → purple → orange, with hard cuts (#78). Sources are in [`assets/brand/`](../../assets/brand/)
+  (dark, light, transparent, Android adaptive foreground, single-colour), rebuilt by `tools/generate_brand_glyph.py`.
+
+### The Doxa look (maintainer decision 2026-11-26, #80)
+
+Chosen from five directions: the **Dashboard** home and the **Night** reader. The mockups are on a private design canvas that the
+maintainer keeps; this section is what the app follows.
+
+- **One font family:** Manrope (SIL OFL 1.1, bundled; source in `app/assets/fonts/README.md`) for the whole interface. Headings are
+  heavy (800) and slightly tight. PDF pages keep their own fonts.
+- **Colours:** neutral surfaces, the same with dynamic colour on or off; only the accent follows the seed or the wallpaper.
+
+  | Role | Light | Dark |
+  |---|---|---|
+  | Background | `#F5F6FA` | `#161A23` |
+  | Cards, list rows | `#FFFFFF` | `#1E2330` |
+  | Raised controls | `#E8EAF0` | `#262C3A` |
+  | Behind the PDF page | `#E8EAF0` | `#10131A` |
+  | Text / secondary text | `#161A23` / `#5A6070` | `#E6E8EF` / `#9AA3B5` |
+  | Lines | `#DDE0E8` | `#262C3A` |
+
+  The four brand colours (magenta `#D6336C`, green `#2BAE66`, purple `#7048E8`, orange `#F08C00`) mark folders and tabs, never
+  text on their own. Text keeps a 4.5:1 contrast.
+- **Shapes:** cards 18–24 px corners, buttons and fields 14 px, dialogs 24 px; no elevation shadows on cards.
+- **Home (Dashboard):** no tabs. One screen holds a large **Continue reading** card (cover, title, page, a progress ring and
+  "Continue on p. N"), **Favorites** as a shelf of covers, **Folders** as tiles (with Add folder), and **Recents** as rows. Each
+  section has "See all", which opens its full list (the current lists, with search, sort and multi-selection).
+- **Reader (Night):** a compact app bar (back, side-panel button, title, page number in tabular figures, tools). Under it, the tab
+  row has browser-like tabs with a top stripe in the document's colour. Both hide together in full screen.
+  - The **side panel** opens and closes with its app-bar button and pushes the page aside instead of covering it.
+  - Icons at its top switch its content. Alpha 1 has **Thumbnails** and **Contents**; **Bookmarks** and **Annotations** join when
+    they are built. A feature that is not built is never shown.
+- **App theme and page colour are separate:** light and dark change the bars, tabs and panels. The page follows its own colour
+  option in View options (normal, night, sepia, custom).
 
 ## 6. Accessibility
 

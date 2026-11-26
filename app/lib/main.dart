@@ -12,9 +12,11 @@ import 'features/library/library_database.dart';
 import 'features/library/library_repository.dart';
 import 'features/settings/app_settings.dart';
 import 'src/doxa_app.dart';
+import 'src/doxa_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerFontLicenses();
   // The app draws edge to edge on every Android version; full screen
   // (FR-VIEW-012) returns to this mode when it ends.
   unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
