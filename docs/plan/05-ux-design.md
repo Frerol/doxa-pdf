@@ -81,7 +81,11 @@ Default desktop shortcuts: `H` highlight, `U` underline, `P` pen, `E` eraser, `L
 - **Toolbar fixed at the top** on tablets. Phones use the compact bottom toolbar.
 - **Tabs on tablets** as well as desktop.
 - **Tabs (FR-FILE-007), maintainer decisions 2026-11-26:**
-  - On medium and expanded widths the tab row sits **under the reader's app bar** and hides with it. Each tab has its own close button.
+  - On medium and expanded widths the tab row sits **under the reader's app bar** and hides with it. Each tab has its own close button,
+    and a long press drags a tab to another place.
+  - On phones a button in the reader's app bar shows how many tabs are open. It opens a **grid of the tabs' first pages**; a tap shows
+    a tab, and ✕ closes it.
+  - The open tabs come back after a restart. Each document reopens when its tab is first shown, and a file that is gone closes its tab with a message.
   - Opening a document from home **adds a tab**. A document that is already open shows its tab instead.
   - Back returns home and keeps the tabs.
   - There is **no fixed tab limit**. Only the active tab keeps its document open in the engine; the others keep their place and reopen

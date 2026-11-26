@@ -608,5 +608,14 @@
         "type": "String"
       }
     }
+  },
+  "openTabs": "{count, plural, =1{1 open tab} other{{count} open tabs}}",
+  "@openTabs": {
+    "description": "Tooltip of the phone's tabs button and title of the tab grid (FR-FILE-007).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

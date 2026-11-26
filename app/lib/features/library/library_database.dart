@@ -67,7 +67,27 @@ class Folders extends Table {
   DateTimeColumn get addedAt => dateTime()();
 }
 
-@DriftDatabase(tables: [Documents, Folders])
+/// The documents open in tabs (FR-FILE-007), so they come back after a
+/// restart. A row whose document is gone is ignored.
+@DataClassName('OpenTabRow')
+class OpenTabs extends Table {
+  @override
+  String get tableName => 'open_tabs';
+
+  /// The document's [Documents.id].
+  IntColumn get documentId => integer()();
+
+  /// Left to right, from 0.
+  IntColumn get position => integer()();
+
+  /// The tab that was shown.
+  BoolColumn get active => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {documentId};
+}
+
+@DriftDatabase(tables: [Documents, Folders, OpenTabs])
 class LibraryDatabase extends _$LibraryDatabase {
   LibraryDatabase(super.executor);
 
@@ -83,12 +103,13 @@ class LibraryDatabase extends _$LibraryDatabase {
   /// `dart run drift_dev make-migrations` in `app/` to save the new schema
   /// for the migration tests.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: stepByStep(
       from1To2: (m, schema) => m.createTable(schema.libraryFolders),
+      from2To3: (m, schema) => m.createTable(schema.openTabs),
     ),
   );
 }

@@ -63,6 +63,7 @@ class ReaderPage extends StatefulWidget {
     this.onOpened,
     this.tabRow,
     this.onGiveUp,
+    this.tabsButton,
   });
 
   final Future<PdfEngine> engine;
@@ -96,6 +97,9 @@ class ReaderPage extends StatefulWidget {
   /// Closes the document when the user gives up opening it (a cancelled
   /// password prompt). Without it, the page's route is removed.
   final VoidCallback? onGiveUp;
+
+  /// Opens the other tabs on phones (FR-FILE-007); first in the app bar.
+  final Widget? tabsButton;
 
   @override
   State<ReaderPage> createState() => _ReaderPageState();
@@ -394,6 +398,7 @@ class _ReaderPageState extends State<ReaderPage> {
               title: Text(widget.title, overflow: TextOverflow.ellipsis),
               bottom: widget.tabRow,
               actions: [
+                ?widget.tabsButton,
                 if (controller != null && controller.info.pageCount > 0) ...[
                   Builder(
                     builder: (context) => IconButton(

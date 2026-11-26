@@ -150,6 +150,32 @@ void main() {
     });
   });
 
+  group('open tabs (FR-FILE-007)', () {
+    test('come back in order with the shown one', () async {
+      final a = await open('a', uri: 'content://doc/a');
+      final b = await open('b', uri: 'content://doc/b');
+      await library.saveOpenTabs([b.id, a.id], active: 1);
+      final tabs = await library.openTabs();
+      expect(tabs.documents.map((d) => d.identity), ['b', 'a']);
+      expect(tabs.active, 1);
+
+      await library.saveOpenTabs([a.id], active: 0);
+      expect((await library.openTabs()).documents.single.identity, 'a');
+    });
+
+    test('leave out documents that cannot be reopened or are gone', () async {
+      final a = await open('a', uri: 'content://doc/a');
+      final b = await open('b', uri: 'content://doc/b');
+      final c = await open('c', uri: 'content://doc/c');
+      await library.saveOpenTabs([a.id, b.id, c.id], active: 2);
+      await library.forgetLocation(a.id);
+      await library.forgetDeleted('content://doc/b');
+      final tabs = await library.openTabs();
+      expect(tabs.documents.map((d) => d.identity), ['c']);
+      expect(tabs.active, 0);
+    });
+  });
+
   group('library folders (FR-FILE-006)', () {
     test('are listed by name, and adding one again renames it', () async {
       await library.addFolder(treeUri: 'content://t/2', displayName: 'zoology');
