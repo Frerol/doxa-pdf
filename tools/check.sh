@@ -44,6 +44,9 @@ flutter pub get >/dev/null
 echo "==> dart format"
 dart format --output=none --set-exit-if-changed "${targets[@]}"
 
+echo "==> repository rules"
+python3 tools/check_repo_rules.py "${targets[@]}"
+
 echo "==> flutter analyze"
 flutter analyze "${targets[@]}"
 

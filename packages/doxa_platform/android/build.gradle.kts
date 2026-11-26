@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 group = "io.github.frerol.doxapdf.doxa_platform"
 version = "1.0-SNAPSHOT"
 
