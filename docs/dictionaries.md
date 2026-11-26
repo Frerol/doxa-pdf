@@ -12,6 +12,9 @@ anything itself: you download a pack here with your browser, then open it with D
 You can also use **Settings → Dictionaries → Import file**. Turn dictionaries on or off there, drag them to change the order in which results
 appear, or remove them.
 
+> **Status:** the lookup and Settings → Dictionaries are in the app. Importing (steps 2 and 3, and **Import file**) is still being built
+> ([#43](https://github.com/Frerol/doxa-pdf/issues/43)), and the packs are published with `1.0.0-alpha.1`.
+
 ## Packs built by Doxa
 
 Each pack is built from free sources with [`tools/build_dictionary.py`](../tools/build_dictionary.py). It is published with the Doxa release
