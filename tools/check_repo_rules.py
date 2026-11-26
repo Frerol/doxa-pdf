@@ -19,7 +19,13 @@ SPDX_EXEMPT = {
     # Flutter plugin scaffold: Gradle project name.
     "packages/doxa_platform/android/settings.gradle.kts",
 }
-SKIP_PREFIXES = ("app/lib/l10n/gen/", "third_party/", "test_corpus/")
+SKIP_PREFIXES = (
+    "app/lib/l10n/gen/",
+    # drift_dev schema helpers, regenerated from app/drift_schemas/.
+    "app/test/drift/library/generated/",
+    "third_party/",
+    "test_corpus/",
+)
 DART_RULES = (
     (
         "flutter-material",

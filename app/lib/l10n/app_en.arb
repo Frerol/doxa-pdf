@@ -12,14 +12,6 @@
   "@appTitle": {
     "description": "Application name. Do not translate."
   },
-  "homeTagline": "A free PDF reader for studying",
-  "@homeTagline": {
-    "description": "Short subtitle on the placeholder home screen."
-  },
-  "previewNotice": "Engineering preview — nothing to see here yet.",
-  "@previewNotice": {
-    "description": "Notice shown while the app is only a scaffold."
-  },
   "readerOpening": "Opening…",
   "@readerOpening": {
     "description": "Accessibility label of the progress indicator while a document opens."
@@ -371,5 +363,86 @@
   "viewFullscreenHint": "Tap the middle of the page to show the toolbars",
   "@viewFullscreenHint": {
     "description": "How to get the toolbars back in full screen."
+  },
+  "libraryRecents": "Recents",
+  "@libraryRecents": {
+    "description": "Home tab with the recently opened documents."
+  },
+  "libraryFavorites": "Favorites",
+  "@libraryFavorites": {
+    "description": "Home tab with the favorite documents."
+  },
+  "librarySearch": "Search by name",
+  "@librarySearch": {
+    "description": "Hint and tooltip for filtering the home lists by document name."
+  },
+  "libraryCloseSearch": "Close search",
+  "@libraryCloseSearch": {
+    "description": "Tooltip of the button that closes the name filter."
+  },
+  "libraryRecentsEmpty": "Documents you open appear here.",
+  "@libraryRecentsEmpty": {
+    "description": "Empty state of the Recents tab."
+  },
+  "libraryFavoritesEmpty": "Tap the star next to a document to add it to your favorites.",
+  "@libraryFavoritesEmpty": {
+    "description": "Empty state of the Favorites tab."
+  },
+  "librarySearchEmpty": "No documents match “{query}”.",
+  "@librarySearchEmpty": {
+    "description": "Shown when the name filter matches nothing.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "libraryProgress": "p. {page} of {count} · {percent}%",
+  "@libraryProgress": {
+    "description": "Reading progress of a document in the home lists.",
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "lastReadToday": "today",
+  "@lastReadToday": {
+    "description": "When a document was last read: today."
+  },
+  "lastReadYesterday": "yesterday",
+  "@lastReadYesterday": {
+    "description": "When a document was last read: yesterday."
+  },
+  "lastReadDaysAgo": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "@lastReadDaysAgo": {
+    "description": "When a document was last read, less than a week ago.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addToFavorites": "Add to favorites",
+  "@addToFavorites": {
+    "description": "Marks a document as favorite."
+  },
+  "removeFromFavorites": "Remove from favorites",
+  "@removeFromFavorites": {
+    "description": "Unmarks a favorite document."
+  },
+  "removeFromRecents": "Remove from recents",
+  "@removeFromRecents": {
+    "description": "Hides a document from the Recents tab; its reading state is kept."
+  },
+  "libraryCannotReopen": "This document can no longer be opened from here. Open it again with Open file.",
+  "@libraryCannotReopen": {
+    "description": "Shown when a recent document's file or access permission is gone."
   }
 }

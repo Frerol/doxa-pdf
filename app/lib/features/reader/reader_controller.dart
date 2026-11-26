@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 
 import 'package:doxa_core/doxa_core.dart';
 import 'package:doxa_engine/doxa_engine.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'reader_geometry.dart';
@@ -31,6 +32,11 @@ typedef ViewState = ({double zoom, Offset offset});
 
 typedef _Anchor = ({int page, double x, double y});
 
+/// Where the reader is, kept across app restarts (FR-VIEW-006): a page,
+/// a point of it as fractions of the page size (the top-left corner of the
+/// screen in continuous mode, the middle otherwise), and the zoom.
+typedef ReadingPosition = ({int page, double x, double y, double zoom});
+
 /// Layers of rectangles drawn over the pages.
 enum HighlightLayer { searchHits, currentHit, selection }
 
@@ -53,8 +59,10 @@ final class ReaderController {
     BitmapDecoder decoder = decodeBitmap,
     int cacheBudgetBytes = 160 << 20,
     ReaderOptions options = const ReaderOptions(),
+    ReadingPosition? initialPosition,
   }) : _decode = decoder,
        _options = options, // ignore: prefer_initializing_formals
+       _initial = initialPosition,
        cache = TileCache(budgetBytes: cacheBudgetBytes);
 
   static const minZoom = 0.25;
@@ -86,6 +94,9 @@ final class ReaderController {
   final _links = <int, Future<List<PageLink>>>{};
 
   ReaderOptions _options;
+
+  /// Shown by the first layout, then dropped.
+  ReadingPosition? _initial;
   PageLayout? _layout;
   Size _viewSize = Size.zero;
   double _devicePixelRatio = 1;
@@ -146,7 +157,7 @@ final class ReaderController {
     if (size.width <= 0 || size.height <= 0) return;
     if (relayout) {
       _relayout();
-      _restore(anchor);
+      _restore(anchor ?? _takeInitial());
     }
     _changed();
   }
@@ -526,6 +537,33 @@ final class ReaderController {
     _changed();
   }
 
+  /// The current reading position, or null before the first layout.
+  ReadingPosition? get position {
+    final mark = _mark();
+    if (mark == null) return _initial;
+    final (:anchor, :zoom) = mark;
+    return (page: anchor.page, x: anchor.x, y: anchor.y, zoom: zoom);
+  }
+
+  /// The saved position as an anchor, with its zoom applied, or null when
+  /// there is none or it no longer fits the document.
+  _Anchor? _takeInitial() {
+    final initial = _initial;
+    _initial = null;
+    if (initial == null ||
+        initial.page < 0 ||
+        initial.page >= info.pageCount ||
+        !initial.zoom.isFinite) {
+      return null;
+    }
+    _zoom = initial.zoom.clamp(minZoom, maxZoom);
+    return (
+      page: initial.page,
+      x: initial.x.isFinite ? initial.x.clamp(0, 1) : 0,
+      y: initial.y.isFinite ? initial.y.clamp(0, 1) : 0,
+    );
+  }
+
   _Mark? _mark() {
     final anchor = _anchor();
     return anchor == null ? null : (anchor: anchor, zoom: _zoom);
@@ -680,7 +718,26 @@ final class ReaderController {
     _clamp();
     _ensure();
     repaint.value++;
-    page.value = currentPage;
+    _publishPage();
+  }
+
+  bool _pagePending = false;
+
+  /// Updates [page]. [resize] runs while the view is laid out, when
+  /// listeners must not rebuild, so the new page is published after that
+  /// frame (a restored position or a rotation can change it).
+  void _publishPage() {
+    final binding = SchedulerBinding.instance;
+    if (binding.schedulerPhase != SchedulerPhase.persistentCallbacks) {
+      page.value = currentPage;
+      return;
+    }
+    if (_pagePending) return;
+    _pagePending = true;
+    binding.addPostFrameCallback((_) {
+      _pagePending = false;
+      if (!_disposed) page.value = currentPage;
+    });
   }
 
   void _clamp() {

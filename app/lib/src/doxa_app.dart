@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import 'dart:async';
 import 'dart:io';
 
 import 'package:doxa_engine/doxa_engine.dart';
@@ -8,9 +7,10 @@ import 'package:doxa_platform/doxa_platform.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../features/dev/dev_documents.dart';
-import '../features/reader/reader_page.dart';
+import '../features/library/document_identity.dart';
+import '../features/library/library_home.dart';
+import '../features/library/library_repository.dart';
 import '../features/settings/app_settings.dart';
-import '../features/settings/settings_page.dart';
 import '../l10n/gen/app_localizations.dart';
 
 /// Seed color of the Doxa PDF Material 3 theme (docs/plan/05-ux-design.md §5).
@@ -39,10 +39,20 @@ class DoxaApp extends StatefulWidget {
     this.settings,
     this.accentColor,
     this.pdfDocuments,
+    this.library,
+    this.thumbnails,
+    this.identify,
   });
 
   final Future<PdfEngine> Function() engine;
   final PdfDocuments? pdfDocuments;
+
+  /// The library database; documents are not recorded when null (tests).
+  final LibraryRepository? library;
+  final ThumbnailStore? thumbnails;
+
+  /// Computes document identities; `documentIdentity` by default.
+  final DocumentIdentifier? identify;
 
   /// App settings; in memory only when null (tests).
   final SettingsController? settings;
@@ -122,198 +132,18 @@ class _DoxaAppState extends State<DoxaApp> with WidgetsBindingObserver {
         ...GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      home: PlaceholderHome(
+      home: LibraryHome(
         engine: widget.engine,
         pdfDocuments:
             widget.pdfDocuments ??
             (Platform.isAndroid ? DoxaPlatform().pdfDocuments : null),
         settings: settings,
+        library: widget.library,
+        thumbnails: widget.thumbnails,
+        identify: widget.identify ?? documentIdentity,
         devDocumentsDir:
             widget.devDocumentsDir ??
             (Platform.isAndroid ? androidDevDocumentsDir : null),
-      ),
-    );
-  }
-}
-
-/// Temporary home screen until the library (M1) exists.
-class PlaceholderHome extends StatefulWidget {
-  const PlaceholderHome({
-    super.key,
-    required this.engine,
-    required this.settings,
-    this.devDocumentsDir,
-    this.pdfDocuments,
-  });
-
-  final Future<PdfEngine> Function() engine;
-  final SettingsController settings;
-  final String? devDocumentsDir;
-
-  final PdfDocuments? pdfDocuments;
-
-  @override
-  State<PlaceholderHome> createState() => _PlaceholderHomeState();
-}
-
-class _PlaceholderHomeState extends State<PlaceholderHome> {
-  StreamSubscription<void>? _incoming;
-  bool _draining = false;
-  bool _incomingPending = false;
-  bool _picking = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _incoming = widget.pdfDocuments?.incomingPdfs.listen((_) => _onIncoming());
-    WidgetsBinding.instance.addPostFrameCallback((_) => _onIncoming());
-  }
-
-  @override
-  void dispose() {
-    unawaited(_incoming?.cancel());
-    super.dispose();
-  }
-
-  void _onIncoming() {
-    _incomingPending = true;
-    if (!_draining && mounted) unawaited(_drainIncoming());
-  }
-
-  Future<void> _drainIncoming() async {
-    final documents = widget.pdfDocuments;
-    if (documents == null) return;
-    _draining = true;
-    try {
-      while (mounted && _incomingPending) {
-        _incomingPending = false;
-        while (mounted) {
-          try {
-            final pdf = await documents.takeIncomingPdf();
-            if (pdf == null) break;
-            await _showPdf(documents, pdf);
-          } on PdfAccessException catch (error) {
-            _showAccessError(error.error);
-          }
-        }
-      }
-    } on Object catch (error) {
-      debugPrint('Doxa: cannot receive PDFs: $error');
-      _showAccessError(PdfAccessError.unreadable);
-    } finally {
-      _draining = false;
-    }
-  }
-
-  Future<void> _pick() async {
-    final documents = widget.pdfDocuments!;
-    setState(() => _picking = true);
-    try {
-      final pdf = await documents.pickPdf();
-      if (pdf != null) await _showPdf(documents, pdf);
-    } on PdfAccessException catch (error) {
-      _showAccessError(error.error);
-    } on Object catch (error) {
-      debugPrint('Doxa: PDF picker failed: $error');
-      _showAccessError(PdfAccessError.unreadable);
-    } finally {
-      if (mounted) setState(() => _picking = false);
-    }
-  }
-
-  Future<void> _showPdf(PdfDocuments documents, PlatformPdf pdf) async {
-    if (!mounted) {
-      await documents.releasePdf(pdf.leaseId);
-      return;
-    }
-    final engine = widget.engine;
-    final settings = widget.settings;
-    Future<PdfEngine>? readerEngine;
-    final route = MaterialPageRoute<void>(
-      builder: (_) {
-        return ReaderPage(
-          engine: readerEngine ??= Future.sync(engine),
-          source: FileSource(pdf.path),
-          title: pdf.displayName,
-          settings: settings,
-          releaseSource: () => documents.releasePdf(pdf.leaseId),
-        );
-      },
-    );
-    unawaited(
-      Navigator.of(context).push(route).then((_) async {
-        if (readerEngine == null) await documents.releasePdf(pdf.leaseId);
-      }),
-    );
-  }
-
-  void _showAccessError(PdfAccessError error) {
-    if (!mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final message = switch (error) {
-      PdfAccessError.missing => l10n.fileMissing,
-      PdfAccessError.unreadable => l10n.fileUnreadable,
-      PdfAccessError.notPdf => l10n.fileNotPdf,
-      PdfAccessError.permissionLost => l10n.filePermissionLost,
-    };
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final textTheme = Theme.of(context).textTheme;
-    return Scaffold(
-      appBar: AppBar(
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: l10n.settingsTitle,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => SettingsPage(settings: widget.settings),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                'assets/brand/doxa-glyph.png',
-                width: 96,
-                height: 96,
-                excludeFromSemantics: true,
-              ),
-              Text(l10n.appTitle, style: textTheme.displaySmall),
-              const SizedBox(height: 8),
-              Text(l10n.homeTagline, style: textTheme.titleMedium),
-              const SizedBox(height: 24),
-              Text(l10n.previewNotice, textAlign: TextAlign.center),
-              if (widget.pdfDocuments != null) ...[
-                const SizedBox(height: 24),
-                FilledButton.icon(
-                  onPressed: _picking ? null : _pick,
-                  icon: const Icon(Icons.folder_open),
-                  label: Text(l10n.openFile),
-                ),
-              ],
-              if (widget.devDocumentsDir case final dir?) ...[
-                const SizedBox(height: 24),
-                DevDocuments(
-                  engine: widget.engine,
-                  directory: dir,
-                  settings: widget.settings,
-                ),
-              ],
-            ],
-          ),
-        ),
       ),
     );
   }
