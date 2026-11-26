@@ -24,7 +24,8 @@ If you depart from a SHOULD, say so in the PR and why. Elsewhere in this file, "
 
 ## 1. Project in one minute
 Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Windows and Linux. The core features are **text markup**
-(highlight, underline, squiggly) and **pen annotation** with the S Pen. The MVP is **Android-only** (betas v0.1–v0.4 on GitHub Releases), and Linux comes next.
+(highlight, underline, squiggly) and **pen annotation** with the S Pen. The MVP is **Android-only** (pre-releases `1.0.0-alpha.1`–`alpha.4`, then betas and release candidates, on GitHub Releases) and becomes 1.0.0; Linux comes next (1.1.0).
+  Versioning: `docs/plan/07-build-release.md` §4. Older docs, ADRs and spikes call the alphas v0.1–v0.4.
 
 - Plan: `docs/README.md` (index), especially `docs/plan/11-mvp.md` (MVP scope), `02-requirements.md` (IDs like `FR-INK-002`) and `08-roadmap.md`.
 - **Stack (ADRs 0001–0004):** Flutter + Dart FFI to PDFium (no V8/XFA), monorepo with pub workspaces, Riverpod for state, drift for the database.
@@ -36,7 +37,7 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 ## 2. Current status
 - **M0 (foundations and spikes) is done.** Its tasks and specs are in git history (`git log -p -- AGENTS.md`). Branch protection on `main` is enabled
   (PR required; checks `Docs`, `Analyze & test`, `Android debug APK`, `PDFium bindings up to date`).
-- **Now: M1 = v0.1 Reader.** Scope: `docs/plan/11-mvp.md` §3 v0.1 and `docs/plan/08-roadmap.md` M1. GitHub is the source of truth for what is open:
+- **Now: M1 = alpha 1, Reader.** Scope: `docs/plan/11-mvp.md` §3 v0.1 and `docs/plan/08-roadmap.md` M1. GitHub is the source of truth for what is open:
   `gh issue list --repo Frerol/doxa-pdf --milestone "M1 — v0.1 Reader" --state open`. Each issue lists its dependencies, tasks and acceptance criteria.
 - Update this section only when the milestone changes. Do not track individual issues here.
 

@@ -35,10 +35,10 @@ and a C API covering rendering, text, annotations, forms, page objects and savin
 | Private keys (`/DoxaPressure`, `/NM`) | `FPDFAnnot_SetStringValue`; arrays not directly supported | Encode pressure as a compact string (base64 of quantized samples) |
 | Save | `FPDF_SaveAsCopy` **full save** (flags 0), streamed to a temp file | `FPDF_INCREMENTAL` is unusable: it rewrites loaded objects and corrupts xref-stream files ([Spike C](../spikes/C-annotation-write.md)). Own incremental writer post-MVP |
 | Insert note pages (M3) | `FPDFPage_New` + page objects for ruling/grid | — |
-| Page organization (post-1.0) | `FPDF_ImportPages`, `FPDFPage_SetRotation`, `FPDFPage_Delete`, `FPDF_MovePages` | — |
-| Forms (post-1.0) | `FPDFDOC_InitFormFillEnvironment`, `FORM_*` | — |
-| OCR text layer (v0.4) | Invisible text objects (`FPDFPageObj_CreateTextObj`, render mode 3) fitted to each word box | Tesseract4Android runs in a Kotlin worker ([ADR-0007](../adr/0007-ocr-integration.md), [Spike D](../spikes/D-ocr.md)) |
-| Encryption / compression (post-1.0) | Not supported for writing | Add qpdf (Apache-2.0) behind the same engine interface |
+| Page organization (alpha 4) | `FPDF_ImportPages`, `FPDFPage_SetRotation`, `FPDFPage_Delete`, `FPDF_MovePages` | — |
+| Forms (later) | `FPDFDOC_InitFormFillEnvironment`, `FORM_*` | — |
+| OCR text layer (alpha 4) | Invisible text objects (`FPDFPageObj_CreateTextObj`, render mode 3) fitted to each word box | Tesseract4Android runs in a Kotlin worker ([ADR-0007](../adr/0007-ocr-integration.md), [Spike D](../spikes/D-ocr.md)) |
+| Encryption / compression (later) | Not supported for writing | Add qpdf (Apache-2.0) behind the same engine interface |
 | Content editing (future) | `FPDFPage_*`/`FPDFPageObj_*`/`FPDFText_*` object APIs | Feasible for objects; text reflow is hard. Revisit via ADR |
 
 ## 4. Writing annotations

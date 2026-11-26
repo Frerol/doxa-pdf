@@ -1,12 +1,14 @@
 # 08 — Roadmap
 
 Milestones are defined by **scope and exit criteria**, not dates. Each milestone ends with a tagged release that users can install.
-The MVP (M1–M4) is **Android-only** and detailed in [11 — MVP Definition](11-mvp.md).
+The MVP (M1–M4) is **Android-only** and detailed in [11 — MVP Definition](11-mvp.md): M1–M4 end with the alphas `1.0.0-alpha.1`–`alpha.4`,
+and M4 continues through betas and release candidates to **1.0.0**. After 1.0.0, each milestone is a minor release
+([07 — Build & Release §4](07-build-release.md#4-versioning--release-process)). Earlier documents call the alphas v0.1–v0.4.
 
 ```mermaid
 flowchart LR
-  M0[M0<br/>Foundations<br/>& spikes] --> M1[M1 · v0.1<br/>Reader] --> M2[M2 · v0.2<br/>Markup + pen ★] --> M3[M3 · v0.3<br/>Notes & review] --> M4[M4 · v0.4<br/>OCR<br/>MVP complete]
-  M4 --> M5[M5 · v0.5<br/>Linux] --> M6[M6 · v0.6<br/>Windows] --> M7[M7 · v1.0<br/>Stores & hardening]
+  M0[M0<br/>Foundations<br/>& spikes] --> M1[M1 · alpha 1<br/>Reader] --> M2[M2 · alpha 2<br/>Markup + pen ★] --> M3[M3 · alpha 3<br/>Notes & review] --> M4[M4 · alpha 4 → 1.0.0<br/>OCR, betas, RC<br/>MVP complete]
+  M4 --> M5[M5 · 1.1.0<br/>Linux] --> M6[M6 · 1.2.0<br/>Windows] --> M7[M7 · 1.3.0<br/>Stores & accessibility]
 ```
 
 ## M0 — Foundations & technical spikes (Android focus) ✓
@@ -20,32 +22,32 @@ Goal: prove the risky parts before building features. **Done:** every spike is G
 
 Exit: a spike report for each with go/no-go; ADRs recorded; [risks](09-risks.md) updated.
 
-## M1 — v0.1 Reader (Android)
+## M1 — Alpha 1: Reader (Android)
 FILE-001..007, 011 · VIEW-001..014, 016..019 · TEXT-001, 002, 004, 008..010, 012 · BOOK-002 · SET-001, 002.
 Exit: open and read large textbooks and articles on the reference tablet within the performance budgets.
 
-## M2 — v0.2 Study core: markup + pen ★
+## M2 — Alpha 2: Study core, markup + pen ★
 MARK-001..005, 008..010, 013 · INK-001..009, 011, 012 · TEXT-005..007 · VIEW-023 · NOTE-002 · ANNO-001, 002, 006, 009 · SAVE-001..005 · FILE-010 · SET-003.
 Exit: a student can highlight and handwrite through a whole chapter with the S Pen, without data loss; annotations interoperate with all [interop targets](11-mvp.md#1-target).
 
-## M3 — v0.3 Notes & review
+## M3 — Alpha 3: Notes & review
 FILE-008 · TEXT-003 · MARK-006, 007, 011 · INK-010 · NOTE-001, 003..007 · ANNO-003..005, 008 · BOOK-001, 003 · SAVE-006, 007.
 Exit: review panel, color labels, bookmarks, Markdown export, note pages and shapes complete the study workflow.
 
-## M4 — v0.4 OCR + pages → MVP complete
-UTIL-001, 002 · NFR-PERF-009 · performance and interop sweep.
-Exit: the [MVP exit criteria](11-mvp.md#5-mvp-exit-criteria) are met.
+## M4 — Alpha 4: OCR + pages, then betas and release candidates → 1.0.0
+UTIL-001, 002 · NFR-PERF-009 in alpha 4; then the betas (performance and interop sweep, feedback fixes) and release candidates.
+Exit: the [MVP exit criteria](11-mvp.md#5-mvp-exit-criteria) are met and **1.0.0** is released.
 
-## M5 — v0.5 Linux
+## M5 — 1.1.0 Linux
 Desktop layouts (expanded size class, side panels), keyboard shortcuts, FILE-009, XDG portals, tablet/pen input through GTK (desktop stylus spike first), Flatpak + AppImage on GitHub Releases.
 
-## M6 — v0.6 Windows
+## M6 — 1.2.0 Windows
 Windows Ink/pen input, file associations, MSIX/Inno installer, code signing.
 
-## M7 — v1.0 Stores & hardening
+## M7 — 1.3.0 Stores & accessibility
 MARK-012 · SET-004, 005 · accessibility audit · store listings (Google Play, F-Droid, Flathub, winget) · [success criteria](01-vision-and-scope.md#7-success-criteria) met.
 
-## Post-1.0 candidates (order to be decided with the community)
+## Later candidates (order to be decided with the community)
 1. Annotation sync via user-owned storage (FR-UTIL-006).
 2. Reading extras: reflow, optional content layers, region capture, in-app translation (FR-VIEW-020..022, FR-TEXT-011).
 3. Forms & signatures, images → PDF, camera scanning, new PDFs, redaction, compressed/protected copies (FR-UTIL-003..005, 008..011).
