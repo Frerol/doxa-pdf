@@ -200,6 +200,25 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Opens a home section's full list with its "See all" (UX §5).
+  Future<void> seeAll(WidgetTester tester, String section) async {
+    final header = find.byKey(ValueKey('section-$section'));
+    final inHeader = find.descendant(
+      of: header,
+      matching: find.text('See all'),
+    );
+    final button = inHeader.evaluate().isEmpty ? header : inHeader;
+    await tester.ensureVisible(button);
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+  }
+
+  /// Back from a full list to the dashboard.
+  Future<void> backHome(WidgetTester tester) async {
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+  }
+
   group('recents (FR-FILE-004, FR-BOOK-002)', () {
     testWidgets('an opened document is listed with its progress', (
       tester,
@@ -220,6 +239,7 @@ void main() {
       await launch(tester);
       await openPicked(tester, pdf(1, 'Calculus.pdf'));
       await closeReader(tester);
+      await seeAll(tester, 'recents');
       await tester.tap(find.byTooltip('Add to favorites'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Show menu'));
@@ -228,8 +248,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Calculus.pdf'), findsNothing);
 
-      await tester.tap(find.text('Favorites'));
-      await tester.pumpAndSettle();
+      await backHome(tester);
+      await seeAll(tester, 'favorites');
       expect(find.text('Calculus.pdf'), findsOneWidget);
     });
 
@@ -247,6 +267,97 @@ void main() {
       expect(find.text('Cálculo.pdf'), findsOneWidget);
       expect(find.text('Physics.pdf'), findsNothing);
     });
+  });
+
+  group('dashboard (UX §5)', () {
+    Future<void> seed(String name, int id, {bool favorite = false}) async {
+      final p = pdf(id, name);
+      documents.persisted[p.uri] = p;
+      final doc = await library.recordOpen(
+        identity: 'id:${p.path}',
+        displayName: name,
+        uri: p.uri,
+      );
+      await library.saveState(doc.id, (
+        page: 11 + id,
+        x: 0,
+        y: 0,
+        zoom: 1,
+        rightToLeft: false,
+      ), pageCount: 20);
+      if (favorite) await library.setFavorite(doc.id, true);
+    }
+
+    testWidgets('Continue reading reopens the last document where it was', (
+      tester,
+    ) async {
+      await seed('Physics.pdf', 1);
+      await seed('Calculus.pdf', 2, favorite: true);
+      await launch(tester);
+      expect(find.text('CONTINUE READING'), findsOneWidget);
+      // The last one opened is the one to continue; the other is a recent.
+      expect(find.text('Continue on p. 14'), findsOneWidget);
+      await tester.tap(find.text('Continue on p. 14'));
+      await tester.pumpAndSettle();
+      final reader = tester.widget<ReaderPage>(find.byType(ReaderPage));
+      expect(reader.title, 'Calculus.pdf');
+      expect(reader.initialPosition?.page, 13);
+    });
+
+    testWidgets('See all opens a section and back returns to it', (
+      tester,
+    ) async {
+      await seed('Physics.pdf', 1, favorite: true);
+      await seed('Calculus.pdf', 2);
+      await launch(tester);
+      await seeAll(tester, 'favorites');
+      expect(find.widgetWithText(AppBar, 'Favorites'), findsOneWidget);
+      expect(find.text('Physics.pdf'), findsOneWidget);
+      expect(find.text('Calculus.pdf'), findsNothing);
+      await backHome(tester);
+      expect(find.text('CONTINUE READING'), findsOneWidget);
+    });
+
+    for (final (name, size) in [
+      ('phone', const Size(360, 780)),
+      ('tablet', const Size(1280, 800)),
+    ]) {
+      testWidgets('fits a $name at the largest text size (UX §6)', (
+        tester,
+      ) async {
+        tester.view
+          ..physicalSize = size
+          ..devicePixelRatio = 1;
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(tester.view.reset);
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await seed(
+          'A long name of a textbook on calculus.pdf',
+          1,
+          favorite: true,
+        );
+        await seed('Physics.pdf', 2, favorite: true);
+        await seed('Anatomy.pdf', 3);
+        folders.picked = PlatformFolder(treeUri: tree, displayName: 'Books');
+        await launch(tester);
+        Future<void> scrollTo(Finder target) async {
+          for (var i = 0; i < 20 && target.evaluate().isEmpty; i++) {
+            await tester.drag(find.byType(ListView), const Offset(0, -300));
+            await tester.pumpAndSettle();
+          }
+          await tester.ensureVisible(target);
+          await tester.pumpAndSettle();
+        }
+
+        await scrollTo(find.text('Add folder'));
+        await tester.tap(find.text('Add folder'));
+        await tester.pumpAndSettle();
+        await scrollTo(find.text('Books'));
+        expect(find.text('Books'), findsOneWidget);
+        // A layout overflow anywhere on the way fails the test.
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 
   group('reopening (FR-VIEW-006)', () {
@@ -309,8 +420,6 @@ void main() {
   group('library folders (FR-FILE-006)', () {
     Future<void> addBooksFolder(WidgetTester tester) async {
       folders.picked = PlatformFolder(treeUri: tree, displayName: 'Books');
-      await tester.tap(find.text('Folders'));
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Add folder'));
       await tester.pumpAndSettle();
     }
@@ -383,6 +492,7 @@ void main() {
     testWidgets('removing a folder releases its grant', (tester) async {
       await launch(tester);
       await addBooksFolder(tester);
+      await seeAll(tester, 'folders');
       await tester.tap(find.byTooltip('Show menu'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Remove from library'));
@@ -394,6 +504,10 @@ void main() {
 
   group('rename, move and delete (FR-FILE-011)', () {
     Future<void> menu(WidgetTester tester, String item) async {
+      // Document menus are in the full lists, not on the dashboard.
+      if (find.byTooltip('Show menu').evaluate().isEmpty) {
+        await seeAll(tester, 'recents');
+      }
       await tester.tap(find.byTooltip('Show menu').first);
       await tester.pumpAndSettle();
       await tester.tap(find.text(item));
@@ -480,6 +594,7 @@ void main() {
       await launch(tester);
       await openPicked(tester, pdf(1, 'Calculus.pdf'));
       await closeReader(tester);
+      await seeAll(tester, 'recents');
       await tester.tap(find.byTooltip('Show menu'));
       await tester.pumpAndSettle();
       expect(find.text('Rename'), findsOneWidget);
@@ -507,8 +622,6 @@ void main() {
 
       await launch(tester);
       folders.picked = PlatformFolder(treeUri: tree, displayName: 'Books');
-      await tester.tap(find.text('Folders'));
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Add folder'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Books'));
@@ -551,6 +664,7 @@ void main() {
       await closeReader(tester);
       await openPicked(tester, pdf(2, 'Physics.pdf'));
       await closeReader(tester);
+      await seeAll(tester, 'recents');
     }
 
     testWidgets(
@@ -603,7 +717,7 @@ void main() {
       expect(find.text('Physics.pdf'), findsOneWidget);
     });
 
-    testWidgets('back and a tab change leave selection mode, not the screen', (
+    testWidgets('back leaves selection mode first, then the full list', (
       tester,
     ) async {
       await openTwo(tester);
@@ -616,9 +730,10 @@ void main() {
 
       await tester.longPress(find.text('Calculus.pdf'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Favorites'));
-      await tester.pumpAndSettle();
+      await backHome(tester);
+      await backHome(tester);
       expect(find.textContaining('selected'), findsNothing);
+      expect(find.text('Continue reading'.toUpperCase()), findsOneWidget);
     });
 
     testWidgets('removing a selection from recents keeps the files', (
@@ -648,8 +763,6 @@ void main() {
       ];
       await launch(tester);
       folders.picked = PlatformFolder(treeUri: tree, displayName: 'Books');
-      await tester.tap(find.text('Folders'));
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Add folder'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Books'));

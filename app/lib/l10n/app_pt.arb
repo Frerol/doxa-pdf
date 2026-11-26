@@ -156,5 +156,11 @@
   "dictionaryAlreadyInstalled": "“{name}” já está instalado.",
   "dictionaryMissingFile": "Está faltando “{file}”.",
   "dictionaryInvalid": "“{file}” não é um dicionário StarDict válido.",
-  "dictionaryNoneFound": "Nenhum dicionário encontrado. Um dicionário StarDict tem um arquivo .ifo."
+  "dictionaryNoneFound": "Nenhum dicionário encontrado. Um dicionário StarDict tem um arquivo .ifo.",
+  "continueReading": "Continuar lendo",
+  "continueOnPage": "Continuar na p. {page}",
+  "seeAll": "Ver todos",
+  "seeAllRecents": "Ver todos os recentes",
+  "percentRead": "{percent}% lido",
+  "homePage": "p. {page} de {count}"
 }

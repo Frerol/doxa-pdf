@@ -17,6 +17,7 @@ import '../settings/settings_page.dart';
 import 'document_actions.dart';
 import 'document_identity.dart';
 import 'folder_page.dart';
+import 'home_dashboard.dart';
 import 'library_repository.dart';
 import 'library_thumbnails.dart';
 import 'selection.dart';
@@ -65,8 +66,7 @@ class LibraryHome extends StatefulWidget {
   State<LibraryHome> createState() => _LibraryHomeState();
 }
 
-class _LibraryHomeState extends State<LibraryHome>
-    with SingleTickerProviderStateMixin {
+class _LibraryHomeState extends State<LibraryHome> {
   StreamSubscription<void>? _incoming;
   bool _draining = false;
   bool _incomingPending = false;
@@ -100,17 +100,24 @@ class _LibraryHomeState extends State<LibraryHome>
   bool get _hasFolders =>
       widget.library != null && widget.libraryFolders != null;
 
-  late final _tabs = TabController(length: _hasFolders ? 3 : 2, vsync: this)
-    ..addListener(_selection.clear);
+  /// The full list shown in place of the dashboard after "See all", or
+  /// null for the dashboard (UX §5).
+  HomeSection? _section;
 
-  /// Documents selected in Recents or Favorites (FR-FILE-011); a tab
-  /// change clears it.
+  // Created once each: a new stream on every build would restart the
+  // query and flash the dashboard.
+  late final _dashboardRecents = widget.library?.watchRecents();
+  late final _dashboardFavorites = widget.library?.watchFavorites();
+  late final _dashboardFolders = _hasFolders
+      ? widget.library!.watchFolders()
+      : null;
+
+  /// Documents selected in Recents or Favorites (FR-FILE-011); leaving
+  /// the list clears it.
   final _selection = Selection<int, LibraryDocument>();
 
-  /// The documents each list shows now, for "Select all".
-  final _shown = <int, List<LibraryDocument>>{};
-
-  static const _recentsTab = 0;
+  /// The documents the open list shows now, for "Select all".
+  var _shown = const <LibraryDocument>[];
 
   @override
   void initState() {
@@ -129,7 +136,6 @@ class _LibraryHomeState extends State<LibraryHome>
     unawaited(_incoming?.cancel());
     _query.dispose();
     _thumbnailsChanged.dispose();
-    _tabs.dispose();
     _readerTabs
       ..removeListener(_saveTabs)
       ..dispose();
@@ -525,9 +531,18 @@ class _LibraryHomeState extends State<LibraryHome>
   }
 
   void _selectAll() => _selection.addAll([
-    for (final document in _shown[_tabs.index] ?? const <LibraryDocument>[])
-      MapEntry(document.id, document),
+    for (final document in _shown) MapEntry(document.id, document),
   ]);
+
+  /// Shows [section]'s full list, or the dashboard when null.
+  void _showSection(HomeSection? section, {bool search = false}) {
+    _selection.clear();
+    setState(() {
+      _section = section;
+      _searching = search;
+      _query.clear();
+    });
+  }
 
   /// Runs a batch action on the selection, then leaves selection mode.
   Future<void> _onSelected(
@@ -546,7 +561,7 @@ class _LibraryHomeState extends State<LibraryHome>
       for (final uri in uris) Uri.tryParse(uri ?? '')?.authority,
     };
     return [
-      if (_tabs.index == _recentsTab && library != null)
+      if (_section == HomeSection.recents && library != null)
         IconButton(
           icon: const Icon(Icons.playlist_remove),
           tooltip: l10n.removeFromRecents,
@@ -580,146 +595,227 @@ class _LibraryHomeState extends State<LibraryHome>
     ];
   }
 
+  List<Widget> _menuActions(AppLocalizations l10n) => [
+    IconButton(
+      icon: const Icon(Icons.settings_outlined),
+      tooltip: l10n.settingsTitle,
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => SettingsPage(settings: widget.settings),
+        ),
+      ),
+    ),
+    if (widget.devDocumentsDir case final dir?)
+      IconButton(
+        icon: const Icon(Icons.developer_mode_outlined),
+        tooltip: l10n.devDocumentsTitle,
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => Scaffold(
+              appBar: AppBar(title: Text(l10n.devDocumentsTitle)),
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: DevDocuments(directory: dir, onOpen: _openFile),
+              ),
+            ),
+          ),
+        ),
+      ),
+  ];
+
+  Widget? _openFileButton(AppLocalizations l10n) => widget.pdfDocuments == null
+      ? null
+      : FloatingActionButton.extended(
+          onPressed: _picking ? null : _pick,
+          icon: const Icon(Icons.folder_open),
+          label: Text(l10n.openFile),
+        );
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final library = widget.library;
-    final folders = _hasFolders ? widget.libraryFolders : null;
-    final tabBar = TabBar(
-      controller: _tabs,
-      tabs: [
-        Tab(text: l10n.libraryRecents),
-        Tab(text: l10n.libraryFavorites),
-        if (folders != null) Tab(text: l10n.libraryFolders),
-      ],
-    );
+    final section = _section;
     return PopScope(
-      // Back leaves selection mode first.
-      canPop: !_selection.isActive,
+      // Back leaves selection mode first, then the full list.
+      canPop: !_selection.isActive && section == null,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _selection.clear();
+        if (didPop) return;
+        if (_selection.isActive) {
+          _selection.clear();
+        } else {
+          _showSection(null);
+        }
       },
-      child: Scaffold(
-        appBar: _selection.isActive
-            ? selectionAppBar(
-                context,
-                count: _selection.length,
-                onClear: _selection.clear,
-                onSelectAll: _selectAll,
-                actions: _selectionActions(l10n),
-                bottom: tabBar,
-              )
-            : AppBar(
-                title: _searching
-                    ? TextField(
-                        controller: _query,
-                        autofocus: true,
-                        decoration: InputDecoration(
-                          hintText: l10n.librarySearch,
-                          border: InputBorder.none,
-                        ),
-                        onChanged: (_) => setState(() {}),
-                      )
-                    : Text(l10n.appTitle),
-                actions: [
-                  if (_searching)
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      tooltip: l10n.libraryCloseSearch,
-                      onPressed: () => _setSearching(false),
-                    )
-                  else
-                    IconButton(
-                      icon: const Icon(Icons.search),
-                      tooltip: l10n.librarySearch,
-                      onPressed: () => _setSearching(true),
-                    ),
-                  IconButton(
-                    icon: const Icon(Icons.settings_outlined),
-                    tooltip: l10n.settingsTitle,
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => SettingsPage(settings: widget.settings),
-                      ),
-                    ),
-                  ),
-                  if (widget.devDocumentsDir case final dir?)
-                    IconButton(
-                      icon: const Icon(Icons.developer_mode_outlined),
-                      tooltip: l10n.devDocumentsTitle,
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => Scaffold(
-                            appBar: AppBar(title: Text(l10n.devDocumentsTitle)),
-                            body: SingleChildScrollView(
-                              padding: const EdgeInsets.all(16),
-                              child: DevDocuments(
-                                directory: dir,
-                                onOpen: _openFile,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-                bottom: tabBar,
-              ),
-        floatingActionButton: widget.pdfDocuments == null
-            ? null
-            : FloatingActionButton.extended(
-                onPressed: _picking ? null : _pick,
-                icon: const Icon(Icons.folder_open),
-                label: Text(l10n.openFile),
-              ),
-        body: TabBarView(
-          controller: _tabs,
+      child: section == null
+          ? _dashboard(l10n)
+          : _sectionScaffold(l10n, section),
+    );
+  }
+
+  /// The dashboard (UX §5): Continue reading, Favorites, Folders, Recents.
+  Widget _dashboard(AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        titleSpacing: MediaQuery.sizeOf(context).width >= 600 ? 40 : 16,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            _DocumentList(
-              documents: library?.watchRecents(),
-              emptyMessage: l10n.libraryRecentsEmpty,
-              query: _query.text,
-              library: library,
-              thumbnails: widget.thumbnails,
-              thumbnailsChanged: _thumbnailsChanged,
-              clock: widget.clock,
-              onOpen: _reopen,
-              actions: _actions,
-              showRemoveFromRecents: true,
-              selection: _selection,
-              onShown: (shown) => _shown[0] = shown,
-            ),
-            _DocumentList(
-              documents: library?.watchFavorites(),
-              emptyMessage: l10n.libraryFavoritesEmpty,
-              query: _query.text,
-              library: library,
-              thumbnails: widget.thumbnails,
-              thumbnailsChanged: _thumbnailsChanged,
-              clock: widget.clock,
-              onOpen: _reopen,
-              actions: _actions,
-              showRemoveFromRecents: false,
-              selection: _selection,
-              onShown: (shown) => _shown[1] = shown,
-            ),
-            if (folders != null)
-              _FolderList(
-                folders: library!.watchFolders(),
-                query: _query.text,
-                onAdd: _addFolder,
-                onBrowse: _browse,
-                onRemove: _removeFolder,
+            const _BrandMark(),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                l10n.appTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.headlineSmall,
               ),
+            ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: l10n.librarySearch,
+            onPressed: () => _showSection(HomeSection.recents, search: true),
+          ),
+          ..._menuActions(l10n),
+          const SizedBox(width: 8),
+        ],
       ),
+      floatingActionButton: _openFileButton(l10n),
+      body: HomeDashboard(
+        recents: _dashboardRecents,
+        favorites: _dashboardFavorites,
+        folders: _dashboardFolders,
+        thumbnails: widget.thumbnails,
+        now: widget.clock(),
+        onOpen: _reopen,
+        onSeeAll: _showSection,
+        onAddFolder: _hasFolders ? _addFolder : null,
+        onBrowse: _hasFolders ? _browse : null,
+      ),
+    );
+  }
+
+  /// One section's full list, with search, sort, menus and selection.
+  Widget _sectionScaffold(AppLocalizations l10n, HomeSection section) {
+    final library = widget.library;
+    final title = switch (section) {
+      HomeSection.recents => l10n.libraryRecents,
+      HomeSection.favorites => l10n.libraryFavorites,
+      HomeSection.folders => l10n.libraryFolders,
+    };
+    return Scaffold(
+      appBar: _selection.isActive
+          ? selectionAppBar(
+              context,
+              count: _selection.length,
+              onClear: _selection.clear,
+              onSelectAll: _selectAll,
+              actions: _selectionActions(l10n),
+            )
+          : AppBar(
+              leading: BackButton(onPressed: () => _showSection(null)),
+              title: _searching
+                  ? TextField(
+                      controller: _query,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: l10n.librarySearch,
+                        border: InputBorder.none,
+                        filled: false,
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    )
+                  : Text(title),
+              actions: [
+                if (_searching)
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    tooltip: l10n.libraryCloseSearch,
+                    onPressed: () => _setSearching(false),
+                  )
+                else
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    tooltip: l10n.librarySearch,
+                    onPressed: () => _setSearching(true),
+                  ),
+                ..._menuActions(l10n),
+              ],
+            ),
+      floatingActionButton: _openFileButton(l10n),
+      body: switch (section) {
+        HomeSection.recents => _DocumentList(
+          key: const ValueKey(HomeSection.recents),
+          documents: library?.watchRecents(),
+          emptyMessage: l10n.libraryRecentsEmpty,
+          query: _query.text,
+          library: library,
+          thumbnails: widget.thumbnails,
+          thumbnailsChanged: _thumbnailsChanged,
+          clock: widget.clock,
+          onOpen: _reopen,
+          actions: _actions,
+          showRemoveFromRecents: true,
+          selection: _selection,
+          onShown: (shown) => _shown = shown,
+        ),
+        HomeSection.favorites => _DocumentList(
+          key: const ValueKey(HomeSection.favorites),
+          documents: library?.watchFavorites(),
+          emptyMessage: l10n.libraryFavoritesEmpty,
+          query: _query.text,
+          library: library,
+          thumbnails: widget.thumbnails,
+          thumbnailsChanged: _thumbnailsChanged,
+          clock: widget.clock,
+          onOpen: _reopen,
+          actions: _actions,
+          showRemoveFromRecents: false,
+          selection: _selection,
+          onShown: (shown) => _shown = shown,
+        ),
+        HomeSection.folders => _FolderList(
+          key: const ValueKey(HomeSection.folders),
+          folders: library!.watchFolders(),
+          query: _query.text,
+          onAdd: _addFolder,
+          onBrowse: _browse,
+          onRemove: _removeFolder,
+        ),
+      },
     );
   }
 }
 
+/// The four brand strokes beside the app's name.
+class _BrandMark extends StatelessWidget {
+  const _BrandMark();
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      for (final (i, color) in brandColors.indexed) ...[
+        if (i > 0) const SizedBox(width: 3),
+        Container(
+          width: 6,
+          height: 22,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+      ],
+    ],
+  );
+}
+
 class _DocumentList extends StatefulWidget {
   const _DocumentList({
+    super.key,
     required this.documents,
     required this.emptyMessage,
     required this.query,
@@ -1033,6 +1129,7 @@ String lastReadLabel(AppLocalizations l10n, DateTime when, DateTime now) {
 
 class _FolderList extends StatefulWidget {
   const _FolderList({
+    super.key,
     required this.folders,
     required this.query,
     required this.onAdd,
