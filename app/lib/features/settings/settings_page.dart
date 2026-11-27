@@ -35,7 +35,7 @@ const customTexts = [
 
 /// The categories of Settings (UX §7). A category appears only when it
 /// has settings: Tabs, Annotating and Stylus join when they have some.
-enum SettingsCategory { general, viewing }
+enum SettingsCategory { general, viewing, about }
 
 /// One setting: where it lives, the words search matches, and its row.
 typedef _Setting = ({
@@ -43,7 +43,12 @@ typedef _Setting = ({
   String Function(AppLocalizations l10n) section,
   String Function(AppLocalizations l10n) title,
   String Function(AppLocalizations l10n) description,
-  Widget Function(BuildContext context, SettingsController settings) build,
+  Widget Function(
+    BuildContext context,
+    SettingsController settings,
+    Future<bool> Function(String uri)? openUri,
+  )
+  build,
 });
 
 final List<_Setting> _settings = [
@@ -52,7 +57,7 @@ final List<_Setting> _settings = [
     section: (l10n) => l10n.settingsAppearance,
     title: (l10n) => l10n.settingsTheme,
     description: (l10n) => l10n.settingsThemeHint,
-    build: (context, settings) {
+    build: (context, settings, _) {
       final l10n = AppLocalizations.of(context);
       return _ChoiceTile<ThemeMode>(
         title: l10n.settingsTheme,
@@ -73,7 +78,7 @@ final List<_Setting> _settings = [
     section: (l10n) => l10n.settingsAppearance,
     title: (l10n) => l10n.settingsDynamicColor,
     description: (l10n) => l10n.settingsDynamicColorHint,
-    build: (context, settings) {
+    build: (context, settings, _) {
       final l10n = AppLocalizations.of(context);
       return SwitchListTile(
         title: Text(l10n.settingsDynamicColor),
@@ -89,7 +94,7 @@ final List<_Setting> _settings = [
     section: (l10n) => l10n.settingsLanguage,
     title: (l10n) => l10n.settingsLanguage,
     description: (l10n) => l10n.settingsLanguageHint,
-    build: (context, settings) {
+    build: (context, settings, _) {
       final l10n = AppLocalizations.of(context);
       return _ChoiceTile<String>(
         title: l10n.settingsLanguage,
@@ -114,7 +119,7 @@ final List<_Setting> _settings = [
     section: (l10n) => l10n.settingsScreen,
     title: (l10n) => l10n.settingsKeepScreenOn,
     description: (l10n) => l10n.settingsKeepScreenOnHint,
-    build: (context, settings) {
+    build: (context, settings, _) {
       final l10n = AppLocalizations.of(context);
       return SwitchListTile(
         title: Text(l10n.settingsKeepScreenOn),
@@ -130,7 +135,7 @@ final List<_Setting> _settings = [
     section: (l10n) => l10n.settingsReading,
     title: (l10n) => l10n.settingsFitMode,
     description: (l10n) => l10n.settingsFitModeHint,
-    build: (context, settings) {
+    build: (context, settings, _) {
       final l10n = AppLocalizations.of(context);
       return _ChoiceTile<FitMode>(
         title: l10n.settingsFitMode,
@@ -150,7 +155,7 @@ final List<_Setting> _settings = [
     section: (l10n) => l10n.settingsReading,
     title: (l10n) => l10n.settingsZoomOutPastFit,
     description: (l10n) => l10n.settingsZoomOutPastFitHint,
-    build: (context, settings) {
+    build: (context, settings, _) {
       final l10n = AppLocalizations.of(context);
       return SwitchListTile(
         title: Text(l10n.settingsZoomOutPastFit),
@@ -166,7 +171,7 @@ final List<_Setting> _settings = [
     section: (l10n) => l10n.settingsReading,
     title: (l10n) => l10n.settingsPageColors,
     description: (l10n) => l10n.settingsPageColorsHint,
-    build: (context, settings) {
+    build: (context, settings, _) {
       final l10n = AppLocalizations.of(context);
       final value = settings.value;
       return Column(
@@ -197,7 +202,7 @@ final List<_Setting> _settings = [
     section: (l10n) => l10n.settingsPageTurning,
     title: (l10n) => l10n.optionTapZones,
     description: (l10n) => l10n.optionTapZonesHint,
-    build: (context, settings) {
+    build: (context, settings, _) {
       final l10n = AppLocalizations.of(context);
       return SwitchListTile(
         title: Text(l10n.optionTapZones),
@@ -213,7 +218,7 @@ final List<_Setting> _settings = [
     section: (l10n) => l10n.settingsPageTurning,
     title: (l10n) => l10n.optionKeepZoom,
     description: (l10n) => l10n.optionKeepZoomHint,
-    build: (context, settings) {
+    build: (context, settings, _) {
       final l10n = AppLocalizations.of(context);
       return SwitchListTile(
         title: Text(l10n.optionKeepZoom),
@@ -224,12 +229,44 @@ final List<_Setting> _settings = [
       );
     },
   ),
+  (
+    category: SettingsCategory.about,
+    section: (l10n) => l10n.settingsSupport,
+    title: (l10n) => l10n.settingsSupport,
+    description: (l10n) => l10n.settingsSupportHint,
+    build: (context, _, openUri) {
+      final l10n = AppLocalizations.of(context);
+      return ListTile(
+        leading: const Icon(Icons.coffee_outlined),
+        title: Text(l10n.settingsSupport),
+        subtitle: Text(l10n.settingsSupportHint),
+        onTap: openUri == null
+            ? null
+            : () async {
+                final messenger = ScaffoldMessenger.of(context);
+                bool opened;
+                try {
+                  opened = await openUri('https://ko-fi.com/P2S82BD7LL');
+                } on Object catch (error) {
+                  debugPrint('Doxa: cannot open the support link: $error');
+                  opened = false;
+                }
+                if (!opened && messenger.mounted) {
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(l10n.linkOpenFailed)),
+                  );
+                }
+              },
+      );
+    },
+  ),
 ];
 
 String _categoryName(AppLocalizations l10n, SettingsCategory category) =>
     switch (category) {
       SettingsCategory.general => l10n.settingsGeneral,
       SettingsCategory.viewing => l10n.settingsViewing,
+      SettingsCategory.about => l10n.settingsAbout,
     };
 
 /// Case- and accent-insensitive words, so "cor" finds "Cores" and "tela"
@@ -239,7 +276,9 @@ String _searchKey(String text) => foldDiacritics(text.trim());
 /// App settings (docs/plan/05-ux-design.md §7 "Settings"): a search field,
 /// then the categories, each opening its own page.
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key, required this.settings});
+  const SettingsPage({super.key, required this.settings, this.openUri});
+
+  final Future<bool> Function(String uri)? openUri;
   final SettingsController settings;
 
   @override
@@ -258,8 +297,11 @@ class _SettingsPageState extends State<SettingsPage> {
   void _open(BuildContext context, SettingsCategory category) =>
       Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) =>
-              _CategoryPage(category: category, settings: widget.settings),
+          builder: (_) => _CategoryPage(
+            category: category,
+            settings: widget.settings,
+            openUri: widget.openUri,
+          ),
         ),
       );
 
@@ -313,6 +355,12 @@ class _SettingsPageState extends State<SettingsPage> {
                     summary: l10n.settingsDictionariesSummary,
                     onTap: () => _openDictionaries(context, dictionaries),
                   ),
+                _CategoryTile(
+                  icon: Icons.info_outline,
+                  title: l10n.settingsAbout,
+                  summary: l10n.settingsSupport,
+                  onTap: () => _open(context, SettingsCategory.about),
+                ),
               ],
             );
           }
@@ -335,7 +383,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     case final inCategory when inCategory.isNotEmpty) ...[
                   _Header(_categoryName(l10n, category)),
                   for (final setting in inCategory)
-                    setting.build(context, widget.settings),
+                    setting.build(context, widget.settings, widget.openUri),
                 ],
               if (dictionariesFound)
                 _CategoryTile(
@@ -396,7 +444,13 @@ class _CategoryTile extends StatelessWidget {
 
 /// One category: its settings under their section headers.
 class _CategoryPage extends StatelessWidget {
-  const _CategoryPage({required this.category, required this.settings});
+  const _CategoryPage({
+    required this.category,
+    required this.settings,
+    required this.openUri,
+  });
+
+  final Future<bool> Function(String uri)? openUri;
 
   final SettingsCategory category;
   final SettingsController settings;
@@ -417,7 +471,7 @@ class _CategoryPage extends StatelessWidget {
             for (final (i, setting) in inCategory.indexed) ...[
               if (_startsSection(inCategory, i, l10n))
                 _Header(setting.section(l10n)),
-              setting.build(context, settings),
+              setting.build(context, settings, openUri),
             ],
           ],
         ),

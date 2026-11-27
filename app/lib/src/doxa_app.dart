@@ -162,6 +162,7 @@ class _DoxaAppState extends State<DoxaApp> with WidgetsBindingObserver {
         ? (_accent ?? doxaSeedColor)
         : doxaSeedColor;
     final code = value.languageCode;
+    final openUri = widget.openUri ?? DoxaPlatform().openUri;
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       themeMode: value.themeMode,
@@ -186,7 +187,7 @@ class _DoxaAppState extends State<DoxaApp> with WidgetsBindingObserver {
         return DictionaryScope(
           library: dictionaries,
           lookup: lookup,
-          openUri: widget.openUri ?? DoxaPlatform().openUri,
+          openUri: openUri,
           importer: importer,
           child: importer == null
               ? child
@@ -194,6 +195,7 @@ class _DoxaAppState extends State<DoxaApp> with WidgetsBindingObserver {
         );
       },
       home: LibraryHome(
+        openUri: openUri,
         engine: widget.engine,
         pdfDocuments:
             widget.pdfDocuments ??
