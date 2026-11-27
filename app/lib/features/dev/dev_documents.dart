@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -75,7 +76,7 @@ class _DevDocumentsState extends State<DevDocuments> {
                 ),
                 IconButton(
                   onPressed: _scan,
-                  icon: const Icon(Icons.refresh),
+                  icon: const Icon(LucideIcons.refreshCw),
                   tooltip: l10n.devDocumentsRefresh,
                 ),
               ],
@@ -85,7 +86,7 @@ class _DevDocumentsState extends State<DevDocuments> {
             else
               for (final file in _files)
                 ListTile(
-                  leading: const Icon(Icons.picture_as_pdf_outlined),
+                  leading: const Icon(LucideIcons.fileText),
                   title: Text(file.uri.pathSegments.last),
                   onTap: () => widget.onOpen(file),
                 ),

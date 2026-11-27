@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -46,14 +47,14 @@ AppBar selectionAppBar(
   final l10n = AppLocalizations.of(context);
   return AppBar(
     leading: IconButton(
-      icon: const Icon(Icons.close),
+      icon: const Icon(LucideIcons.x),
       tooltip: l10n.clearSelection,
       onPressed: onClear,
     ),
     title: Text(l10n.selectedCount(count)),
     actions: [
       IconButton(
-        icon: const Icon(Icons.select_all),
+        icon: const Icon(LucideIcons.listChecks),
         tooltip: l10n.selectAll,
         onPressed: onSelectAll,
       ),
@@ -84,7 +85,7 @@ class SelectedMark extends StatelessWidget {
               color: scheme.primary.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Icon(Icons.check, color: scheme.onPrimary),
+            child: Icon(LucideIcons.check, color: scheme.onPrimary),
           ),
         ),
       ],

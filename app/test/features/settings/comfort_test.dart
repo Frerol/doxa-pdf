@@ -18,6 +18,7 @@ import 'package:doxa_pdf/src/pdfium_licenses.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../reader/test_images.dart';
@@ -275,7 +276,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Open-source licenses'), findsOneWidget);
       }
-      await tester.tap(find.byIcon(Icons.clear));
+      await tester.tap(find.byIcon(LucideIcons.x));
       await tester.pumpAndSettle();
       await tester.tap(find.text('About'));
       await tester.pumpAndSettle();
@@ -351,7 +352,7 @@ void main() {
       expect(find.byType(SwitchListTile), findsNothing);
 
       // Clearing the search brings the categories back.
-      await tester.tap(find.byIcon(Icons.clear));
+      await tester.tap(find.byIcon(LucideIcons.x));
       await tester.pumpAndSettle();
       expect(find.text('Geral'), findsOneWidget);
     });

@@ -13,6 +13,7 @@ import 'package:doxa_pdf/l10n/gen/app_localizations.dart';
 import 'package:doxa_pdf/src/doxa_app.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'test_images.dart';
@@ -184,7 +185,7 @@ void main() {
       final page = reader.layout!.pageRect(0);
       expect(reader.visibleRect.width, closeTo(page.width, 1e-6));
       expect(find.byTooltip('Zoom'), findsNothing);
-      expect(find.byIcon(Icons.zoom_in), findsNothing);
+      expect(find.byIcon(LucideIcons.zoomIn), findsNothing);
     });
 
     testWidgets(

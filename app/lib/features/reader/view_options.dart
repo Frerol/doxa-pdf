@@ -3,6 +3,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -608,9 +609,13 @@ class _LayoutGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tiles = [
-      (ViewLayout.singlePage, Icons.crop_portrait, l10n.layoutSinglePage),
-      (ViewLayout.twoPages, Icons.menu_book_outlined, l10n.layoutTwoPages),
-      (ViewLayout.coverTwoPages, Icons.auto_stories_outlined, l10n.layoutCover),
+      (
+        ViewLayout.singlePage,
+        LucideIcons.rectangleVertical,
+        l10n.layoutSinglePage,
+      ),
+      (ViewLayout.twoPages, LucideIcons.columns2, l10n.layoutTwoPages),
+      (ViewLayout.coverTwoPages, LucideIcons.bookOpen, l10n.layoutCover),
     ];
     return _UniformTiles(
       children: [
@@ -672,7 +677,7 @@ class _PageColours extends StatelessWidget {
             label: l10n.colorMore,
             selected: mode == PageColorMode.custom,
             onTap: onMore,
-            child: const Icon(Icons.palette_outlined, size: 32),
+            child: const Icon(LucideIcons.palette, size: 32),
           ),
       ],
     );

@@ -2,6 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The one font family of the interface (docs/plan/05-ux-design.md §5):
@@ -102,6 +103,12 @@ ThemeData doxaTheme({required Color seed, required Brightness brightness}) {
     borderRadius: BorderRadius.all(Radius.circular(14)),
   );
   return base.copyWith(
+    actionIconTheme: ActionIconThemeData(
+      backButtonIconBuilder: (_) => const Icon(LucideIcons.arrowLeft),
+      closeButtonIconBuilder: (_) => const Icon(LucideIcons.x),
+      drawerButtonIconBuilder: (_) => const Icon(LucideIcons.menu),
+      endDrawerButtonIconBuilder: (_) => const Icon(LucideIcons.menu),
+    ),
     // Headings are heavy and slightly tight, as in the chosen design.
     textTheme: text.copyWith(
       headlineMedium: text.headlineMedium?.copyWith(
@@ -137,6 +144,9 @@ ThemeData doxaTheme({required Color seed, required Brightness brightness}) {
         borderRadius: BorderRadius.all(Radius.circular(18)),
       ),
     ),
+    segmentedButtonTheme: const SegmentedButtonThemeData(
+      selectedIcon: Icon(LucideIcons.check),
+    ),
     listTileTheme: const ListTileThemeData(shape: medium),
     filledButtonTheme: const FilledButtonThemeData(
       style: ButtonStyle(shape: WidgetStatePropertyAll(medium)),
@@ -170,10 +180,26 @@ ThemeData doxaTheme({required Color seed, required Brightness brightness}) {
   );
 }
 
-/// Shows Manrope's licence on the licences page (#55).
+/// Adds a tonal container only when an enabled icon toggle is selected.
+ButtonStyle iconToggleStyle(BuildContext context) {
+  final scheme = Theme.of(context).colorScheme;
+  final selected = WidgetState.selected & ~WidgetState.disabled;
+  return ButtonStyle(
+    backgroundColor: WidgetStateProperty<Color?>.fromMap({
+      selected: scheme.secondaryContainer,
+    }),
+    foregroundColor: WidgetStateProperty<Color?>.fromMap({
+      selected: scheme.onSecondaryContainer,
+    }),
+  );
+}
+
+/// Shows the bundled Manrope and Lucide font notices on the licences page.
 void registerFontLicenses() {
   LicenseRegistry.addLicense(() async* {
     final text = await rootBundle.loadString('assets/fonts/Manrope-OFL.txt');
     yield LicenseEntryWithLineBreaks(const ['Manrope'], text);
+    final lucide = await rootBundle.loadString('assets/licenses/lucide.txt');
+    yield LicenseEntryWithLineBreaks(const ['Lucide'], lucide);
   });
 }

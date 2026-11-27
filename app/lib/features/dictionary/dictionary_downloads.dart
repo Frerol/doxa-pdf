@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:doxa_platform/doxa_platform.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -379,7 +380,7 @@ class _PackTile extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 3),
             )
           : IconButton(
-              icon: const Icon(Icons.close),
+              icon: const Icon(LucideIcons.x),
               tooltip: l10n.dictionaryCancelDownload(pack.name),
               onPressed: downloads.cancel,
             );
@@ -388,7 +389,7 @@ class _PackTile extends StatelessWidget {
         PackStatus.installed => Tooltip(
           message: l10n.dictionaryInstalled,
           child: Icon(
-            Icons.check_circle,
+            LucideIcons.circleCheck,
             semanticLabel: l10n.dictionaryInstalled,
             color: Theme.of(context).colorScheme.primary,
           ),
@@ -398,7 +399,7 @@ class _PackTile extends StatelessWidget {
           child: Text(l10n.dictionaryUpdate),
         ),
         PackStatus.available => IconButton(
-          icon: const Icon(Icons.download_outlined),
+          icon: const Icon(LucideIcons.download),
           tooltip: l10n.dictionaryDownloadTooltip(pack.name),
           onPressed: busy ? null : onGet,
         ),
@@ -457,7 +458,7 @@ class _Unavailable extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              offline ? Icons.cloud_off_outlined : Icons.error_outline,
+              offline ? LucideIcons.cloudOff : LucideIcons.circleAlert,
               size: 40,
               color: theme.colorScheme.primary,
             ),
@@ -468,7 +469,7 @@ class _Unavailable extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(LucideIcons.refreshCw),
               label: Text(l10n.retry),
               onPressed: onRetry,
             ),
@@ -480,12 +481,12 @@ class _Unavailable extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   OutlinedButton.icon(
-                    icon: const Icon(Icons.file_open_outlined),
+                    icon: const Icon(LucideIcons.fileInput),
                     label: Text(l10n.dictionaryImport),
                     onPressed: () => unawaited(importer.pickFiles(context)),
                   ),
                   OutlinedButton.icon(
-                    icon: const Icon(Icons.drive_folder_upload_outlined),
+                    icon: const Icon(LucideIcons.folderInput),
                     label: Text(l10n.dictionaryImportFolder),
                     onPressed: () => unawaited(importer.pickFolder(context)),
                   ),

@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:doxa_dict/doxa_dict.dart';
 import 'package:flutter/services.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -234,14 +235,14 @@ class _DictionaryLookupViewState extends State<DictionaryLookupView> {
             style: Theme.of(context).textTheme.titleLarge,
             decoration: InputDecoration(
               hintText: l10n.dictionaryLookUpHint,
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(LucideIcons.search),
             ),
             onSubmitted: _lookUp,
           ),
         ),
         if (found.isNotEmpty)
           IconButton(
-            icon: const Icon(Icons.copy),
+            icon: const Icon(LucideIcons.copy),
             tooltip: l10n.selectionCopy,
             onPressed: () => _copy(found),
           ),
@@ -260,7 +261,7 @@ class DictionaryButton extends StatelessWidget {
     final scope = DictionaryScope.maybeOf(context);
     if (scope == null) return const SizedBox.shrink();
     return IconButton(
-      icon: const Icon(Icons.menu_book_outlined),
+      icon: const Icon(LucideIcons.bookA),
       tooltip: AppLocalizations.of(context).dictionaryAction,
       onPressed: () => showDictionaryLookup(
         context,
@@ -409,11 +410,7 @@ class DictionaryEmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(
-            Icons.menu_book_outlined,
-            size: 40,
-            color: theme.colorScheme.primary,
-          ),
+          Icon(LucideIcons.bookA, size: 40, color: theme.colorScheme.primary),
           const SizedBox(height: 12),
           Text(
             l10n.dictionaryEmptyTitle,
@@ -430,7 +427,7 @@ class DictionaryEmptyState extends StatelessWidget {
           ] else if (importer case final importer?) ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
-              icon: const Icon(Icons.file_open_outlined),
+              icon: const Icon(LucideIcons.fileInput),
               label: Text(l10n.dictionaryImport),
               onPressed: () => unawaited(importer.pickFiles(context)),
             ),
@@ -460,13 +457,13 @@ class GetDictionariesButton extends StatelessWidget {
     final downloads = scope?.downloads;
     if (downloads == null) {
       return FilledButton.icon(
-        icon: const Icon(Icons.open_in_browser),
+        icon: const Icon(LucideIcons.externalLink),
         label: Text(l10n.dictionaryGet),
         onPressed: () => unawaited(openUri(dictionariesPage)),
       );
     }
     return FilledButton.icon(
-      icon: const Icon(Icons.download_outlined),
+      icon: const Icon(LucideIcons.download),
       label: Text(l10n.dictionaryGet),
       onPressed: () => unawaited(
         Navigator.of(context).push(

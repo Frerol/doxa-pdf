@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:doxa_dict/doxa_dict.dart' show foldDiacritics;
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -241,7 +242,7 @@ final List<_Setting> _settings = [
     build: (context, _, openUri) {
       final l10n = AppLocalizations.of(context);
       return ListTile(
-        leading: const Icon(Icons.coffee_outlined),
+        leading: const Icon(LucideIcons.coffee),
         title: Text(l10n.settingsSupport),
         subtitle: Text(l10n.settingsSupportHint),
         onTap: openUri == null
@@ -271,7 +272,7 @@ final List<_Setting> _settings = [
     description: (_) =>
         '$_applicationName $_displayVersion · open source licence license',
     build: (context, _, _) => ListTile(
-      leading: const Icon(Icons.description_outlined),
+      leading: const Icon(LucideIcons.scrollText),
       title: Text(AppLocalizations.of(context).settingsLicenses),
       subtitle: Text('$_applicationName $_displayVersion'),
       onTap: () => showLicensePage(
@@ -347,11 +348,11 @@ class _SettingsPageState extends State<SettingsPage> {
             child: SearchBar(
               controller: _search,
               hintText: l10n.settingsSearchHint,
-              leading: const Icon(Icons.search),
+              leading: const Icon(LucideIcons.search),
               trailing: [
                 if (_search.text.isNotEmpty)
                   IconButton(
-                    icon: const Icon(Icons.clear),
+                    icon: const Icon(LucideIcons.x),
                     tooltip: MaterialLocalizations.of(context)
                         .deleteButtonTooltip,
                     onPressed: _search.clear,
@@ -364,26 +365,26 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 field,
                 _CategoryTile(
-                  icon: Icons.tune,
+                  icon: LucideIcons.slidersHorizontal,
                   title: l10n.settingsGeneral,
                   summary: l10n.settingsGeneralSummary,
                   onTap: () => _open(context, SettingsCategory.general),
                 ),
                 _CategoryTile(
-                  icon: Icons.chrome_reader_mode_outlined,
+                  icon: LucideIcons.eye,
                   title: l10n.settingsViewing,
                   summary: l10n.settingsViewingSummary,
                   onTap: () => _open(context, SettingsCategory.viewing),
                 ),
                 if (dictionaries != null)
                   _CategoryTile(
-                    icon: Icons.menu_book_outlined,
+                    icon: LucideIcons.bookA,
                     title: l10n.dictionariesTitle,
                     summary: l10n.settingsDictionariesSummary,
                     onTap: () => _openDictionaries(context, dictionaries),
                   ),
                 _CategoryTile(
-                  icon: Icons.info_outline,
+                  icon: LucideIcons.info,
                   title: l10n.settingsAbout,
                   summary: '${l10n.settingsSupport} · ${l10n.settingsLicenses}',
                   onTap: () => _open(context, SettingsCategory.about),
@@ -414,7 +415,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               if (dictionariesFound)
                 _CategoryTile(
-                  icon: Icons.menu_book_outlined,
+                  icon: LucideIcons.bookA,
                   title: l10n.dictionariesTitle,
                   summary: l10n.settingsDictionariesSummary,
                   onTap: () => _openDictionaries(context, dictionaries),
@@ -464,7 +465,7 @@ class _CategoryTile extends StatelessWidget {
     leading: Icon(icon),
     title: Text(title),
     subtitle: Text(summary),
-    trailing: const Icon(Icons.chevron_right),
+    trailing: const Icon(LucideIcons.chevronRight),
     onTap: onTap,
   );
 }
@@ -717,7 +718,11 @@ class _Swatches extends StatelessWidget {
                   color: customFill,
                   isSelected: customSelected,
                   semanticsLabel: '$label: $customLabel',
-                  icon: Icon(Icons.colorize, size: 20, color: customIconColor),
+                  icon: Icon(
+                    LucideIcons.pipette,
+                    size: 20,
+                    color: customIconColor,
+                  ),
                   onTap: () async {
                     final color = await showColourPicker(
                       context,

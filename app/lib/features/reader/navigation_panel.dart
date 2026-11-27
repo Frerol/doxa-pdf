@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:doxa_engine/doxa_engine.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -68,7 +69,7 @@ class _ReaderSidePanelState extends State<ReaderSidePanel> {
                 overflow: TextOverflow.ellipsis,
               ),
               trailing: IconButton(
-                icon: const Icon(Icons.close),
+                icon: const Icon(LucideIcons.x),
                 tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                 onPressed: close,
               ),
@@ -110,7 +111,9 @@ class _ReaderSidePanelState extends State<ReaderSidePanel> {
                       children: [
                         IconButton(
                           icon: Icon(
-                            _searching ? Icons.search_off : Icons.search,
+                            _searching
+                                ? LucideIcons.searchX
+                                : LucideIcons.search,
                           ),
                           tooltip: _searching
                               ? MaterialLocalizations.of(context)
@@ -126,8 +129,8 @@ class _ReaderSidePanelState extends State<ReaderSidePanel> {
                           IconButton(
                             icon: Icon(
                               allExpanded
-                                  ? Icons.unfold_less
-                                  : Icons.unfold_more,
+                                  ? LucideIcons.chevronsDownUp
+                                  : LucideIcons.chevronsUpDown,
                             ),
                             tooltip: allExpanded
                                 ? l10n.outlineCollapseAll
@@ -203,7 +206,9 @@ class _ReaderSidePanelState extends State<ReaderSidePanel> {
           children: [
             if (node.children.isNotEmpty && _query.isEmpty)
               IconButton(
-                icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
+                icon: Icon(
+                  expanded ? LucideIcons.chevronUp : LucideIcons.chevronDown,
+                ),
                 tooltip: expanded
                     ? l10n.outlineCollapseEntry
                     : l10n.outlineExpandEntry,

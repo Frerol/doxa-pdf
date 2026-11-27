@@ -22,6 +22,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: any
+  lucide_icons_flutter: ^4.0.5
   material_ui: ^1.1.0
 
 dev_dependencies:
@@ -37,6 +38,7 @@ flutter:
   assets:
     - assets/brand/doxa-glyph.png
     - assets/fonts/Manrope-OFL.txt
+    - assets/licenses/lucide.txt
     # Links to the license directory populated by tools/fetch_pdfium.sh.
     - assets/pdfium-licenses/
   # The interface font (docs/plan/05-ux-design.md §5); source and licence in

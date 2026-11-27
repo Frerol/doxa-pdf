@@ -7,9 +7,11 @@ import 'package:doxa_engine/doxa_engine.dart';
 import 'package:doxa_platform/doxa_platform.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import '../../src/doxa_theme.dart';
 import '../dictionary/dictionary_library.dart';
 import '../dictionary/dictionary_popup.dart';
 import '../settings/app_settings.dart';
@@ -490,15 +492,15 @@ class _ReaderPageState extends State<ReaderPage> {
                   if (canPop) const BackButton(),
                   if (hasPanel)
                     IconButton(
-                      icon: const Icon(Icons.view_sidebar_outlined),
-                      selectedIcon: const Icon(Icons.view_sidebar),
+                      icon: const Icon(LucideIcons.panelLeft),
+                      style: iconToggleStyle(context),
                       tooltip: l10n.sidePanel,
                       isSelected: dockPanel,
                       onPressed: () => _togglePanel(controller),
                     ),
                   if (hasPanel)
                     IconButton(
-                      icon: const Icon(Icons.grid_view_outlined),
+                      icon: const Icon(LucideIcons.layoutGrid),
                       tooltip: l10n.thumbnails,
                       onPressed: () => _openThumbnails(controller),
                     ),
@@ -511,13 +513,13 @@ class _ReaderPageState extends State<ReaderPage> {
                 ?widget.tabsButton,
                 if (controller != null && controller.info.pageCount > 0) ...[
                   IconButton(
-                    icon: const Icon(Icons.search),
+                    icon: const Icon(LucideIcons.search),
                     tooltip: l10n.searchTooltip,
                     onPressed: () => setState(() => _searchOpen = true),
                   ),
                   const DictionaryButton(),
                   IconButton(
-                    icon: const Icon(Icons.chrome_reader_mode_outlined),
+                    icon: const Icon(LucideIcons.eye),
                     tooltip: l10n.viewOptions,
                     onPressed: () => showViewOptions(
                       context,
@@ -753,7 +755,7 @@ class _SearchBarState extends State<_SearchBar> {
     return AppBar(
       automaticallyImplyLeading: false,
       leading: IconButton(
-        icon: const Icon(Icons.close),
+        icon: const Icon(LucideIcons.x),
         tooltip: l10n.searchClose,
         onPressed: widget.onClose,
       ),
@@ -787,12 +789,12 @@ class _SearchBarState extends State<_SearchBar> {
                   child: Text(_statusText(l10n, status)),
                 ),
               IconButton(
-                icon: const Icon(Icons.keyboard_arrow_up),
+                icon: const Icon(LucideIcons.chevronUp),
                 tooltip: l10n.searchPrevious,
                 onPressed: status.count == 0 ? null : session.previous,
               ),
               IconButton(
-                icon: const Icon(Icons.keyboard_arrow_down),
+                icon: const Icon(LucideIcons.chevronDown),
                 tooltip: l10n.searchNext,
                 onPressed: status.count == 0 ? null : session.next,
               ),
@@ -800,7 +802,7 @@ class _SearchBarState extends State<_SearchBar> {
           ),
         ),
         PopupMenuButton<int>(
-          icon: const Icon(Icons.tune),
+          icon: const Icon(LucideIcons.slidersHorizontal),
           tooltip: l10n.searchOptions,
           onSelected: (option) {
             setState(() {
@@ -897,18 +899,18 @@ class _SelectionBar extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextButton.icon(
-                      icon: const Icon(Icons.copy),
+                      icon: const Icon(LucideIcons.copy),
                       label: Text(l10n.selectionCopy),
                       onPressed: () => _copy(context),
                     ),
                     if (DictionaryScope.maybeOf(context) case final scope?)
                       TextButton.icon(
-                        icon: const Icon(Icons.menu_book_outlined),
+                        icon: const Icon(LucideIcons.bookA),
                         label: Text(l10n.dictionaryAction),
                         onPressed: () => _lookUp(context, scope),
                       ),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: const Icon(LucideIcons.x),
                       tooltip: l10n.selectionClose,
                       onPressed: selection.clear,
                     ),

@@ -220,7 +220,7 @@ Maintainer decision (2026-11-24): the viewer should **strongly resemble the layo
 | Resemble (layout, flows, conventions) | Keep original (identity) |
 |---|---|
 | Screen structure: top app bar, document tabs, annotation toolbar at the top, side/bottom panels | Name, logo, app icon, splash |
-| Tool order and grouping in the annotation toolbar; long-press for tool options | Icon set (Material Symbols), illustrations |
+| Tool order and grouping in the annotation toolbar; long-press for tool options | Icon set (Lucide, [ADR-0011](../adr/0011-lucide-icons.md)), illustrations |
 | Viewing modes, page navigation, thumbnail grid, outline and annotation list panels | Colour palette (Doxa seed colour) and typography |
 | Gestures: pinch/double-tap zoom, swipe paging, tap to show/hide chrome | UI texts and help content (written by us) |
 | Annotation selection handles, context menu actions, colour/thickness pickers | Store listing, screenshots and marketing |

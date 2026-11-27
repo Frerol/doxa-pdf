@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:doxa_platform/doxa_platform.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -358,7 +359,7 @@ class _MoveTargetPageState extends State<MoveTargetPage> {
           // Leaves the picker from any level.
           actions: [
             IconButton(
-              icon: const Icon(Icons.close),
+              icon: const Icon(LucideIcons.x),
               tooltip: l10n.cancel,
               onPressed: () => Navigator.of(context).pop(),
             ),
@@ -371,7 +372,7 @@ class _MoveTargetPageState extends State<MoveTargetPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: FilledButton.icon(
-                    icon: const Icon(Icons.drive_file_move_outlined),
+                    icon: const Icon(LucideIcons.folderSymlink),
                     label: Text(l10n.moveHere),
                     onPressed: () => Navigator.of(context).pop(level.target),
                   ),
@@ -385,7 +386,7 @@ class _MoveTargetPageState extends State<MoveTargetPage> {
     children: [
       for (final root in widget.roots)
         ListTile(
-          leading: const Icon(Icons.folder_outlined),
+          leading: const Icon(LucideIcons.folder),
           title: Text(root.displayName),
           onTap: () => _enter((
             treeUri: root.treeUri,
@@ -413,7 +414,7 @@ class _MoveTargetPageState extends State<MoveTargetPage> {
             children: [
               for (final folder in entries)
                 ListTile(
-                  leading: const Icon(Icons.folder_outlined),
+                  leading: const Icon(LucideIcons.folder),
                   title: Text(folder.name),
                   onTap: () => _enter((
                     treeUri: level.target.treeUri,

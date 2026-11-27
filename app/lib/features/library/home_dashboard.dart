@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -428,7 +429,7 @@ class _FolderTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    Icons.folder_outlined,
+                    LucideIcons.folder,
                     color: dark ? Color.lerp(color, Colors.white, 0.45) : color,
                   ),
                 ),
@@ -584,7 +585,7 @@ class _Empty extends StatelessWidget {
               const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: add,
-                icon: const Icon(Icons.create_new_folder_outlined),
+                icon: const Icon(LucideIcons.folderPlus),
                 label: Text(l10n.addFolder),
               ),
             ],
@@ -615,7 +616,7 @@ class Cover extends StatelessWidget {
       width: width,
       height: height,
       color: scheme.surfaceContainerHighest,
-      child: Icon(Icons.picture_as_pdf_outlined, color: scheme.outline),
+      child: Icon(LucideIcons.fileText, color: scheme.outline),
     );
     final file = this.file;
     return ClipRRect(
