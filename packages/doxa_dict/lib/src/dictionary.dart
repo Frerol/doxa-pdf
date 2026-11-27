@@ -82,7 +82,9 @@ final class Dictionary {
     final (syn, synStamp) = _IndexSource.select('$base.syn', '.dz');
     _IndexSource.checkSources(info, idx, syn);
     final words = info.wordCount;
-    final aliases = info.synWordCount ?? 0;
+    // Some writers declare synwordcount without shipping a .syn (#43): the
+    // set then has no synonyms, as in other StarDict readers.
+    final aliases = syn == null ? 0 : info.synWordCount ?? 0;
     final idxLimit = idxStamp.kind == 2
         ? StarDictIndex.maxGzipIndexSize
         : idxStamp.size;
@@ -386,9 +388,6 @@ final class _IndexSource {
   static void checkSources(StarDictInfo info, File? idx, File? syn) {
     if (idx == null) {
       throw const DictionaryFormatException('Missing .idx or .idx.gz file');
-    }
-    if (syn == null && (info.synWordCount ?? 0) > 0) {
-      throw const DictionaryFormatException('Missing declared .syn file');
     }
   }
 

@@ -163,13 +163,28 @@ void main() {
       expect(() => Dictionary.open(ifo), _formatError);
     });
 
-    test('rejects missing declared synonyms and missing data', () {
-      final syn = companion('syn')..deleteSync();
-      expect(() => Dictionary.open(ifo), _formatError);
-      File('$_root/study.syn').copySync(syn.path);
+    test('rejects missing data', () {
       companion('dict').deleteSync();
       companion('dict.dz').deleteSync();
       expect(() => Dictionary.open(ifo), _formatError);
+    });
+
+    test('opens a set that declares synonyms but ships no .syn (#43)', () {
+      // A real FreeDict set (eng-por 0.3) does this; other readers open it
+      // without synonyms, and so must Doxa, with and without the fold index.
+      // With study.syn, 'Alvo' also finds 'arco' and 'zebra' as synonyms.
+      companion('syn').deleteSync();
+
+      final scanned = Dictionary.open(ifo);
+      addTearDown(scanned.close);
+      expect(_words(scanned.lookup('Alvo')), ['Alvo', 'Alvo']);
+      expect(_words(scanned.lookup('ACT')), ['act']);
+
+      Dictionary.buildFoldIndex(ifo.path);
+      final indexed = Dictionary.open(ifo, scanWithoutFoldIndex: false);
+      addTearDown(indexed.close);
+      expect(indexed.hasFoldIndex, isTrue);
+      expect(_words(indexed.lookup('ACT')), ['act']);
     });
 
     test('reads a gzip-compressed .syn.dz in place of .syn', () {
