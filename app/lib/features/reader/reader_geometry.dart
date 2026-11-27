@@ -239,7 +239,17 @@ final class StripLayout implements PageLayout {
     _cells = List.filled(spreads.length, Rect.zero);
     for (final spread in visual) {
       final pages = spreads[spread];
-      final cell = _layOut(pages, x, viewSize);
+      // A page alone in two-page mode keeps its half of the spread: the
+      // cover on the right, a last page on the left (mirrored right to
+      // left), as in a printed book (UX §7 "View options").
+      final lone = options.mode == ReaderMode.twoPages && pages.length == 1;
+      final cover = options.coverPage && spread == 0;
+      final cell = _layOut(
+        pages,
+        x,
+        viewSize,
+        loneOnRight: lone ? cover != options.rightToLeft : null,
+      );
       _cells[spread] = cell;
       _visualOrder.add(spread);
       _visualLefts.add(cell.left);
@@ -268,13 +278,17 @@ final class StripLayout implements PageLayout {
   late final Size contentSize;
 
   /// Places [pages] in a cell that starts at [left] and returns the cell.
-  Rect _layOut(List<int> pages, double left, Size view) {
+  /// Lays [pages] out in a cell starting at [left]. With [loneOnRight] set,
+  /// the single page takes the right or left half of a two-page spread.
+  Rect _layOut(List<int> pages, double left, Size view, {bool? loneOnRight}) {
     final aspects = [
       for (final page in pages)
         _sizeOf(info, page).width / _sizeOf(info, page).height,
     ];
-    final aspectSum = aspects.fold<double>(0, (a, b) => a + b);
-    final gaps = margin * (pages.length - 1);
+    final half = loneOnRight != null;
+    // A lone page is sized as if its facing page had the same shape.
+    final aspectSum = aspects.fold<double>(0, (a, b) => a + b) * (half ? 2 : 1);
+    final gaps = margin * (half ? 1 : pages.length - 1);
     final innerHeight = math.max(1.0, view.height - 2 * margin);
     final innerWidth = math.max(1.0, view.width - 2 * margin);
     final double height;
@@ -291,6 +305,7 @@ final class StripLayout implements PageLayout {
     }
     final spreadWidth = height * aspectSum + gaps;
     var x = left + (cellWidth - spreadWidth) / 2;
+    if (loneOnRight ?? false) x += height * aspects.single + margin;
     final y = (view.height - height) / 2;
     // The first page of a spread sits on the reading side.
     final ordered = options.rightToLeft ? pages.reversed : pages;

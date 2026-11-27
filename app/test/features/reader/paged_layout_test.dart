@@ -79,6 +79,24 @@ void main() {
       expect(layout.pagesOf(1), [2, 3]);
     });
 
+    test('a page alone keeps its half: cover right, last page left (#110)', () {
+      // Spread pages are 400 wide, 8 apart, centred: halves at 96 and 504.
+      final cover = strip(6, ReaderMode.twoPages);
+      expect(cover.pageRect(0), const Rect.fromLTWH(504, 8, 400, 600));
+      expect(cover.pageRect(5), const Rect.fromLTWH(3096, 8, 400, 600));
+      // Without a cover, an odd last page is on the left half too.
+      final pairs = strip(5, ReaderMode.twoPages, coverPage: false);
+      expect(pairs.pagesOf(2), [4]);
+      expect(pairs.pageRect(4), const Rect.fromLTWH(2096, 8, 400, 600));
+      // Right to left mirrors both: the cover on the left of its cell.
+      final rtl = strip(6, ReaderMode.twoPages, rightToLeft: true);
+      final cell = rtl.spreadRect(0);
+      expect(rtl.pageRect(0).left - cell.left, 96);
+      expect(rtl.pageRect(5).left - rtl.spreadRect(3).left, 504);
+      // Single page mode still centres every page.
+      expect(strip(3, ReaderMode.singlePage).pageRect(0).left, 300);
+    });
+
     test('shrinks spreads that are too wide for the screen', () {
       final layout = StripLayout(
         pages(2, width: 800, height: 600),
