@@ -176,42 +176,41 @@ void main() {
     expect(controller.zoom, ReaderController.minZoom);
   });
 
-  testReader('fit width, fit page and smart zoom (FR-VIEW-004)', (
+  testReader('resize re-fits the current page or its width (FR-VIEW-004)', (
     tester,
   ) async {
     final (controller, _, _) = await openReader(tester);
     controller.resize(viewSize, 1);
     controller.goToPage(10);
-    controller.fitPage();
-    expect(controller.zoom, 1); // A 400 × 600 page fits exactly.
     controller.resize(const Size(400, 300), 1);
-    controller.fitPage();
-    expect(controller.zoom, 0.5);
+    var page = controller.layout!.pageRect(10);
     expect(controller.currentPage, 10);
-    final page = controller.layout!.pageRect(10);
+    expect(controller.visibleRect.height, closeTo(page.height, 1e-6));
     expect(controller.visibleRect.center.dy, closeTo(page.center.dy, 1e-6));
 
     controller.fitWidth();
-    expect(controller.zoom, 1);
-    expect(controller.offset.dx, 0);
-
-    controller.smartZoom(const Offset(100, 100));
-    expect(controller.zoom, ReaderController.smartZoomLevel);
-    controller.smartZoom(const Offset(100, 100));
-    expect(controller.zoom, 1);
+    controller.resize(const Size(500, 350), 1);
+    page = controller.layout!.pageRect(10);
+    expect(controller.currentPage, 10);
+    expect(controller.visibleRect.width, closeTo(page.width, 1e-6));
+    expect(controller.visibleRect.left, closeTo(page.left, 1e-6));
   });
 
-  testReader('keeps the reading position when the width changes', (
-    tester,
-  ) async {
-    final (controller, _, _) = await openReader(tester);
-    controller.resize(viewSize, 1);
-    controller.goToPage(20);
-    controller.panBy(const Offset(0, -150)); // A quarter into page 20.
-    controller.resize(const Size(800, 500), 1);
-    final page = controller.layout!.pageRect(20);
-    expect(controller.offset.dy, closeTo(page.top + page.height / 4, 1e-6));
-  });
+  testReader(
+    'keeps a user zoom and reading position when the width changes (FR-VIEW-004)',
+    (tester) async {
+      final (controller, _, _) = await openReader(tester);
+      controller.resize(viewSize, 1);
+      controller.goToPage(20);
+      final zoom = controller.zoom;
+      controller.zoomTo(zoom); // A user zoom can have the same scale as fit.
+      controller.panBy(const Offset(0, -150)); // A quarter into page 20.
+      controller.resize(const Size(800, 500), 1);
+      expect(controller.zoom, closeTo(zoom, 1e-6));
+      final page = controller.layout!.pageRect(20);
+      expect(controller.offset.dy, closeTo(page.top + page.height / 4, 1e-6));
+    },
+  );
 
   testReader('evicts old images over budget, never visible ones', (
     tester,

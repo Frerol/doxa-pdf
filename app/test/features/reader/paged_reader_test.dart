@@ -99,7 +99,7 @@ void main() {
       )!;
       expect(turned.offset, const Offset(800, 0));
       // Dragging past the middle of the screen also turns.
-      c.setView((zoom: 1, offset: const Offset(500, 0)));
+      c.setView((zoom: 1, offset: const Offset(500, 0), atFit: true));
       expect(
         c.settle(startSpread: 0, velocity: Offset.zero)!.offset,
         const Offset(800, 0),
@@ -113,11 +113,11 @@ void main() {
       final c = await controllerFor(tester)
         ..resize(viewSize, 1);
       c.zoomAround(2, const Offset(400, 308), const Offset(400, 308));
-      expect(c.turnPage(forward: true)!.zoom, 1);
-      c.setOptions(c.options.copyWith(keepZoomOnTurn: true));
       final kept = c.turnPage(forward: true)!;
-      expect(kept.zoom, 2);
+      expect(kept.zoom, c.zoom);
       expect(kept.offset.dx - 800, closeTo(c.offset.dx, 1e-9));
+      c.setOptions(c.options.copyWith(keepZoomOnTurn: false));
+      expect(c.turnPage(forward: true)!.atFit, isTrue);
       await settle(tester);
     });
 
@@ -154,6 +154,30 @@ void main() {
       expect(c.currentPage, inInclusiveRange(5, 6));
       await settle(tester);
     });
+
+    testWidgets(
+      'fit includes both pages of a spread after resize (FR-VIEW-004)',
+      (tester) async {
+        final c =
+            await controllerFor(
+                tester,
+                options: const ReaderOptions(
+                  mode: ReaderMode.twoPages,
+                  coverPage: false,
+                ),
+              )
+              ..resize(viewSize, 1);
+        c.resize(const Size(640, 250), 1);
+        Rect spread() =>
+            c.layout!.pageRect(0).expandToInclude(c.layout!.pageRect(1));
+        expect(c.visibleRect.inflate(1e-6).intersect(spread()), spread());
+        c.setFitMode(FitMode.width);
+        final view = c.visibleRect;
+        expect(view.left, closeTo(spread().left, 1e-6));
+        expect(view.width, closeTo(spread().width, 1e-6));
+        await settle(tester);
+      },
+    );
 
     testWidgets('fit page and fit width in a paged layout', (tester) async {
       final c = await controllerFor(tester)

@@ -24,26 +24,14 @@
   "@readerPasswordNeeded": {
     "description": "Shown when an encrypted PDF cannot be opened without a password."
   },
-  "readerZoomMenu": "Zoom",
-  "@readerZoomMenu": {
-    "description": "Tooltip of the reader's zoom menu."
-  },
+  "settingsFitMode": "Page fit",
   "readerFitWidth": "Fit width",
   "@readerFitWidth": {
-    "description": "Zoom menu item: pages as wide as the screen."
+    "description": "Fit setting: pages as wide as the screen."
   },
   "readerFitPage": "Fit page",
   "@readerFitPage": {
-    "description": "Zoom menu item: the whole page fits the screen."
-  },
-  "readerZoomFactor": "{factor}×",
-  "@readerZoomFactor": {
-    "description": "Zoom menu item: a multiple of the fit-width zoom.",
-    "placeholders": {
-      "factor": {
-        "type": "int"
-      }
-    }
+    "description": "Fit setting: the whole page fits the screen."
   },
   "devDocumentsTitle": "PDFs in the app folder (developer)",
   "@devDocumentsTitle": {

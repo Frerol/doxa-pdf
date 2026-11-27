@@ -14,6 +14,12 @@ const previewPixels = 360;
 /// How pages are arranged (FR-VIEW-002, FR-VIEW-003).
 enum ReaderMode { continuous, singlePage, twoPages, horizontal }
 
+/// How the reader scales a page or spread when it is at fit.
+enum FitMode { page, width }
+
+/// Saved zoom value for a view that follows the fit preference.
+const fitReadingZoom = 0.0;
+
 /// Layout and page-turning options of the reader.
 final class ReaderOptions {
   const ReaderOptions({
@@ -21,7 +27,7 @@ final class ReaderOptions {
     this.coverPage = true,
     this.rightToLeft = false,
     this.tapZones = true,
-    this.keepZoomOnTurn = false,
+    this.keepZoomOnTurn = true,
   });
 
   final ReaderMode mode;

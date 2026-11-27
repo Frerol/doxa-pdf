@@ -155,6 +155,7 @@ class _ReaderPageState extends State<ReaderPage> {
   /// Settings can change while the document is open (custom colours from
   /// the view options, keep screen on).
   void _onSettings() {
+    _controller?.setFitMode(widget.settings!.value.fitMode);
     _applyKeepScreenOn();
     if (mounted) setState(() {});
   }
@@ -218,6 +219,7 @@ class _ReaderPageState extends State<ReaderPage> {
               tapZones: settings.tapZones,
               keepZoomOnTurn: settings.keepZoomOnTurn,
             ),
+            fitMode: settings.fitMode,
             initialPosition: widget.initialPosition,
           );
           controller.page.addListener(_scheduleSave);
@@ -466,7 +468,6 @@ class _ReaderPageState extends State<ReaderPage> {
                     tooltip: l10n.searchTooltip,
                     onPressed: () => setState(() => _searchOpen = true),
                   ),
-                  _ZoomMenu(controller: controller),
                   IconButton(
                     icon: const Icon(Icons.chrome_reader_mode_outlined),
                     tooltip: l10n.viewOptions,
@@ -761,37 +762,6 @@ class _Message extends StatelessWidget {
       child: Text(text, textAlign: TextAlign.center),
     ),
   );
-}
-
-/// Fit width, fit page and zoom presets (FR-VIEW-004).
-class _ZoomMenu extends StatelessWidget {
-  const _ZoomMenu({required this.controller});
-  final ReaderController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return PopupMenuButton<void Function()>(
-      icon: const Icon(Icons.zoom_in),
-      tooltip: l10n.readerZoomMenu,
-      onSelected: (action) => action(),
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: controller.fitWidth,
-          child: Text(l10n.readerFitWidth),
-        ),
-        PopupMenuItem(
-          value: controller.fitPage,
-          child: Text(l10n.readerFitPage),
-        ),
-        for (final factor in const [2, 4])
-          PopupMenuItem(
-            value: () => controller.zoomTo(factor.toDouble()),
-            child: Text(l10n.readerZoomFactor(factor)),
-          ),
-      ],
-    );
-  }
 }
 
 /// View options (docs/plan/05-ux-design.md §2): the page layout and how

@@ -28,13 +28,14 @@ Future<ui.Image> decodeBitmap(RenderedBitmap bitmap) {
 }
 
 /// A zoom and offset of the view, for page-turn animations.
-typedef ViewState = ({double zoom, Offset offset});
+typedef ViewState = ({double zoom, Offset offset, bool atFit});
 
 typedef _Anchor = ({int page, double x, double y});
 
 /// Where the reader is, kept across app restarts (FR-VIEW-006): a page,
-/// a point of it as fractions of the page size (the top-left corner of the
-/// screen in continuous mode, the middle otherwise), and the zoom.
+/// a point of it as fractions of the page size (the top-left corner at a
+/// user zoom in continuous mode, the middle otherwise), and the zoom.
+/// A saved zoom of zero means to use the current fit setting.
 typedef ReadingPosition = ({int page, double x, double y, double zoom});
 
 /// Layers of rectangles drawn over the pages.
@@ -60,9 +61,11 @@ final class ReaderController {
     int cacheBudgetBytes = 160 << 20,
     ReaderOptions options = const ReaderOptions(),
     ReadingPosition? initialPosition,
+    FitMode fitMode = FitMode.page,
   }) : _decode = decoder,
        _options = options, // ignore: prefer_initializing_formals
        _initial = initialPosition,
+       _fitMode = fitMode, // ignore: prefer_initializing_formals
        cache = TileCache(budgetBytes: cacheBudgetBytes);
 
   static const minZoom = 0.25;
@@ -101,6 +104,8 @@ final class ReaderController {
   Size _viewSize = Size.zero;
   double _devicePixelRatio = 1;
   double _zoom = 1;
+  FitMode _fitMode;
+  bool _atFit = true;
   double _ox = 0;
   double _oy = 0;
   int _generation = 0;
@@ -119,6 +124,10 @@ final class ReaderController {
   Size get viewSize => _viewSize;
   double get devicePixelRatio => _devicePixelRatio;
   double get zoom => _zoom;
+
+  /// Whether the view follows the fit mode when the viewport changes.
+  bool get atFit => _atFit;
+
   Offset get offset => Offset(_ox, _oy);
   int get pendingRequests => _pending.length;
 
@@ -144,6 +153,7 @@ final class ReaderController {
   /// Lays the document out for a new view size, keeping the reading
   /// position.
   void resize(Size size, double devicePixelRatio) {
+    if (size.width <= 0 || size.height <= 0) return;
     if (size == _viewSize && devicePixelRatio == _devicePixelRatio) return;
     final old = _layout;
     final relayout =
@@ -154,11 +164,8 @@ final class ReaderController {
     final anchor = _anchor();
     _viewSize = size;
     _devicePixelRatio = devicePixelRatio;
-    if (size.width <= 0 || size.height <= 0) return;
-    if (relayout) {
-      _relayout();
-      _restore(anchor ?? _takeInitial());
-    }
+    if (relayout) _relayout();
+    _restore(old == null ? _takeInitial() : anchor);
     _changed();
   }
 
@@ -174,7 +181,7 @@ final class ReaderController {
     if (!layoutChanged || _layout == null) return;
     final current = currentPage;
     _relayout();
-    _zoom = 1;
+    _atFit = true;
     _showPage(current);
     _changed();
   }
@@ -188,16 +195,16 @@ final class ReaderController {
   }
 
   /// The reading position: a page and a point of it, as fractions of the
-  /// page size. In continuous mode the point is the top-left corner of the
-  /// screen; otherwise it is the middle of the screen.
+  /// page size. A continuous view at a user zoom uses its top-left corner;
+  /// other views use the middle of the screen.
   _Anchor? _anchor() {
     final layout = _layout;
     if (layout == null || layout.pageCount == 0) return null;
     final visible = visibleRect;
-    final point = layout is ContinuousLayout ? visible.topLeft : visible.center;
-    final page = layout is ContinuousLayout
-        ? layout.pageAtY(point.dy)
-        : layout.pageAt(point);
+    final point = layout is ContinuousLayout && !_atFit
+        ? visible.topLeft
+        : visible.center;
+    final page = layout.pageAt(point);
     final rect = layout.pageRect(page);
     return (
       page: page,
@@ -215,6 +222,14 @@ final class ReaderController {
       _showPage(0);
       return;
     }
+    if (_atFit) {
+      _showPage(anchor.page);
+      if (layout is ContinuousLayout && _fitMode == FitMode.width) {
+        final rect = layout.pageRect(anchor.page);
+        _oy = rect.top + anchor.y * rect.height - visibleRect.height / 2;
+      }
+      return;
+    }
     final rect = layout.pageRect(anchor.page);
     final point = Offset(
       rect.left + anchor.x * rect.width,
@@ -223,8 +238,6 @@ final class ReaderController {
     if (layout is ContinuousLayout) {
       _ox = point.dx;
       _oy = point.dy;
-    } else if (layout.paged && _zoom <= 1) {
-      _showPage(anchor.page);
     } else {
       // Keep the zoom and put the same point back in the middle.
       _ox = point.dx - _viewSize.width / _zoom / 2;
@@ -241,66 +254,83 @@ final class ReaderController {
 
   /// Sets the zoom so that [documentPoint] stays under [screenPoint].
   void zoomAround(double zoom, Offset documentPoint, Offset screenPoint) {
+    _atFit = false;
     _zoom = zoom.clamp(minZoom, maxZoom);
     _ox = documentPoint.dx - screenPoint.dx / _zoom;
     _oy = documentPoint.dy - screenPoint.dy / _zoom;
     _changed();
   }
 
-  /// Zooms around the middle of the screen (zoom presets).
+  /// Sets a user zoom around the middle of the screen.
   void zoomTo(double zoom) {
     final centre = _viewSize.center(Offset.zero);
     zoomAround(zoom, toDocument(centre), centre);
   }
 
-  /// Fit width: the current page is as wide as the screen.
+  /// Changes the fit preference, immediately re-fitting a view at fit.
+  void setFitMode(FitMode mode) {
+    if (_fitMode == mode) return;
+    _fitMode = mode;
+    if (_atFit) _fitCurrentPage();
+  }
+
+  /// Fits the current page or spread to the viewport width.
   void fitWidth() {
-    final layout = _layout;
-    if (layout == null || layout.pageCount == 0) return;
-    final rect = layout.pageRect(currentPage);
-    final centreY = visibleRect.center.dy;
-    _zoom = (_viewSize.width / rect.width).clamp(minZoom, maxZoom);
-    _ox = rect.left;
-    _oy = layout is ContinuousLayout
-        ? centreY - _viewSize.height / _zoom / 2
-        : rect.top;
-    _changed();
+    _fitMode = FitMode.width;
+    _fitCurrentPage();
   }
 
-  /// Fit page: the current page (the spread, when paged) fits the screen,
-  /// centred.
+  /// Fits the whole current page or spread in the viewport.
   void fitPage() {
+    _fitMode = FitMode.page;
+    _fitCurrentPage();
+  }
+
+  void _fitCurrentPage() {
     final layout = _layout;
     if (layout == null || layout.pageCount == 0) return;
-    final rect = layout.paged
-        ? layout.spreadRect(currentSpread)
-        : layout.pageRect(currentPage);
-    _zoom = math
-        .min(_viewSize.width / rect.width, _viewSize.height / rect.height)
-        .clamp(minZoom, maxZoom);
-    _ox = rect.center.dx - _viewSize.width / _zoom / 2;
-    _oy = rect.center.dy - _viewSize.height / _zoom / 2;
+    _atFit = true;
+    _showPage(currentPage);
     _changed();
   }
 
-  /// Double tap (FR-VIEW-004): zoom in on the tapped point, or back to the
-  /// layout's fit when already zoomed in.
+  ViewState _fitView(int spread) {
+    final layout = _layout!;
+    final cell = layout.spreadRect(spread);
+    var bounds = cell;
+    if (_fitMode == FitMode.width) {
+      bounds = layout
+          .pagesOf(spread)
+          .map(layout.pageRect)
+          .reduce((first, second) => first.expandToInclude(second));
+    }
+    final widthZoom = _viewSize.width / bounds.width;
+    final zoom = _fitMode == FitMode.width
+        ? widthZoom
+        : math.min(widthZoom, _viewSize.height / bounds.height);
+    final centered = bounds.center - _viewSize.center(Offset.zero) / zoom;
+    return (
+      zoom: zoom,
+      offset:
+          _fitMode == FitMode.width && bounds.height * zoom > _viewSize.height
+          ? Offset(centered.dx, bounds.top)
+          : centered,
+      atFit: true,
+    );
+  }
+
+  /// Double tap (FR-VIEW-004): zoom in relative to fit at the tapped point,
+  /// or return to the chosen fit mode.
   void smartZoom(Offset screenPoint) {
     final layout = _layout;
-    if (layout == null) return;
-    if (_zoom > 1.05) {
-      final point = toDocument(screenPoint);
-      _zoom = 1;
-      if (layout.paged) {
-        _showPage(layout.pageAt(point));
-      } else {
-        // Keep the tapped point under the finger; clamping does the rest.
-        _ox = point.dx - screenPoint.dx;
-        _oy = point.dy - screenPoint.dy;
-      }
-      _changed();
+    if (layout == null || layout.pageCount == 0) return;
+    final point = toDocument(screenPoint);
+    if (_atFit) {
+      zoomAround(_zoom * smartZoomLevel, point, screenPoint);
     } else {
-      zoomAround(smartZoomLevel, toDocument(screenPoint), screenPoint);
+      _atFit = true;
+      _showPage(layout.pageAt(point));
+      _changed();
     }
   }
 
@@ -420,9 +450,7 @@ final class ReaderController {
     final target = documentRect(page, rect);
     if (layout.paged && layout.spreadOf(page) != currentSpread) {
       final view = viewForSpread(layout.spreadOf(page), keepZoom: true);
-      _zoom = view.zoom;
-      _ox = view.offset.dx;
-      _oy = view.offset.dy;
+      _applyView(view);
     }
     if (target == null) {
       if (!layout.paged) _showPage(page);
@@ -532,7 +560,7 @@ final class ReaderController {
     to.add(here);
     final mark = from.removeLast();
     history.value++;
-    _zoom = mark.zoom.clamp(minZoom, maxZoom);
+    _restoreZoom(mark.zoom);
     _restore(mark.anchor);
     _changed();
   }
@@ -556,7 +584,7 @@ final class ReaderController {
         !initial.zoom.isFinite) {
       return null;
     }
-    _zoom = initial.zoom.clamp(minZoom, maxZoom);
+    _restoreZoom(initial.zoom);
     return (
       page: initial.page,
       x: initial.x.isFinite ? initial.x.clamp(0, 1) : 0,
@@ -564,9 +592,16 @@ final class ReaderController {
     );
   }
 
+  void _restoreZoom(double zoom) {
+    _atFit = zoom == fitReadingZoom;
+    if (!_atFit) _zoom = zoom.clamp(minZoom, maxZoom);
+  }
+
   _Mark? _mark() {
     final anchor = _anchor();
-    return anchor == null ? null : (anchor: anchor, zoom: _zoom);
+    return anchor == null
+        ? null
+        : (anchor: anchor, zoom: _atFit ? fitReadingZoom : _zoom);
   }
 
   /// Remembers the reading position before a jump.
@@ -593,41 +628,54 @@ final class ReaderController {
   void _showPage(int page) {
     final layout = _layout!;
     if (layout.pageCount == 0) return;
-    switch (layout) {
-      case ContinuousLayout():
-        _oy = layout.pageRect(page).top;
-      case _ when layout.paged:
-        final view = viewForSpread(layout.spreadOf(page), keepZoom: false);
-        _zoom = view.zoom;
-        _ox = view.offset.dx;
-        _oy = view.offset.dy;
-      case _:
-        _ox = layout.spreadRect(layout.spreadOf(page)).left;
+    final spread = layout.spreadOf(page);
+    if (_atFit || layout.paged) {
+      _applyView(viewForSpread(spread, keepZoom: true));
+    } else if (layout is ContinuousLayout) {
+      _oy = layout.pageRect(page).top;
+    } else {
+      _ox = layout.spreadRect(spread).left;
     }
   }
 
   /// Applies a view computed by [viewForSpread] or [settle]; used by
   /// page-turn animations.
   void setView(ViewState view) {
-    _zoom = view.zoom.clamp(minZoom, maxZoom);
-    _ox = view.offset.dx;
-    _oy = view.offset.dy;
+    _applyView(view);
     _changed();
   }
 
-  /// The view showing [spread] in a paged layout. With [keepZoom], the zoom
-  /// and the position inside the cell stay as they are (FR-VIEW-018).
+  void _applyView(ViewState view) {
+    _atFit = view.atFit;
+    _zoom = view.zoom;
+    _ox = view.offset.dx;
+    _oy = view.offset.dy;
+  }
+
+  /// The view showing [spread] in a paged layout. With [keepZoom], a user
+  /// zoom and the position inside the cell stay as they are (FR-VIEW-018).
   ViewState viewForSpread(int spread, {required bool keepZoom}) {
+    if (!keepZoom || _atFit) return _fitView(spread);
     final layout = _layout!;
     final cell = layout.spreadRect(spread);
-    if (!keepZoom || _zoom <= 1) {
-      return (zoom: 1.0, offset: cell.topLeft);
-    }
     final current = layout.spreadRect(currentSpread);
+    return _userViewInCell(cell, cell.topLeft + offset - current.topLeft);
+  }
+
+  ViewState _userViewInCell(Rect cell, Offset target) {
     final visible = visibleRect;
-    final dx = (_ox - current.left).clamp(0.0, cell.width - visible.width);
-    final dy = (_oy - current.top).clamp(0.0, cell.height - visible.height);
-    return (zoom: _zoom, offset: cell.topLeft + Offset(dx, dy));
+    double place(double value, double start, double end, double extent) =>
+        extent >= end - start
+        ? (start + end - extent) / 2
+        : value.clamp(start, end - extent);
+    return (
+      zoom: _zoom,
+      offset: Offset(
+        place(target.dx, cell.left, cell.right, visible.width),
+        place(target.dy, cell.top, cell.bottom, visible.height),
+      ),
+      atFit: false,
+    );
   }
 
   /// Turns the page in a paged layout, towards the left or right of the
@@ -653,7 +701,7 @@ final class ReaderController {
     final layout = _layout;
     if (layout == null || !layout.paged || layout.spreadCount == 0) return null;
     var target = currentSpread;
-    final zoomedIn = _zoom > 1.05;
+    final zoomedIn = !_atFit && _zoom > 1.05;
     if (target == startSpread && !zoomedIn && velocity.dx.abs() > 600) {
       // A finger moving right reveals the spread on the left.
       target =
@@ -664,6 +712,7 @@ final class ReaderController {
         ? _clampedToCell(target)
         : viewForSpread(target, keepZoom: _options.keepZoomOnTurn);
     final same =
+        view.atFit == _atFit &&
         (view.zoom - _zoom).abs() < 1e-6 &&
         (view.offset - offset).distance < 0.5;
     return same ? null : view;
@@ -671,16 +720,14 @@ final class ReaderController {
 
   /// The current view moved back inside the cell of [spread].
   ViewState _clampedToCell(int spread) {
-    if (_zoom <= 1) return viewForSpread(spread, keepZoom: false);
     final cell = _layout!.spreadRect(spread);
-    final visible = visibleRect;
-    return (
-      zoom: _zoom,
-      offset: Offset(
-        _ox.clamp(cell.left, cell.right - visible.width),
-        _oy.clamp(cell.top, cell.bottom - visible.height),
-      ),
-    );
+    if (!_atFit) return _userViewInCell(cell, offset);
+    final fit = _fitView(spread);
+    if (_fitMode == FitMode.width && visibleRect.height < cell.height) {
+      final y = _oy.clamp(cell.top, cell.bottom - visibleRect.height);
+      return (zoom: fit.zoom, offset: Offset(fit.offset.dx, y), atFit: true);
+    }
+    return fit;
   }
 
   /// Frees memory on memory pressure (`onTrimMemory`): keeps only what is
