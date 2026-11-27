@@ -18,6 +18,7 @@ final class FakePage {
     this.text = '',
     this.label,
     this.links = const [],
+    this.annotations = const [],
   });
 
   /// Displayed size in points.
@@ -29,6 +30,9 @@ final class FakePage {
   final String text;
   final String? label;
   final List<PageLink> links;
+
+  /// Returned by `annotations`, as they are.
+  final List<Annotation> annotations;
 }
 
 /// A document served by [FakePdfEngine].
@@ -130,6 +134,12 @@ final class FakePdfEngine implements PdfEngine {
   @override
   Future<List<PageLink>> pageLinks(DocumentHandle document, int index) async =>
       _page(document, index).links;
+
+  @override
+  Future<List<Annotation>> annotations(
+    DocumentHandle document,
+    int index,
+  ) async => _page(document, index).annotations;
 
   @override
   Future<PageText> pageText(DocumentHandle document, int index) async =>

@@ -125,6 +125,7 @@ final class EngineHost {
       QueryKind.outline => backend.outline(doc),
       QueryKind.pageLinks => backend.pageLinks(doc, _checkPage(doc, page)),
       QueryKind.pageText => backend.pageText(doc, _checkPage(doc, page)),
+      QueryKind.annotations => backend.annotations(doc, _checkPage(doc, page)),
     };
     reply(ValueReply(command.id, value));
   }

@@ -10,6 +10,7 @@ import 'package:ffi/ffi.dart';
 import 'package:pdfium_ffi/pdfium_ffi.dart';
 
 import '../api/types.dart';
+import 'annotation_reader.dart';
 import 'backend.dart';
 import 'protocol.dart';
 
@@ -24,7 +25,7 @@ typedef _PagePtr = Pointer<fpdf_page_t__>;
 /// and an *editing instance*, loaded on demand, which is never rendered with
 /// `FPDF_ANNOT` and is the only one ever saved (ADR-0008).
 final class PdfiumBackend implements EngineBackend {
-  PdfiumBackend(this._pdf) {
+  PdfiumBackend(this._pdf) : _annotations = AnnotationReader(_pdf) {
     final config = calloc<FPDF_LIBRARY_CONFIG_>()..ref.version = 2;
     _pdf.FPDF_InitLibraryWithConfig(config);
     calloc.free(config);
@@ -42,6 +43,7 @@ final class PdfiumBackend implements EngineBackend {
   static const maxLinksPerPage = 10000;
 
   final PdfiumBindings _pdf;
+  final AnnotationReader _annotations;
   final _docs = <int, _Document>{};
   var _disposed = false;
 
@@ -365,6 +367,14 @@ final class PdfiumBackend implements EngineBackend {
         ..free(rect);
     }
     return links;
+  }
+
+  @override
+  List<Annotation> annotations(int documentId, int pageIndex) {
+    // Checks the page index against the render instance, which has the
+    // same pages.
+    _page(documentId, pageIndex);
+    return _annotations.read(editInstance(documentId), pageIndex);
   }
 
   @override

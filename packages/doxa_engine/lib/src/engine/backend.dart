@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:doxa_core/doxa_core.dart';
+
 import '../api/types.dart';
 import 'protocol.dart';
 
@@ -20,6 +22,9 @@ abstract interface class EngineBackend {
   List<OutlineNode> outline(int documentId);
   List<PageLink> pageLinks(int documentId, int pageIndex);
   PageText pageText(int documentId, int pageIndex);
+
+  /// The annotations of one page, read from the editing instance.
+  List<Annotation> annotations(int documentId, int pageIndex);
   RenderedPixels render(RenderRequest request);
 
   /// Closes every document and releases the library.

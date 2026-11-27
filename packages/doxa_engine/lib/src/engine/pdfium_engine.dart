@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:isolate';
 
+import 'package:doxa_core/doxa_core.dart';
 import 'package:pdfium_ffi/pdfium_ffi.dart';
 
 import '../api/pdf_engine.dart';
@@ -99,6 +100,12 @@ final class PdfiumEngine implements PdfEngine {
   @override
   Future<PageText> pageText(DocumentHandle document, int pageIndex) =>
       _query<PageText>(QueryKind.pageText, document, pageIndex);
+
+  @override
+  Future<List<Annotation>> annotations(
+    DocumentHandle document,
+    int pageIndex,
+  ) => _query<List<Annotation>>(QueryKind.annotations, document, pageIndex);
 
   Future<T> _query<T>(QueryKind kind, DocumentHandle doc, [int? page]) async {
     final id = _nextId++;

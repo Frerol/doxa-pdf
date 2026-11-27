@@ -134,6 +134,75 @@ def write_navigation_pdf(path):
     )
 
 
+def write_annotations_pdf(path):
+    """Three pages of annotations with known values (issue #140).
+
+    Page 1 has Doxa's own markup and ink, a foreign underline without /NM,
+    foreign ink, a square, and what Doxa leaves out or cannot draw: a popup,
+    a link and a highlight with a broken /QuadPoints array. Page 2 is
+    rotated by 90 degrees and page 3 has an offset CropBox; each has one
+    highlight. The ids are fixed, so the file is reproducible.
+    """
+    doxa_markup = "doxa:0b3f6c1e-2a4d-4e8f-9a1b-3c5d7e9f1a2b"
+    doxa_ink = "doxa:5e7a9c1b-3d5f-4a7c-8e9a-1b3c5d7e9fa0"
+    annots = [
+        # 6: Doxa highlight over the first line, with its note and text.
+        "<< /Type /Annot /Subtype /Highlight /Rect [70 696 330 716] "
+        "/QuadPoints [72 714 328 714 72 698 328 698] /C [1 1 0] /CA 0.4 "
+        f"/NM ({doxa_markup}) /DoxaVersion (1) /DoxaText (A field notebook) "
+        "/T (Ana) /Contents (Check the date) /M (D:20261127103000Z) /F 4 >>",
+        # 7: foreign underline without /NM, two lines.
+        "<< /Type /Annot /Subtype /Underline /Rect [70 656 400 696] "
+        "/QuadPoints [72 694 398 694 72 678 398 678 72 674 398 674 72 658 398 658] "
+        "/C [0 0 1] /F 4 >>",
+        # 8: foreign ink with a border width.
+        "<< /Type /Annot /Subtype /Ink /Rect [95 395 305 505] "
+        "/InkList [[100 400 200 500 300 450] [100 450 150 460]] /C [1 0 0] "
+        "/Border [0 0 3] /NM (other-app-ink) /F 4 >>",
+        # 9: Doxa ink drawn by the highlighter, with pressure.
+        "<< /Type /Annot /Subtype /Ink /Rect [95 295 305 315] "
+        "/InkList [[100 300 200 310 300 305]] /C [0 1 0] /CA 0.5 /Border [0 0 8] "
+        f"/NM ({doxa_ink}) /DoxaVersion (1) /DoxaTool (highlighter) "
+        "/DoxaPressure (AgA) /F 4 >>",
+        # 10: a square from another app.
+        "<< /Type /Annot /Subtype /Square /Rect [400 100 500 200] /C [0 0 0] "
+        "/NM (square-1) /F 4 >>",
+        # 11: a popup, which belongs to the highlight and is left out.
+        "<< /Type /Annot /Subtype /Popup /Rect [400 700 550 780] /Parent 6 0 R >>",
+        # 12: a link, read by pageLinks instead.
+        "<< /Type /Annot /Subtype /Link /Rect [72 100 200 120] /Border [0 0 0] "
+        "/A << /S /URI /URI (https://example.org/) >> >>",
+        # 13: a highlight whose /QuadPoints is not a multiple of eight.
+        "<< /Type /Annot /Subtype /Highlight /Rect [70 600 300 620] "
+        "/QuadPoints [72 618 298 618 72 602] /C [1 1 0] /NM (broken-quads) >>",
+        # 14 (page 2) and 15 (page 3): one highlight each.
+        "<< /Type /Annot /Subtype /Highlight /Rect [70 696 330 716] "
+        "/QuadPoints [72 714 328 714 72 698 328 698] /C [1 0.5 0] /NM (rotated) >>",
+        "<< /Type /Annot /Subtype /Highlight /Rect [70 696 330 716] "
+        "/QuadPoints [72 714 328 714 72 698 328 698] /C [1 0.5 0] /NM (cropped) >>",
+    ]
+    content = text_block(72, 700, [
+        "A field notebook",
+        "The morning light crossed the valley.",
+        "We drew a map and marked the river.",
+    ])
+    page = (
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+        "/Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R {} >>"
+    )
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [5 0 R 16 0 R 17 0 R] /Count 3 >>",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        stream(content),
+        page.format("/Annots [6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R]").encode("ascii"),
+        *(annot.encode("ascii") for annot in annots),
+        page.format("/Rotate 90 /Annots [14 0 R]").encode("ascii"),
+        page.format("/CropBox [37.5 62.25 547.75 728.5] /Annots [15 0 R]").encode("ascii"),
+    ]
+    serialize(path, objects)
+
+
 def main():
     sample = text_block(72, 700, [
         "A field notebook",
@@ -165,6 +234,7 @@ def main():
     write_pdf(CORPUS / "two-column-article.pdf", article, [""])
     write_pdf(CORPUS / "many-pages.pdf", sample, [""] * 1001)
     write_navigation_pdf(CORPUS / "navigation.pdf")
+    write_annotations_pdf(CORPUS / "annotations.pdf")
 
     markup = (
         '<span font_family="Noto Sans Hebrew">שלום עולם</span>\n\n'
