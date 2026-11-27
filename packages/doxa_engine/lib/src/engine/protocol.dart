@@ -25,7 +25,7 @@ final class CloseCommand extends EngineCommand {
   final int documentId;
 }
 
-enum QueryKind { pageDetails, outline, pageLinks, pageText }
+enum QueryKind { pageDetails, outline, pageLinks, pageText, annotations }
 
 final class QueryCommand extends EngineCommand {
   const QueryCommand(super.id, this.kind, this.documentId, [this.pageIndex]);

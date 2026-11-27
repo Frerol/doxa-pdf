@@ -65,7 +65,7 @@ Interop is verified by rendering the saved output with pdf.js, MuPDF and Poppler
 
 ## 5. Engine interface
 
-Implemented in `packages/doxa_engine` (issue #46). Annotation reading, editing and saving arrive in M2.
+Implemented in `packages/doxa_engine` (issue #46). Annotation reading arrived in #140; editing and saving arrive later in M2.
 
 ```dart
 abstract interface class PdfEngine {
@@ -80,6 +80,7 @@ abstract interface class PdfEngine {
   void setGeneration(DocumentHandle document, int generation);            // drops stale queued renders
 
   Future<PageText> pageText(DocumentHandle document, int pageIndex);       // chars + boxes, cached
+  Future<List<Annotation>> annotations(DocumentHandle document, int pageIndex); // editing instance; no popups, links or widgets
   Stream<SearchHit> search(DocumentHandle document, SearchQuery query);    // page by page; cancel the subscription to stop
 
   Future<void> dispose();
@@ -90,5 +91,8 @@ abstract interface class PdfEngine {
   event-loop turn (visible previews, visible tiles, near previews, near tiles, search pages, thumbnails, background), so cancellations
   and new generations apply before the next job. Every failure becomes a typed reply, so one bad document never stops the engine.
 - Each document has a render instance (rendered with `FPDF_ANNOT`) and an editing instance loaded on demand (ADR-0005).
-- Text boxes and destinations are in PDF user space; `PageDetails.transform()` maps them to the view.
+- Text boxes and destinations are in PDF user space; `PageDetails.transform()` maps them to the view. So are annotation quads and ink points.
+- `annotations` reads the `doxa_core` model from the editing instance and changes nothing. PDFium reports no `/C` once an annotation has an
+  appearance stream (most annotations from other apps), so the colour of the first painted path of the appearance stands in for it.
+  A foreign annotation without `/NM` gets an id from its page and position, in memory only.
 - `FakePdfEngine` (`package:doxa_engine/testing.dart`) lets UI and controller tests run without native code.

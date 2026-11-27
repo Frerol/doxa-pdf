@@ -1,0 +1,84 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 16 0 R 17 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Length 146 >>
+stream
+BT /F1 14 Tf 72 700 Td 20 TL
+(A field notebook) Tj T*
+(The morning light crossed the valley.) Tj T*
+(We drew a map and marked the river.) Tj T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R /Annots [6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R] >>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [70 696 330 716] /QuadPoints [72 714 328 714 72 698 328 698] /C [1 1 0] /CA 0.4 /NM (doxa:0b3f6c1e-2a4d-4e8f-9a1b-3c5d7e9f1a2b) /DoxaVersion (1) /DoxaText (A field notebook) /T (Ana) /Contents (Check the date) /M (D:20261127103000Z) /F 4 >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Underline /Rect [70 656 400 696] /QuadPoints [72 694 398 694 72 678 398 678 72 674 398 674 72 658 398 658] /C [0 0 1] /F 4 >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Ink /Rect [95 395 305 505] /InkList [[100 400 200 500 300 450] [100 450 150 460]] /C [1 0 0] /Border [0 0 3] /NM (other-app-ink) /F 4 >>
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Ink /Rect [95 295 305 315] /InkList [[100 300 200 310 300 305]] /C [0 1 0] /CA 0.5 /Border [0 0 8] /NM (doxa:5e7a9c1b-3d5f-4a7c-8e9a-1b3c5d7e9fa0) /DoxaVersion (1) /DoxaTool (highlighter) /DoxaPressure (AgA) /F 4 >>
+endobj
+10 0 obj
+<< /Type /Annot /Subtype /Square /Rect [400 100 500 200] /C [0 0 0] /NM (square-1) /F 4 >>
+endobj
+11 0 obj
+<< /Type /Annot /Subtype /Popup /Rect [400 700 550 780] /Parent 6 0 R >>
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Link /Rect [72 100 200 120] /Border [0 0 0] /A << /S /URI /URI (https://example.org/) >> >>
+endobj
+13 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [70 600 300 620] /QuadPoints [72 618 298 618 72 602] /C [1 1 0] /NM (broken-quads) >>
+endobj
+14 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [70 696 330 716] /QuadPoints [72 714 328 714 72 698 328 698] /C [1 0.5 0] /NM (rotated) >>
+endobj
+15 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [70 696 330 716] /QuadPoints [72 714 328 714 72 698 328 698] /C [1 0.5 0] /NM (cropped) >>
+endobj
+16 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R /Rotate 90 /Annots [14 0 R] >>
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R /CropBox [37.5 62.25 547.75 728.5] /Annots [15 0 R] >>
+endobj
+xref
+0 18
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000129 00000 n 
+0000000199 00000 n 
+0000000396 00000 n 
+0000000584 00000 n 
+0000000882 00000 n 
+0000001049 00000 n 
+0000001227 00000 n 
+0000001484 00000 n 
+0000001591 00000 n 
+0000001680 00000 n 
+0000001814 00000 n 
+0000001958 00000 n 
+0000002107 00000 n 
+0000002256 00000 n 
+0000002411 00000 n 
+trailer
+<< /Size 18 /Root 1 0 R >>
+startxref
+2590
+%%EOF

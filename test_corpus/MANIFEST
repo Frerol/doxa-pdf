@@ -2,6 +2,7 @@
 annotated-acrobat.pdf	-	https://github.com/mozilla/pdf.js/blob/0382dd0e252ff4d8be5956114ea176a68fe10bba/test/pdfs/highlight_popup.pdf	Apache-2.0	Calixte Denizet, pdf.js test fixture. Acrobat Pro 24.3.20112 highlight with popup, upstream file unchanged.
 annotated-okular.pdf	-	https://github.com/Frerol/doxa-pdf/issues/9	GPL-3.0-or-later	Doxa PDF. Okular 26.08.3 added a linked sticky note to two-column-article.pdf using Document::addPageAnnotation and Document::saveChanges.
 annotated-pdfjs.pdf	-	https://github.com/Frerol/doxa-pdf/issues/9	GPL-3.0-or-later	Doxa PDF. pdf.js 5.4.624 added a free-text annotation to offset-cropbox.pdf using annotationStorage and saveDocument.
+annotations.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. Annotations with known values: Doxa's own and foreign markup and ink, a square, a popup, a link, broken quads, a rotated page and an offset CropBox.
 encrypted.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. AES-256.
 many-pages.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. 1,001 pages sharing a content stream.
 marked-up-xournalpp.pdf	-	https://github.com/Frerol/doxa-pdf/issues/9	GPL-3.0-or-later	Doxa PDF. Xournal++ 1.3.8 exported pen and highlighter strokes over two-column-article.pdf with its qpdf backend.

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:doxa_core/doxa_core.dart';
+
 import 'types.dart';
 
 /// The PDF engine used by the app (docs/plan/04-pdf-engine.md §5).
@@ -37,6 +39,12 @@ abstract interface class PdfEngine {
 
   /// The text layer of one page.
   Future<PageText> pageText(DocumentHandle document, int pageIndex);
+
+  /// The annotations of one page (FR-ANNO-002), read from the editing
+  /// instance (ADR-0005), in the page's `/Annots` order. Popups, links
+  /// and form widgets are left out: popups belong to their markup, and
+  /// links ([pageLinks]) and form fields are not study annotations.
+  Future<List<Annotation>> annotations(DocumentHandle document, int pageIndex);
 
   /// Searches every page in order and streams the hits page by page.
   /// Cancelling the subscription stops the search.
