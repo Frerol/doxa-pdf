@@ -7,6 +7,7 @@
 /// `dart test`. See docs/plan/03-architecture.md §2.
 library;
 
+export 'src/annotation.dart';
 export 'src/annotation_id.dart';
 export 'src/geometry.dart';
 export 'src/page_transform.dart';
