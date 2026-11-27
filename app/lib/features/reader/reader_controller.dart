@@ -112,6 +112,8 @@ final class ReaderController {
   double _ox = 0;
   double _oy = 0;
   int _generation = 0;
+  int _firstRenderGeneration = 0;
+  bool _renderingSuspended = false;
 
   /// Bumped on every new layout: renders requested for an older layout
   /// have the wrong geometry and are dropped.
@@ -795,10 +797,24 @@ final class ReaderController {
     return fit;
   }
 
-  /// Frees memory on memory pressure (`onTrimMemory`): keeps only what is
-  /// on screen.
-  void trimMemory() {
-    cache.evict(keep: visibleKeys(), targetBytes: 0);
+  /// Frees memory, keeping only what's on screen on memory pressure.
+  /// With [keepVisible] false, rendering stays suspended until [resumeRendering].
+  void trimMemory({bool keepVisible = true}) {
+    if (!keepVisible && !_renderingSuspended) {
+      _renderingSuspended = true;
+      _firstRenderGeneration = ++_generation;
+      engine.setGeneration(document, _generation);
+      _pending.clear();
+    }
+    cache.evict(keep: keepVisible ? visibleKeys() : const {}, targetBytes: 0);
+    repaint.value++;
+  }
+
+  /// Recreates the visible previews and tiles after returning to the app.
+  void resumeRendering() {
+    if (!_renderingSuspended) return;
+    _renderingSuspended = false;
+    _ensure();
     repaint.value++;
   }
 
@@ -882,7 +898,12 @@ final class ReaderController {
   /// previews, visible tiles, then one screen ahead in both directions.
   void _ensure() {
     final layout = _layout;
-    if (_disposed || layout == null || layout.pageCount == 0) return;
+    if (_disposed ||
+        _renderingSuspended ||
+        layout == null ||
+        layout.pageCount == 0) {
+      return;
+    }
     _generation++;
     engine.setGeneration(document, _generation);
     final visible = visibleRect;
@@ -922,7 +943,7 @@ final class ReaderController {
   }
 
   void _request(TileSpec spec, RenderPriority priority) {
-    if (cache.use(spec.key) != null) return;
+    if (_renderingSuspended || cache.use(spec.key) != null) return;
     // A request from an older generation will be dropped as stale, so ask
     // again for anything that is still needed now.
     final pending = _pending[spec.key];
@@ -945,9 +966,15 @@ final class ReaderController {
   Future<void> _load(String key, RenderRequest request, int epoch) async {
     try {
       final result = await engine.render(request);
-      if (_disposed || result is! RenderedBitmap) return;
+      if (_disposed ||
+          request.generation < _firstRenderGeneration ||
+          result is! RenderedBitmap) {
+        return;
+      }
       final image = await _decode(result);
-      if (_disposed || (epoch != _layoutEpoch && key.startsWith('t:'))) {
+      if (_disposed ||
+          request.generation < _firstRenderGeneration ||
+          (epoch != _layoutEpoch && key.startsWith('t:'))) {
         image.dispose();
         return;
       }

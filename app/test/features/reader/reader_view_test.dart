@@ -153,6 +153,38 @@ void main() {
     expect(controller.cache.keys.toSet(), controller.visibleKeys());
   });
 
+  testWidgets('background releases images and resume redraws (NFR-PERF-006)', (
+    tester,
+  ) async {
+    final binding = tester.binding;
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    addTearDown(
+      () => binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed),
+    );
+    await showReader(tester);
+    final visible = controller.visibleKeys();
+    expect(visible, isNotEmpty);
+    expect(controller.cache.keys, containsAll(visible));
+
+    // Leave a preview request in flight as the app becomes hidden.
+    expect(controller.thumbnail(39), isNull);
+    expect(controller.pendingRequests, greaterThan(0));
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    expect(controller.cache.keys, containsAll(visible));
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    expect(controller.cache.keys, isEmpty);
+    await settle(tester);
+    expect(controller.cache.keys, isEmpty);
+
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    expect(controller.cache.keys, isEmpty);
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await settle(tester);
+    expect(controller.cache.keys, containsAll(visible));
+  });
+
   group('ReaderPage', () {
     Future<void> showPage(
       WidgetTester tester,
