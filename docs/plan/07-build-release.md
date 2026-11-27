@@ -68,7 +68,8 @@ Platform notes:
   All per-ABI APKs share the same code (`force-version-code-ignoring-abi`), because Flutter's ABI × 1000 offset would collide with the PATCH digits.
 - **Conventional Commits** drive the changelog (`CHANGELOG.md`, Keep a Changelog format).
 - **Release workflow** (`.github/workflows/release.yml`, on `v*` tags): checks that the tag names the app version, builds signed per-ABI APKs
-  (`arm64-v8a`, `armeabi-v7a`, `x86_64`), checks each one's signer, `versionCode` and `versionName`, writes `SHA256SUMS` and creates a **draft** release,
+  (`arm64-v8a`, `armeabi-v7a`, `x86_64`), checks each one's signer, `versionCode` and `versionName`, checks the release dependency licenses, writes a CycloneDX SBOM
+  (`tools/generate_sbom.py`) and `SHA256SUMS`, and creates a **draft** release,
   marked pre-release when the version has a `-` suffix. The release key comes from the secrets `DOXA_RELEASE_KEYSTORE_BASE64`, `DOXA_RELEASE_STORE_PASSWORD`,
   `DOXA_RELEASE_KEY_ALIAS` and `DOXA_RELEASE_KEY_PASSWORD`; local release builds without them are signed with the debug key.
 - Release flow for alphas and betas: tag, signed release draft, the manual checklist on the reference tablet (stylus, interop, upgrade from the previous version), then publish.

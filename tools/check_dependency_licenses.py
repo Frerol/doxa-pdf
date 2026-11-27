@@ -23,11 +23,10 @@ MAVEN_LICENSE_URLS = {
     "www.gnu.org/licenses/gpl-3.0": "GPL-3.0",
     "www.gnu.org/licenses/lgpl-3.0": "LGPL-3.0",
 }
-FLUTTER_DEBUG_MODULES = {
-    "io.flutter:arm64_v8a_debug",
-    "io.flutter:armeabi_v7a_debug",
-    "io.flutter:flutter_embedding_debug",
-    "io.flutter:x86_64_debug",
+FLUTTER_ENGINE_MODULES = {
+    f"io.flutter:{artifact}_{mode}"
+    for artifact in ("arm64_v8a", "armeabi_v7a", "flutter_embedding", "x86_64")
+    for mode in ("debug", "release")
 }
 MAVEN_INHERITED_LICENSES = {
     # The artifact's POM inherits this from guava-parent:26.0-android.
@@ -100,7 +99,7 @@ def gradle_licenses(report, flutter_root):
     licenses = {}
     for coordinate, pom in read_json(report).items():
         module, version = coordinate.rsplit(":", 1)
-        if module in FLUTTER_DEBUG_MODULES and version == flutter_version:
+        if module in FLUTTER_ENGINE_MODULES and version == flutter_version:
             licenses[coordinate] = "BSD-3-Clause"
         else:
             license_name = maven_license(pom)
