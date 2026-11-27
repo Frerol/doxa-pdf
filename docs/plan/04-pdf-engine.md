@@ -45,6 +45,11 @@ and a C API covering rendering, text, annotations, forms, page objects and savin
 
 > **Updated by [Spike C](../spikes/C-annotation-write.md) / [ADR-0008](../adr/0008-annotation-save-strategy.md):** in the MVP, text markup is written **without** `/AP`, ink gets an AP built from page objects (`FPDFAnnot_AppendObject`, after all dictionary setters), and saves are full saves. The hand-written appearance-stream writer described below is the target for the post-MVP incremental writer.
 
+Each Doxa-created annotation carries the ownership marker of [ADR-0005](../adr/0005-rendering-pipeline-and-foreign-annotations.md) §5:
+an `/NM` of `doxa:` plus a UUID v4, and the private key `/DoxaVersion` with the text value `1` (`DoxaMarker` in `doxa_core`). Both
+must be present: the prefix alone, which another app could copy, does not make an annotation Doxa's. The version goes up when what Doxa
+writes changes, for example the `/DoxaPressure` encoding (one base64url character per quantised pressure, a comma between strokes).
+
 Each Doxa-created annotation includes:
 - The standard keys: `/Subtype`, `/Rect`, `/C`, `/CA`, `/NM`, `/M`, `/CreationDate`, `/T` (author), `/Contents`, `/F` (Print).
 - Geometry: `/QuadPoints` for markup and `/InkList` for ink.
