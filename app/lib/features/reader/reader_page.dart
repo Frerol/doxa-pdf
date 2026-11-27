@@ -122,11 +122,10 @@ class _ReaderPageState extends State<ReaderPage> {
   /// and they are drawn over the page instead of resizing it.
   bool _fullscreen = false;
 
-  /// The side panel (UX §5): whether it is open and what it shows.
+  /// Whether the tablet dock is open (UX §7).
   bool _panelOpen = false;
-  PanelSection _panelSection = PanelSection.pages;
 
-  /// Widths from which the panel sits beside the page instead of over it.
+  /// Minimum width for docking beside the page.
   static const _panelBesideWidth = 600.0;
 
   /// Whether the app bar, tab row and scrubber show. A tap in the middle of
@@ -362,39 +361,66 @@ class _ReaderPageState extends State<ReaderPage> {
     if (page != null) controller.goToPage(page, record: true);
   }
 
-  /// The page with the side panel: beside it on wide screens, over it on
-  /// phones, where picking an entry closes it.
+  Future<void> _togglePanel(ReaderController controller) async {
+    if (MediaQuery.sizeOf(context).width >= _panelBesideWidth) {
+      controller.keepScaleOnNextResize();
+      setState(() => _panelOpen = !_panelOpen);
+      return;
+    }
+
+    final target = await Navigator.of(context).push<LinkTarget>(
+      MaterialPageRoute<LinkTarget>(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: Text(AppLocalizations.of(context).outlineTab)),
+          body: SafeArea(
+            top: false,
+            child: ReaderSidePanel(
+              controller: controller,
+              onFollow: (target) => Navigator.of(context).pop(target),
+            ),
+          ),
+        ),
+      ),
+    );
+    if (mounted && _controller == controller && target != null) {
+      await _follow(target);
+    }
+  }
+
   Widget _withPanel(
     ReaderController controller, {
     required bool showPanel,
     required Widget child,
   }) {
-    if (!showPanel) return child;
-    final beside = MediaQuery.sizeOf(context).width >= _panelBesideWidth;
-    final panel = ReaderSidePanel(
-      controller: controller,
-      section: _panelSection,
-      onSection: (section) => setState(() => _panelSection = section),
-      onFollow: (target) {
-        if (!beside) setState(() => _panelOpen = false);
-        unawaited(_follow(target));
-      },
-    );
-    if (!beside) {
-      return Stack(
-        children: [
-          child,
-          Positioned.fill(child: panel),
-        ],
-      );
-    }
-    final line = Theme.of(context).colorScheme.outlineVariant;
+    final size = MediaQuery.sizeOf(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      textDirection: TextDirection.ltr,
       children: [
-        SizedBox(width: ReaderSidePanel.width, child: panel),
-        VerticalDivider(width: 1, color: line),
-        Expanded(child: child),
+        if (showPanel) ...[
+          SizedBox(
+            width: size.width * (size.width > size.height ? 0.25 : 0.4),
+            child: SafeArea(
+              bottom: false,
+              left: false,
+              right: false,
+              child: ReaderSidePanel(
+                key: ObjectKey(controller),
+                controller: controller,
+                onClose: () {
+                  controller.keepScaleOnNextResize();
+                  setState(() => _panelOpen = false);
+                },
+                onFollow: (target) => unawaited(_follow(target)),
+              ),
+            ),
+          ),
+          VerticalDivider(
+            width: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ],
+        Expanded(key: const ValueKey('reader-area'), child: child),
       ],
     );
   }
@@ -419,6 +445,10 @@ class _ReaderPageState extends State<ReaderPage> {
     final showBars = _barsShown || _searchOpen;
     final canPop = Navigator.of(context).canPop();
     final hasPanel = controller != null && controller.info.pageCount > 0;
+    final dockPanel =
+        hasPanel &&
+        _panelOpen &&
+        MediaQuery.sizeOf(context).width >= _panelBesideWidth;
     final body = Scaffold(
       // In full screen the page keeps its size while the bars come and go:
       // the bars are drawn over it instead of resizing it.
@@ -435,7 +465,6 @@ class _ReaderPageState extends State<ReaderPage> {
               }),
             )
           : AppBar(
-              // The contents button opens the drawer; no extra menu button.
               automaticallyImplyLeading: false,
               leadingWidth: (canPop ? 48.0 : 0) + (hasPanel ? 48.0 : 0) + 8,
               leading: Row(
@@ -447,8 +476,8 @@ class _ReaderPageState extends State<ReaderPage> {
                       icon: const Icon(Icons.view_sidebar_outlined),
                       selectedIcon: const Icon(Icons.view_sidebar),
                       tooltip: l10n.sidePanel,
-                      isSelected: _panelOpen,
-                      onPressed: () => setState(() => _panelOpen = !_panelOpen),
+                      isSelected: dockPanel,
+                      onPressed: () => _togglePanel(controller),
                     ),
                 ],
               ),
@@ -494,7 +523,7 @@ class _ReaderPageState extends State<ReaderPage> {
         (final ReaderController c, _) => _withPanel(
           c,
           // The panel stays when the bars hide (UX §7).
-          showPanel: hasPanel && _panelOpen,
+          showPanel: dockPanel,
           child: Stack(
             children: [
               Positioned.fill(

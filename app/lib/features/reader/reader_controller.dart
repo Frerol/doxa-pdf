@@ -150,6 +150,13 @@ final class ReaderController {
   Offset toDocument(Offset screen) =>
       Offset(_ox + screen.dx / _zoom, _oy + screen.dy / _zoom);
 
+  bool _keepScale = false;
+
+  /// Makes the next [resize] keep a user zoom's page size on screen instead
+  /// of its zoom relative to fit. The side panel calls it as it docks or
+  /// undocks (UX §7); a rotation keeps the relative zoom.
+  void keepScaleOnNextResize() => _keepScale = true;
+
   /// Lays the document out for a new view size, keeping the reading
   /// position.
   void resize(Size size, double devicePixelRatio) {
@@ -165,6 +172,23 @@ final class ReaderController {
     _viewSize = size;
     _devicePixelRatio = devicePixelRatio;
     if (relayout) _relayout();
+    // After [keepScaleOnNextResize], a user zoom keeps the page's size on
+    // screen: the layout scales with the view width, so the zoom makes up
+    // for it, and a narrower view clips the page instead of shrinking it.
+    final keepScale = _keepScale;
+    _keepScale = false;
+    final layout = _layout;
+    if (keepScale &&
+        !_atFit &&
+        old != null &&
+        anchor != null &&
+        layout != null) {
+      final before = old.pageRect(anchor.page).width;
+      final after = layout.pageRect(anchor.page).width;
+      if (before > 0 && after > 0) {
+        _zoom = (_zoom * before / after).clamp(minZoom, maxZoom);
+      }
+    }
     _restore(old == null ? _takeInitial() : anchor);
     _changed();
   }

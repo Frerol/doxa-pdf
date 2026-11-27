@@ -90,7 +90,13 @@
   "@navigationPanel": {
     "description": "Tooltip of the button that opens the outline and thumbnails panel."
   },
-  "outlineTab": "Outline",
+  "outlineTab": "Contents",
+  "outlineSearch": "Search contents",
+  "outlineExpandAll": "Expand all",
+  "outlineCollapseAll": "Collapse all",
+  "outlineExpandEntry": "Expand entry",
+  "outlineCollapseEntry": "Collapse entry",
+  "outlineNoMatches": "No matching entries",
   "@outlineTab": {
     "description": "Panel tab with the document's table of contents."
   },
