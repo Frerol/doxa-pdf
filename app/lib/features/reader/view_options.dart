@@ -369,9 +369,10 @@ class _ChoiceTile extends StatelessWidget {
 
 /// Tiles in a row, all as wide and tall as the largest one's content, at
 /// the start of the line. Where the line is narrower, the tiles narrow
-/// together and their labels wrap; where even the longest word does not
-/// fit (large text on a phone), they stack, each as wide as the line.
-/// Text and touch targets keep their size either way (UX §6).
+/// together and their labels wrap. A row that still misses by a little is
+/// scaled down slightly; one that misses by more (large text on a phone)
+/// stacks, each tile as wide as the line, so text and touch targets keep
+/// their size (UX §6).
 class _UniformTiles extends MultiChildRenderObjectWidget {
   const _UniformTiles({required super.children});
 
@@ -396,12 +397,18 @@ class _RenderUniformTiles extends RenderBox
 
   static const _gap = 8.0;
 
+  /// The smallest scale a row may take before the tiles stack instead.
+  static const _minScale = 0.8;
+
   TextDirection _textDirection;
   set textDirection(TextDirection value) {
     if (value == _textDirection) return;
     _textDirection = value;
     markNeedsLayout();
   }
+
+  /// The scale of the row laid out last; 1 when it fits or stacks.
+  double _scale = 1;
 
   @override
   void setupParentData(RenderBox child) {
@@ -415,20 +422,27 @@ class _RenderUniformTiles extends RenderBox
 
   double get _gaps => _gap * math.max(0, childCount - 1);
 
-  /// The tiles' width in a row of [maxWidth], or null when they stack.
-  double? _rowTile(double maxWidth) {
+  /// The tiles' width and scale in a row of [maxWidth], or null when
+  /// they stack.
+  ({double tile, double scale})? _row(double maxWidth) {
     if (childCount == 0) return null;
     final natural = _widest((c) => c.getMaxIntrinsicWidth(double.infinity));
     final fitted = (maxWidth - _gaps) / childCount;
-    if (natural <= fitted) return natural;
+    if (natural <= fitted) return (tile: natural, scale: 1);
     final narrowest = _widest((c) => c.getMinIntrinsicWidth(double.infinity));
-    return narrowest <= fitted ? fitted : null;
+    if (narrowest <= fitted) return (tile: fitted, scale: 1);
+    final scale = maxWidth / (narrowest * childCount + _gaps);
+    return scale >= _minScale ? (tile: narrowest, scale: scale) : null;
   }
+
+  /// The height of each tile in a row of tiles [tile] wide, unscaled.
+  double _rowHeight(double tile) =>
+      _widest((c) => c.getMinIntrinsicHeight(tile));
 
   double _height(double width) {
     if (childCount == 0) return 0;
-    if (_rowTile(width) case final tile?) {
-      return _widest((c) => c.getMinIntrinsicHeight(tile));
+    if (_row(width) case (:final tile, :final scale)) {
+      return _rowHeight(tile) * scale;
     }
     return getChildrenAsList().fold<double>(
           0,
@@ -454,30 +468,35 @@ class _RenderUniformTiles extends RenderBox
   @override
   Size computeDryLayout(BoxConstraints constraints) {
     final width = constraints.maxWidth;
-    final tile = _rowTile(width);
-    return constraints.constrain(
-      Size(tile == null ? width : tile * childCount + _gaps, _height(width)),
-    );
+    final row = _row(width);
+    final rowWidth = row == null
+        ? width
+        : (row.tile * childCount + _gaps) * row.scale;
+    return constraints.constrain(Size(rowWidth, _height(width)));
   }
 
   @override
   void performLayout() {
     final width = constraints.maxWidth;
     final tiles = getChildrenAsList();
+    _scale = 1;
     if (tiles.isEmpty) {
       size = constraints.smallest;
       return;
     }
-    if (_rowTile(width) case final tile?) {
-      final height = _height(width);
-      size = constraints.constrain(Size(tile * childCount + _gaps, height));
+    if (_row(width) case (:final tile, :final scale)) {
+      final height = _rowHeight(tile);
+      final rowWidth = tile * childCount + _gaps;
+      _scale = scale;
+      size = constraints.constrain(Size(rowWidth * scale, height * scale));
       // At the start of the line when the parent makes it wider.
+      final lineWidth = size.width / scale;
       for (final (i, child) in tiles.indexed) {
         child.layout(BoxConstraints.tight(Size(tile, height)));
         final start = i * (tile + _gap);
         final x = _textDirection == TextDirection.ltr
             ? start
-            : size.width - start - tile;
+            : lineWidth - start - tile;
         (child.parentData! as _UniformTilesData).offset = Offset(x, 0);
       }
       return;
@@ -491,13 +510,35 @@ class _RenderUniformTiles extends RenderBox
     size = constraints.constrain(Size(width, y - _gap));
   }
 
-  @override
-  void paint(PaintingContext context, Offset offset) =>
-      defaultPaint(context, offset);
+  Matrix4 get _transform => Matrix4.diagonal3Values(_scale, _scale, 1);
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
-      defaultHitTestChildren(result, position: position);
+  void paint(PaintingContext context, Offset offset) {
+    if (_scale == 1) {
+      defaultPaint(context, offset);
+      return;
+    }
+    context.pushTransform(needsCompositing, offset, _transform, defaultPaint);
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    if (_scale == 1) {
+      return defaultHitTestChildren(result, position: position);
+    }
+    return result.addWithPaintTransform(
+      transform: _transform,
+      position: position,
+      hitTest: (result, position) =>
+          defaultHitTestChildren(result, position: position),
+    );
+  }
+
+  @override
+  void applyPaintTransform(RenderBox child, Matrix4 transform) {
+    if (_scale != 1) transform.multiply(_transform);
+    super.applyPaintTransform(child, transform);
+  }
 }
 
 /// Single page, two pages and cover + two pages.
