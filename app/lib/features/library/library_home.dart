@@ -12,6 +12,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../src/doxa_theme.dart';
 import '../dev/dev_documents.dart';
+import '../dictionary/dictionary_popup.dart';
 import '../reader/reader_tabs.dart';
 import '../settings/app_settings.dart';
 import '../settings/settings_page.dart';
@@ -701,6 +702,7 @@ class _LibraryHomeState extends State<LibraryHome> {
             tooltip: l10n.librarySearch,
             onPressed: () => _showSection(HomeSection.recents, search: true),
           ),
+          const DictionaryButton(),
           ..._menuActions(l10n),
           const SizedBox(width: 8),
         ],

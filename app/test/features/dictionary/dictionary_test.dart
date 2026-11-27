@@ -419,6 +419,68 @@ void main() {
       expect(lookup.queries, ['cas', 'cat']);
       expect(find.text('Alpha'), findsOneWidget);
       expect(find.textContaining('feline animal'), findsOneWidget);
+      // The field shows the word now looked up.
+      expect(find.widgetWithText(TextField, 'cat'), findsOneWidget);
+    });
+
+    testWidgets('FR-TEXT-008 looks up a typed word (#121)', (tester) async {
+      writeSet(Directory('${root.path}/a'), 'Alpha', {'cat': 'animal'});
+      final library = DictionaryLibrary(root.path);
+      await tester.runAsync(library.load);
+      final lookup = _FakeLookup();
+      await pump(
+        tester,
+        DictionaryLookupView(
+          query: '',
+          library: library,
+          lookup: lookup,
+          openUri: (_) async => true,
+        ),
+      );
+      // Opened without a word: only the field, nothing looked up yet.
+      expect(lookup.queries, isEmpty);
+      expect(find.textContaining('No entry'), findsNothing);
+
+      await tester.enterText(find.byType(TextField), '   ');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+      expect(lookup.queries, isEmpty);
+
+      await tester.enterText(find.byType(TextField), ' cat ');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+      expect(lookup.queries, ['cat']);
+      expect(find.text('Alpha'), findsOneWidget);
+      expect(find.textContaining('feline animal'), findsOneWidget);
+    });
+
+    testWidgets('the Dictionary button opens an empty lookup (#121)', (
+      tester,
+    ) async {
+      writeSet(Directory('${root.path}/a'), 'Alpha', {'cat': 'animal'});
+      final library = DictionaryLibrary(root.path);
+      await tester.runAsync(library.load);
+      final lookup = _FakeLookup();
+      await pump(tester, const DictionaryButton());
+      // Without dictionaries in the app there is no button.
+      expect(find.byType(IconButton), findsNothing);
+
+      await pump(
+        tester,
+        DictionaryScope(
+          library: library,
+          lookup: lookup,
+          openUri: (_) async => true,
+          child: const DictionaryButton(),
+        ),
+      );
+      await tester.tap(find.byTooltip('Dictionary'));
+      await tester.pumpAndSettle();
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.controller!.text, isEmpty);
+      // The field has the keyboard, ready for a word.
+      expect(tester.testTextInput.hasAnyClients, isTrue);
+      expect(lookup.queries, isEmpty);
     });
   });
 

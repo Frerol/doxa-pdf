@@ -516,6 +516,7 @@ class _ReaderPageState extends State<ReaderPage> {
                     tooltip: l10n.searchTooltip,
                     onPressed: () => setState(() => _searchOpen = true),
                   ),
+                  const DictionaryButton(),
                   IconButton(
                     icon: const Icon(Icons.chrome_reader_mode_outlined),
                     tooltip: l10n.viewOptions,

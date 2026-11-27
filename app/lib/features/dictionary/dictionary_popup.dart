@@ -19,8 +19,9 @@ const dictionariesPage =
 const _dialogWidth = 600.0;
 
 /// Shows what the enabled dictionaries say about [query] (FR-TEXT-008): a
-/// popup on tablets, a bottom sheet on phones. With no dictionary installed
-/// it explains how to get one (FR-TEXT-012).
+/// popup on tablets, a bottom sheet on phones. Its field looks up a typed
+/// word; an empty [query] opens with only the field (#121). With no
+/// dictionary installed it explains how to get one (FR-TEXT-012).
 Future<void> showDictionaryLookup(
   BuildContext context, {
   required String query,
@@ -84,6 +85,7 @@ class DictionaryLookupView extends StatefulWidget {
 
 class _DictionaryLookupViewState extends State<DictionaryLookupView> {
   late String _query = widget.query.trim();
+  late final _field = TextEditingController(text: _query);
   Future<LookupResult>? _results;
 
   @override
@@ -96,6 +98,7 @@ class _DictionaryLookupViewState extends State<DictionaryLookupView> {
   @override
   void dispose() {
     widget.library.removeListener(_onLibrary);
+    _field.dispose();
     super.dispose();
   }
 
@@ -106,13 +109,21 @@ class _DictionaryLookupViewState extends State<DictionaryLookupView> {
 
   void _search() {
     final enabled = widget.library.enabled;
-    _results = enabled.isEmpty ? null : widget.lookup.lookup(_query, enabled);
+    _results = enabled.isEmpty || _query.isEmpty
+        ? null
+        : widget.lookup.lookup(_query, enabled);
   }
 
-  void _lookUp(String word) => setState(() {
-    _query = word;
-    _search();
-  });
+  /// Looks [word] up, from the field or a suggestion.
+  void _lookUp(String word) {
+    final query = word.trim();
+    if (query.isEmpty) return;
+    _field.text = query;
+    setState(() {
+      _query = query;
+      _search();
+    });
+  }
 
   Future<void> _copy(List<LookupGroup> groups) async {
     final l10n = AppLocalizations.of(context);
@@ -125,11 +136,18 @@ class _DictionaryLookupViewState extends State<DictionaryLookupView> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final results = _results;
-    if (results == null) {
+    if (widget.library.enabled.isEmpty) {
       return DictionaryEmptyState(
         openUri: widget.openUri,
         importer: widget.importer,
+      );
+    }
+    final results = _results;
+    if (results == null) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [_header(l10n, const [])],
       );
     }
     return FutureBuilder<LookupResult>(
@@ -149,26 +167,7 @@ class _DictionaryLookupViewState extends State<DictionaryLookupView> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(24, 16, 8, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _query,
-                      style: theme.textTheme.titleLarge,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (found.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.copy),
-                      tooltip: l10n.selectionCopy,
-                      onPressed: () => _copy(found),
-                    ),
-                ],
-              ),
-            ),
+            _header(l10n, found),
             Flexible(
               child: switch (snapshot) {
                 AsyncSnapshot(
@@ -218,6 +217,58 @@ class _DictionaryLookupViewState extends State<DictionaryLookupView> {
           ],
         );
       },
+    );
+  }
+
+  /// The field with the looked-up word, and Copy once something is found.
+  Widget _header(AppLocalizations l10n, List<LookupGroup> found) => Padding(
+    padding: const EdgeInsetsDirectional.fromSTEB(24, 16, 8, 8),
+    child: Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _field,
+            autofocus: _query.isEmpty,
+            textInputAction: TextInputAction.search,
+            style: Theme.of(context).textTheme.titleLarge,
+            decoration: InputDecoration(
+              hintText: l10n.dictionaryLookUpHint,
+              prefixIcon: const Icon(Icons.search),
+            ),
+            onSubmitted: _lookUp,
+          ),
+        ),
+        if (found.isNotEmpty)
+          IconButton(
+            icon: const Icon(Icons.copy),
+            tooltip: l10n.selectionCopy,
+            onPressed: () => _copy(found),
+          ),
+      ],
+    ),
+  );
+}
+
+/// Opens the dictionary lookup with an empty field, to look up a typed word
+/// (FR-TEXT-008, #121). Shows nothing when the app has no dictionaries.
+class DictionaryButton extends StatelessWidget {
+  const DictionaryButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = DictionaryScope.maybeOf(context);
+    if (scope == null) return const SizedBox.shrink();
+    return IconButton(
+      icon: const Icon(Icons.menu_book_outlined),
+      tooltip: AppLocalizations.of(context).dictionaryAction,
+      onPressed: () => showDictionaryLookup(
+        context,
+        query: '',
+        library: scope.library,
+        lookup: scope.lookup,
+        openUri: scope.openUri,
+        importer: scope.importer,
+      ),
     );
   }
 }
