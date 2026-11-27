@@ -860,6 +860,19 @@ final class ReaderController {
     _ox = visible.width >= content.width
         ? -(visible.width - content.width) / 2
         : _ox.clamp(0, content.width - visible.width);
+    if (layout.paged && layout.pageCount > 0) {
+      // Up and down, a paged view moves only within its pages: a page that
+      // fits stays still, even when its screen-sized cell is a little
+      // taller than the view (fit width). Sideways moves turn pages.
+      final pages = layout
+          .pagesOf(layout.spreadOf(layout.pageAt(visible.center)))
+          .map(layout.pageRect)
+          .reduce((first, second) => first.expandToInclude(second));
+      _oy = visible.height >= pages.height
+          ? pages.center.dy - visible.height / 2
+          : _oy.clamp(pages.top, pages.bottom - visible.height);
+      return;
+    }
     _oy = visible.height >= content.height
         ? -(visible.height - content.height) / 2
         : _oy.clamp(0, content.height - visible.height);
