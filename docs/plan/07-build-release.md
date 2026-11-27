@@ -64,7 +64,13 @@ Platform notes:
 - Android `versionCode` is derived from the version and MUST grow with every release, in SemVer order:
   `MAJOR × 10 000 000 + MINOR × 100 000 + PATCH × 1 000 + stage`, where stage is `100 + 10 × N + F` for `alpha.N.F` (`F` = 0 without a fix number; N, F ≤ 9),
   `300 + N` for `beta.N`, `500 + N` for `rc.N`, and `999` for the final release. For example, `1.0.0-alpha.1` is 10 000 110, `1.0.0-alpha.1.2` is 10 000 112 and `1.0.0` is 10 000 999.
+  `tools/version_code.py` computes it; the pubspec build number MUST equal it (`app/pubspec.yaml` `version: 1.0.0-alpha.1+10000110`, checked in CI).
+  All per-ABI APKs share the same code (`force-version-code-ignoring-abi`), because Flutter's ABI × 1000 offset would collide with the PATCH digits.
 - **Conventional Commits** drive the changelog (`CHANGELOG.md`, Keep a Changelog format).
+- **Release workflow** (`.github/workflows/release.yml`, on `v*` tags): checks that the tag names the app version, builds signed per-ABI APKs
+  (`arm64-v8a`, `armeabi-v7a`, `x86_64`), checks each one's signer, `versionCode` and `versionName`, writes `SHA256SUMS` and creates a **draft** release,
+  marked pre-release when the version has a `-` suffix. The release key comes from the secrets `DOXA_RELEASE_KEYSTORE_BASE64`, `DOXA_RELEASE_STORE_PASSWORD`,
+  `DOXA_RELEASE_KEY_ALIAS` and `DOXA_RELEASE_KEY_PASSWORD`; local release builds without them are signed with the debug key.
 - Release flow for alphas and betas: tag, signed release draft, the manual checklist on the reference tablet (stylus, interop, upgrade from the previous version), then publish.
   For 1.0.0 and every later minor or major release: freeze, release candidates (`v1.1.0-rc.1`…) until one passes the checklist, then the final tag, then store submissions.
 - Reproducibility: pinned toolchain plus lockfiles. Release artifacts ship with SHA-256 checksums and an SBOM (CycloneDX).
