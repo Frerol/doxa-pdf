@@ -37,8 +37,9 @@ Doxa PDF is a free (GPL-3.0-or-later) PDF reader **for studying** on Android, Wi
 ## 2. Current status
 - **M0 (foundations and spikes) is done.** Its tasks and specs are in git history (`git log -p -- AGENTS.md`). Branch protection on `main` is enabled
   (PR required; checks `Docs`, `Analyze & test`, `Android debug APK`, `PDFium bindings up to date`).
-- **Now: M1 = alpha 1, Reader.** Scope: `docs/plan/11-mvp.md` §3 v0.1 and `docs/plan/08-roadmap.md` M1. GitHub is the source of truth for what is open:
-  `gh issue list --repo Frerol/doxa-pdf --milestone "M1 — Alpha 1: Reader" --state open`. Each issue lists its dependencies, tasks and acceptance criteria.
+- **M1 (alpha 1, Reader) is done:** `1.0.0-alpha.1` was published on GitHub Releases on 2026-11-27, signed with the maintainer's key (CI secrets `DOXA_RELEASE_*`).
+- **Now: M2 = alpha 2, markup + pen.** Scope: `docs/plan/11-mvp.md` §3 Alpha 2 and `docs/plan/08-roadmap.md` M2. GitHub is the source of truth for what is open:
+  `gh issue list --repo Frerol/doxa-pdf --milestone "M2 — Alpha 2: Markup + pen" --state open`. Each issue lists its dependencies, tasks and acceptance criteria.
 - Update this section only when the milestone changes. Do not track individual issues here.
 
 ## 3. Repository layout

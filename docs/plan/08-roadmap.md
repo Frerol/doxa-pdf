@@ -22,7 +22,7 @@ Goal: prove the risky parts before building features. **Done:** every spike is G
 
 Exit: a spike report for each with go/no-go; ADRs recorded; [risks](09-risks.md) updated.
 
-## M1 — Alpha 1: Reader (Android)
+## M1 — Alpha 1: Reader (Android) ✓
 FILE-001..007, 011 · VIEW-001..014, 016..019 · TEXT-001, 002, 004, 008..010, 012 · BOOK-002 · SET-001, 002.
 Exit: open and read large textbooks and articles on the reference tablet within the performance budgets.
 
