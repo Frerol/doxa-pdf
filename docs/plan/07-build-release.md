@@ -72,6 +72,10 @@ Platform notes:
   (`tools/generate_sbom.py`) and `SHA256SUMS`, and creates a **draft** release,
   marked pre-release when the version has a `-` suffix. The release key comes from the secrets `DOXA_RELEASE_KEYSTORE_BASE64`, `DOXA_RELEASE_STORE_PASSWORD`,
   `DOXA_RELEASE_KEY_ALIAS` and `DOXA_RELEASE_KEY_PASSWORD`; local release builds without them are signed with the debug key.
+- **Dictionary packs** (ADR-0010) are built by hand with `tools/build_dictionary.py`, because their sources are large downloads. For each
+  release, upload the packs listed in `tools/dictionary_packs.json` and the catalogue written by `tools/build_dictionary_catalog.py --out`
+  to the draft release as `dictionaries.json`, then download the assets and run `tools/build_dictionary_catalog.py --check` on them before
+  publishing. The app fetches the catalogue from the release that matches its version, so every release needs one, even when the packs did not change.
 - Release flow for alphas and betas: tag, signed release draft, the manual checklist on the reference tablet (stylus, interop, upgrade from the previous version), then publish.
   For 1.0.0 and every later minor or major release: freeze, release candidates (`v1.1.0-rc.1`…) until one passes the checklist, then the final tag, then store submissions.
 - Reproducibility: pinned toolchain plus lockfiles. Release artifacts ship with SHA-256 checksums and an SBOM (CycloneDX).

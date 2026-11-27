@@ -7,11 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import 'dictionary_downloads.dart';
 import 'dictionary_import.dart';
 import 'dictionary_library.dart';
 
-/// The project page that lists Doxa's dictionary packs (FR-TEXT-012). The
-/// browser downloads them; the app never uses the network (NFR-SEC-001).
+/// The project page that lists Doxa's dictionary packs (FR-TEXT-012), for
+/// Get dictionaries where the app cannot download them itself (ADR-0010).
 const dictionariesPage =
     'https://github.com/Frerol/doxa-pdf/blob/main/docs/dictionaries.md';
 
@@ -422,11 +423,7 @@ class DictionaryEmptyState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(l10n.dictionaryEmptyMessage, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          FilledButton.icon(
-            icon: const Icon(Icons.open_in_browser),
-            label: Text(l10n.dictionaryGet),
-            onPressed: () => unawaited(openUri(dictionariesPage)),
-          ),
+          GetDictionariesButton(openUri: openUri, importer: importer),
           if (importActions case final actions?) ...[
             const SizedBox(height: 8),
             actions,
@@ -439,6 +436,47 @@ class DictionaryEmptyState extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// **Get dictionaries** (UX §9): Doxa's list of packs where the app can
+/// download them (ADR-0010), the project page in the browser elsewhere.
+class GetDictionariesButton extends StatelessWidget {
+  const GetDictionariesButton({
+    super.key,
+    required this.openUri,
+    this.importer,
+  });
+
+  final Future<bool> Function(String uri) openUri;
+  final DictionaryImporter? importer;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final scope = DictionaryScope.maybeOf(context);
+    final downloads = scope?.downloads;
+    if (downloads == null) {
+      return FilledButton.icon(
+        icon: const Icon(Icons.open_in_browser),
+        label: Text(l10n.dictionaryGet),
+        onPressed: () => unawaited(openUri(dictionariesPage)),
+      );
+    }
+    return FilledButton.icon(
+      icon: const Icon(Icons.download_outlined),
+      label: Text(l10n.dictionaryGet),
+      onPressed: () => unawaited(
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => DictionaryDownloadsPage(
+              downloads: downloads,
+              importer: importer ?? scope?.importer,
+            ),
+          ),
+        ),
       ),
     );
   }

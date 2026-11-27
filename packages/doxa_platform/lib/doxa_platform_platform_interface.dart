@@ -4,6 +4,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'dictionary_imports.dart';
 import 'document_files.dart';
+import 'download_conditions.dart';
 import 'doxa_platform_pigeon.dart';
 import 'library_folders.dart';
 import 'pdf_documents.dart';
@@ -40,6 +41,9 @@ abstract class DoxaPlatformPlatform extends PlatformInterface {
 
   DictionaryImports get dictionaryImports =>
       throw UnsupportedError('Dictionary imports are not available.');
+
+  DownloadConditions get downloadConditions =>
+      throw UnsupportedError('Download conditions are not available.');
 
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');

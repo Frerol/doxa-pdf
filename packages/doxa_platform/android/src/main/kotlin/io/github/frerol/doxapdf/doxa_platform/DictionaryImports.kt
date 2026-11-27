@@ -93,6 +93,16 @@ internal class DictionaryImports(context: Context) {
         }
     }
 
+    /**
+     * Stages a `.zip` the app downloaded into its cache (ADR-0010). The
+     * archive stays where it is; the caller deletes it.
+     */
+    fun stageArchive(path: String, callback: (Result<String>) -> Unit) = perform(callback) { target ->
+        val archive = File(path)
+        if (!archive.isFile) throw FileNotFoundException(path)
+        archive.inputStream().use { extract(it, target, Budget()) }
+    }
+
     /** Stages the dictionary files of a folder tree, keeping its layout. */
     fun stageTree(tree: Uri, callback: (Result<String>) -> Unit) = perform(callback) { target ->
         val root = DocumentsContract.getTreeDocumentId(tree)

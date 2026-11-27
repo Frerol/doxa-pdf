@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import 'dictionary_imports.dart';
 import 'document_files.dart';
+import 'download_conditions.dart';
 import 'doxa_platform_platform_interface.dart';
 import 'library_folders.dart';
 import 'pdf_documents.dart';
@@ -32,6 +33,11 @@ class PigeonDoxaPlatform extends DoxaPlatformPlatform {
 
   @override
   late final DictionaryImports dictionaryImports = _PigeonDictionaryImports(
+    _hostApi,
+  );
+
+  @override
+  late final DownloadConditions downloadConditions = _PigeonDownloadConditions(
     _hostApi,
   );
 
@@ -150,6 +156,10 @@ class _PigeonDictionaryImports
   @override
   Future<String?> takeIncoming() => _staging(_hostApi.takeIncomingDictionary);
 
+  @override
+  Future<String> stageArchive(String path) async =>
+      (await _staging(() => _hostApi.stageDictionaryArchive(path)))!;
+
   /// Maps host errors to [DictionaryImportException].
   static Future<String?> _staging(Future<String?> Function() action) async {
     try {
@@ -164,6 +174,21 @@ class _PigeonDictionaryImports
       });
     }
   }
+}
+
+class _PigeonDownloadConditions implements DownloadConditions {
+  _PigeonDownloadConditions(this._hostApi);
+
+  final DoxaPlatformPluginApi _hostApi;
+
+  @override
+  Future<String> cacheDirectory() => _hostApi.getCacheDirectory();
+
+  @override
+  Future<int?> freeBytes() => _hostApi.getCacheFreeBytes();
+
+  @override
+  Future<bool> isMetered() => _hostApi.isNetworkMetered();
 }
 
 /// Maps host errors to [DocumentFileException].

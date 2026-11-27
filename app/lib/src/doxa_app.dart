@@ -7,6 +7,7 @@ import 'package:doxa_platform/doxa_platform.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../features/dev/dev_documents.dart';
+import '../features/dictionary/dictionary_downloads.dart';
 import '../features/dictionary/dictionary_import.dart';
 import '../features/dictionary/dictionary_library.dart';
 import '../features/library/document_identity.dart';
@@ -50,6 +51,7 @@ class DoxaApp extends StatefulWidget {
     this.dictionaries,
     this.dictionaryLookup,
     this.dictionaryImports,
+    this.downloadConditions,
     this.openUri,
     this.clock = DateTime.now,
   });
@@ -88,6 +90,10 @@ class DoxaApp extends StatefulWidget {
   /// (FR-TEXT-009); the platform's on Android by default.
   final DictionaryImports? dictionaryImports;
 
+  /// What dictionary downloads check first (ADR-0010); the platform's on
+  /// Android by default. Get dictionaries opens the browser without it.
+  final DownloadConditions? downloadConditions;
+
   /// Opens a web page in the browser; the platform's by default.
   final Future<bool> Function(String uri)? openUri;
 
@@ -105,14 +111,31 @@ class DoxaApp extends StatefulWidget {
 class _DoxaAppState extends State<DoxaApp> with WidgetsBindingObserver {
   SettingsController? _ownSettings;
 
+  late final DictionaryImports? _imports =
+      widget.dictionaryImports ??
+      (Platform.isAndroid ? DoxaPlatform().dictionaryImports : null);
+
   late final DictionaryImporter? _importer = switch ((
     widget.dictionaries,
-    widget.dictionaryImports ??
-        (Platform.isAndroid ? DoxaPlatform().dictionaryImports : null),
+    _imports,
   )) {
     (final library?, final imports?) => DictionaryImporter(
       library: library,
       imports: imports,
+    ),
+    _ => null,
+  };
+
+  late final DictionaryDownloads? _downloads = switch ((
+    widget.dictionaries,
+    _imports,
+    widget.downloadConditions ??
+        (Platform.isAndroid ? DoxaPlatform().downloadConditions : null),
+  )) {
+    (final library?, final imports?, final conditions?) => DictionaryDownloads(
+      library: library,
+      imports: imports,
+      conditions: conditions,
     ),
     _ => null,
   };
@@ -189,6 +212,7 @@ class _DoxaAppState extends State<DoxaApp> with WidgetsBindingObserver {
           lookup: lookup,
           openUri: openUri,
           importer: importer,
+          downloads: _downloads,
           child: importer == null
               ? child
               : IncomingDictionaries(importer: importer, child: child),

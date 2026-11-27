@@ -1,18 +1,21 @@
 # Dictionaries for Doxa PDF
 
-Doxa looks words up **offline**, in StarDict dictionaries you add ([ADR-0009](adr/0009-offline-dictionary.md)). The app never downloads
-anything itself: you download a pack here with your browser, then open it with Doxa.
+Doxa looks words up **offline**, in StarDict dictionaries you add ([ADR-0009](adr/0009-offline-dictionary.md)). Words you look up never
+leave your device.
 
-## Add a dictionary in three steps
+## Add a dictionary
 
+**In the app (Android):** tap **Get dictionaries** in the lookup popup or in **Settings → Dictionaries**, then tap a pack. Doxa shows its
+size, downloads it from this project's GitHub Releases (asking first on mobile data), checks its SHA-256, and turns it on
+([ADR-0010](adr/0010-dictionary-downloads-in-app.md)). Doxa connects to the network only when you open that list or tap a pack.
+
+**With the browser:**
 1. Download a `.zip` pack from the list below.
 2. Open the downloaded file and choose **Doxa PDF** in "Open with". Doxa imports it, checks it and turns it on.
 3. Back in your document, select a word and tap **Dictionary**.
 
-You can also use **Settings → Dictionaries → Import file**. Turn dictionaries on or off there, drag them to change the order in which results
-appear, or remove them.
-
-Settings → Dictionaries also has **Import folder**, for a dictionary that is not in a `.zip`.
+You can also use **Settings → Dictionaries → Import file**, or **Import folder** for a dictionary that is not in a `.zip`. Turn dictionaries
+on or off there, drag them to change the order in which results appear, or remove them.
 
 > **Status:** the packs below are published with `1.0.0-alpha.1` ([#43](https://github.com/Frerol/doxa-pdf/issues/43)). Until then,
 > import any StarDict dictionary you have.
@@ -32,6 +35,10 @@ it belongs to, with its SHA-256. Each `.zip` holds a `LICENSE.txt` with the sour
 In the Wiktionary packs, an inflected form leads to its dictionary form: "comia" shows its note and the entry for "comer".
 A compact English pack (11.3 MB) can be built from [Open English WordNet](https://github.com/globalwordnet/english-wordnet) 2024 with the same tool.
 It lists irregular forms ("ran" finds "run"), but not regular ones: "dogs" does not find "dog".
+
+The app's list shows the definition packs (Português and English) from
+[`tools/dictionary_packs.json`](../tools/dictionary_packs.json). The translation packs belong to the separate Translate action
+([#100](https://github.com/Frerol/doxa-pdf/issues/100)).
 
 ## Other dictionaries
 
