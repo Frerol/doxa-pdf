@@ -173,6 +173,23 @@ abstract class DoxaPlatformPluginApi {
   /// (FR-TEXT-012), or returns null when none is waiting.
   @asyncCallback
   String? takeIncomingDictionary();
+
+  /// Extracts the dictionary `.zip` at [path], a file the app downloaded
+  /// into its cache (ADR-0010), into a new staging folder, like
+  /// [pickDictionaryFiles]. The `.zip` itself is left in place. Fails with
+  /// `missing`, `notDictionary`, `tooLarge` or `unreadable`.
+  @asyncCallback
+  String stageDictionaryArchive(String path);
+
+  /// The app's cache directory, where downloads are written (ADR-0010).
+  String getCacheDirectory();
+
+  /// Bytes free for the app in its cache directory, or null when unknown.
+  int? getCacheFreeBytes();
+
+  /// Whether the active network is metered, so a large download asks
+  /// first (ADR-0010). False when there is no network.
+  bool isNetworkMetered();
 }
 
 @FlutterApi()

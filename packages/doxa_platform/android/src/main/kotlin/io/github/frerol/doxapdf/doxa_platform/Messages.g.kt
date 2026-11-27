@@ -541,6 +541,22 @@ interface DoxaPlatformPluginApi {
    * (FR-TEXT-012), or returns null when none is waiting.
    */
   fun takeIncomingDictionary(callback: (Result<String?>) -> Unit)
+  /**
+   * Extracts the dictionary `.zip` at [path], a file the app downloaded
+   * into its cache (ADR-0010), into a new staging folder, like
+   * [pickDictionaryFiles]. The `.zip` itself is left in place. Fails with
+   * `missing`, `notDictionary`, `tooLarge` or `unreadable`.
+   */
+  fun stageDictionaryArchive(path: String, callback: (Result<String>) -> Unit)
+  /** The app's cache directory, where downloads are written (ADR-0010). */
+  fun getCacheDirectory(): String
+  /** Bytes free for the app in its cache directory, or null when unknown. */
+  fun getCacheFreeBytes(): Long?
+  /**
+   * Whether the active network is metered, so a large download asks
+   * first (ADR-0010). False when there is no network.
+   */
+  fun isNetworkMetered(): Boolean
 
   companion object {
     /** The codec used by DoxaPlatformPluginApi. */
@@ -873,6 +889,71 @@ interface DoxaPlatformPluginApi {
                 reply.reply(MessagesPigeonUtils.wrapResult(data))
               }
             }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.stageDictionaryArchive$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val pathArg = args[0] as String
+            api.stageDictionaryArchive(pathArg) { result: Result<String> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(MessagesPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(MessagesPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.getCacheDirectory$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getCacheDirectory())
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.getCacheFreeBytes$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getCacheFreeBytes())
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.isNetworkMetered$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.isNetworkMetered())
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
           }
         } else {
           channel.setMessageHandler(null)

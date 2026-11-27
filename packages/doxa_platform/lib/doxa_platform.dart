@@ -2,12 +2,14 @@
 
 import 'dictionary_imports.dart';
 import 'document_files.dart';
+import 'download_conditions.dart';
 import 'doxa_platform_platform_interface.dart';
 import 'library_folders.dart';
 import 'pdf_documents.dart';
 
 export 'dictionary_imports.dart';
 export 'document_files.dart';
+export 'download_conditions.dart';
 export 'library_folders.dart';
 export 'pdf_documents.dart';
 
@@ -22,6 +24,9 @@ class DoxaPlatform {
 
   DictionaryImports get dictionaryImports =>
       DoxaPlatformPlatform.instance.dictionaryImports;
+
+  DownloadConditions get downloadConditions =>
+      DoxaPlatformPlatform.instance.downloadConditions;
 
   Future<String?> getPlatformVersion() {
     return DoxaPlatformPlatform.instance.getPlatformVersion();

@@ -22,6 +22,9 @@ class MockDoxaPlatformPlatform
   DictionaryImports get dictionaryImports => throw UnimplementedError();
 
   @override
+  DownloadConditions get downloadConditions => throw UnimplementedError();
+
+  @override
   Future<String?> getPlatformVersion() => Future.value('42');
 
   final opened = <String>[];

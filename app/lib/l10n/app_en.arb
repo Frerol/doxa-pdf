@@ -723,7 +723,7 @@
   "@dictionaryEmptyTitle": {
     "description": "Title of the empty state when no dictionary is installed (FR-TEXT-012)."
   },
-  "dictionaryEmptyMessage": "Doxa looks words up offline in dictionaries you add. Get a free one from the Doxa dictionaries page, then open the downloaded file with Doxa.",
+  "dictionaryEmptyMessage": "Doxa looks words up offline in dictionaries you add. Get a free one, or import a StarDict dictionary you already have.",
   "@dictionaryEmptyMessage": {
     "description": "Explanation in the empty state (UX §9)."
   },
@@ -956,5 +956,93 @@
   "optionKeepZoomHint": "The next page opens at the same zoom",
   "@optionKeepZoomHint": {
     "description": "Description of the keep-zoom setting."
+  },
+  "retry": "Try again",
+  "@retry": {
+    "description": "Button that retries loading a list."
+  },
+  "dictionaryDownload": "Download",
+  "@dictionaryDownload": {
+    "description": "Button that starts a dictionary download (ADR-0010)."
+  },
+  "dictionaryDownloadTooltip": "Download {name}",
+  "@dictionaryDownloadTooltip": {
+    "description": "Tooltip of a pack's download button.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryCancelDownload": "Cancel the download of {name}",
+  "@dictionaryCancelDownload": {
+    "description": "Tooltip of the cancel button of a running download.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryDownloading": "Downloading {name}",
+  "@dictionaryDownloading": {
+    "description": "Accessibility label of a download's progress bar.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryInstalled": "Installed",
+  "@dictionaryInstalled": {
+    "description": "Shown next to a pack that is already installed."
+  },
+  "dictionaryUpdate": "Update",
+  "@dictionaryUpdate": {
+    "description": "Button that downloads a newer build of an installed pack."
+  },
+  "dictionaryMeteredTitle": "Use mobile data?",
+  "@dictionaryMeteredTitle": {
+    "description": "Title of the question before a download on a metered network."
+  },
+  "dictionaryMeteredMessage": "You are on a metered connection. Downloading “{name}” uses {size}.",
+  "@dictionaryMeteredMessage": {
+    "description": "Question before a download on a metered network.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryNoSpace": "Not enough free space. This dictionary needs {size}.",
+  "@dictionaryNoSpace": {
+    "description": "Snackbar when a pack does not fit.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryOffline": "No connection. Connect to the internet and try again, or import a dictionary file.",
+  "@dictionaryOffline": {
+    "description": "No network for the dictionary list or a download."
+  },
+  "dictionaryCatalogFailed": "The list of dictionaries could not be loaded. Try again later, or import a dictionary file.",
+  "@dictionaryCatalogFailed": {
+    "description": "The catalogue could not be fetched or read."
+  },
+  "dictionaryDownloadFailed": "The download failed. Try again later.",
+  "@dictionaryDownloadFailed": {
+    "description": "A download failed on the server's side."
+  },
+  "dictionaryCorrupt": "The downloaded file is damaged. Try again.",
+  "@dictionaryCorrupt": {
+    "description": "A downloaded pack failed its SHA-256 check or is not a valid .zip."
+  },
+  "dictionaryDownloadsNote": "Dictionaries download from Doxa's releases on GitHub. The words you look up never leave this device.",
+  "@dictionaryDownloadsNote": {
+    "description": "Privacy note under the list of packs (ADR-0010)."
   }
 }

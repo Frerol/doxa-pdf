@@ -89,12 +89,20 @@ class DictionariesPage extends StatelessWidget {
           }
           final locale = l10n.localeName;
           return ReorderableListView.builder(
-            header: importActions == null
-                ? null
-                : Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: importActions,
-                  ),
+            header: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  GetDictionariesButton(openUri: openUri, importer: importer),
+                  if (importActions != null) ...[
+                    const SizedBox(height: 8),
+                    importActions,
+                  ],
+                ],
+              ),
+            ),
             itemCount: all.length,
             onReorderItem: (from, to) => unawaited(library.move(from, to)),
             itemBuilder: (context, i) {

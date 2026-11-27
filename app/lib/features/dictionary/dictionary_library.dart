@@ -8,6 +8,7 @@ import 'dart:isolate';
 import 'package:doxa_dict/doxa_dict.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'dictionary_downloads.dart';
 import 'dictionary_import.dart';
 
 /// A dictionary the user installed (FR-TEXT-009): one folder under the
@@ -197,6 +198,7 @@ class DictionaryScope extends InheritedWidget {
     required this.lookup,
     required this.openUri,
     this.importer,
+    this.downloads,
     required super.child,
   });
 
@@ -209,6 +211,10 @@ class DictionaryScope extends InheritedWidget {
   /// Imports dictionaries; Import file is hidden when null.
   final DictionaryImporter? importer;
 
+  /// Downloads Doxa's packs in the app (ADR-0010); Get dictionaries opens
+  /// the browser when null.
+  final DictionaryDownloads? downloads;
+
   static DictionaryScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<DictionaryScope>();
 
@@ -216,7 +222,8 @@ class DictionaryScope extends InheritedWidget {
   bool updateShouldNotify(DictionaryScope old) =>
       library != old.library ||
       lookup != old.lookup ||
-      importer != old.importer;
+      importer != old.importer ||
+      downloads != old.downloads;
 }
 
 /// The entries or read failure for one dictionary.

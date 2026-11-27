@@ -45,4 +45,8 @@ abstract interface class DictionaryImports {
   /// Stages the next `.zip` opened with "Open with", or returns null when
   /// none is waiting, including one from a cold start.
   Future<String?> takeIncoming();
+
+  /// Stages the `.zip` at [path], one the app downloaded into its cache
+  /// (ADR-0010). The `.zip` is left in place for the caller to delete.
+  Future<String> stageArchive(String path);
 }

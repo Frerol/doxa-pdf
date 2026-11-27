@@ -1,0 +1,25 @@
+{
+  "_comment": "Packs listed in the app's Get dictionaries (ADR-0010). Built with tools/build_dictionary.py; tools/build_dictionary_catalog.py adds the hashes and sizes. Translation packs belong to the Translate action (#100).",
+  "packs": [
+    {
+      "id": "doxa-pt",
+      "file": "doxa-pt.zip",
+      "name": "Português",
+      "language": "pt",
+      "kind": "definitions",
+      "source": "Wikcionário (Wiktextract)",
+      "licence": "CC BY-SA 4.0",
+      "description": "Definições do Wikcionário em português."
+    },
+    {
+      "id": "doxa-en",
+      "file": "doxa-en.zip",
+      "name": "English",
+      "language": "en",
+      "kind": "definitions",
+      "source": "English Wiktionary (Wiktextract)",
+      "licence": "CC BY-SA 4.0",
+      "description": "Definitions from the English Wiktionary."
+    }
+  ]
+}

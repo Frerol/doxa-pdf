@@ -601,6 +601,9 @@ class _FakeImports implements DictionaryImports {
   @override
   Future<String?> takeIncoming() async =>
       incomingStaged.isEmpty ? null : incomingStaged.removeAt(0);
+
+  @override
+  Future<String> stageArchive(String path) => throw UnimplementedError();
 }
 
 class _FakeLookup implements DictionaryLookup {

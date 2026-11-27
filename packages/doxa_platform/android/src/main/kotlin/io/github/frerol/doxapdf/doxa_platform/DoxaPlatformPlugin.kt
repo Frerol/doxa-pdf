@@ -6,8 +6,10 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Build
+import android.os.StatFs
 import android.provider.DocumentsContract
 import android.view.WindowManager
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -204,6 +206,24 @@ class DoxaPlatformPlugin :
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         startDictionaryPicker(picker, PICK_DICTIONARY_FILES, callback)
+    }
+
+    override fun stageDictionaryArchive(path: String, callback: (Result<String>) -> Unit) {
+        dictionaryImports?.stageArchive(path, callback)
+            ?: callback(Result.failure(FlutterError("unreadable")))
+    }
+
+    override fun getCacheDirectory(): String =
+        context?.cacheDir?.absolutePath ?: throw IllegalStateException("Not attached")
+
+    override fun getCacheFreeBytes(): Long? = context?.let {
+        runCatching { StatFs(it.cacheDir.absolutePath).availableBytes }.getOrNull()
+    }
+
+    override fun isNetworkMetered(): Boolean {
+        val manager = context?.getSystemService(ConnectivityManager::class.java) ?: return false
+        // If the network state cannot be read, assume metered and ask first.
+        return runCatching { manager.isActiveNetworkMetered }.getOrDefault(true)
     }
 
     override fun pickDictionaryFolder(callback: (Result<String?>) -> Unit) {

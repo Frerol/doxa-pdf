@@ -58,6 +58,18 @@ void main() {
     final imports = PigeonDoxaPlatform(api: api).dictionaryImports;
     api.staged = '/cache/staged';
     expect(await imports.pickFiles(), '/cache/staged');
+    expect(await imports.stageArchive('/cache/pack.zip'), '/cache/staged');
+    api.stageError = 'missing';
+    await expectLater(
+      imports.stageArchive('/cache/pack.zip'),
+      throwsA(
+        isA<DictionaryImportException>().having(
+          (e) => e.error,
+          'error',
+          DictionaryImportError.missing,
+        ),
+      ),
+    );
     for (final (code, error) in [
       ('tooLarge', DictionaryImportError.tooLarge),
       ('notDictionary', DictionaryImportError.notDictionary),
@@ -256,6 +268,18 @@ class FakeDoxaPlatformPluginApi implements DoxaPlatformPluginApi {
 
   @override
   Future<String?> takeIncomingDictionary() => _stage();
+
+  @override
+  Future<String> stageDictionaryArchive(String path) async => (await _stage())!;
+
+  @override
+  Future<String> getCacheDirectory() async => '/cache';
+
+  @override
+  Future<int?> getCacheFreeBytes() async => null;
+
+  @override
+  Future<bool> isNetworkMetered() async => false;
 
   @override
   // ignore: non_constant_identifier_names

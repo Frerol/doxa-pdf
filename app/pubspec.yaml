@@ -10,6 +10,7 @@ environment:
   sdk: ^3.14.0
 
 dependencies:
+  crypto: ^3.0.8
   doxa_core: ^0.0.1
   doxa_dict: ^0.0.1
   doxa_engine: ^0.0.1
