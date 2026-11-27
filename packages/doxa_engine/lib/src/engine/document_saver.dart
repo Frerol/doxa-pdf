@@ -94,7 +94,7 @@ final class DocumentSaver {
         ..WriteBlock = _writeBlock;
       _target = out;
       _error = null;
-      // A full save: never FPDF_INCREMENTAL (ADR-0008).
+      // Flags 0: a full save, never an incremental one (ADR-0008).
       final ok = _pdf.FPDF_SaveAsCopy(edit, writer, 0) != 0;
       final error = _error;
       if (error is FileSystemException) throw error;
