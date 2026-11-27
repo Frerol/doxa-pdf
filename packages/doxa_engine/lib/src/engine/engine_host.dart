@@ -55,6 +55,13 @@ final class EngineHost {
             reply(ValueReply(id, backend.edit(documentId, edit)));
           }, documentId: documentId),
         );
+      case SaveCommand(:final id, :final documentId, :final path):
+        _enqueue(
+          _Job(id, _Rank.control, () {
+            _checkOpen(documentId);
+            reply(ValueReply(id, backend.save(documentId, path)));
+          }, documentId: documentId),
+        );
       case RenderCommand(:final id, :final request):
         _addRender(id, request);
       case SearchCommand(:final id, :final documentId, :final query):
@@ -132,6 +139,7 @@ final class EngineHost {
       QueryKind.outline => backend.outline(doc),
       QueryKind.pageLinks => backend.pageLinks(doc, _checkPage(doc, page)),
       QueryKind.pageText => backend.pageText(doc, _checkPage(doc, page)),
+      QueryKind.signatureCount => backend.signatureCount(doc),
       QueryKind.annotations => backend.annotations(doc, _checkPage(doc, page)),
     };
     reply(ValueReply(command.id, value));

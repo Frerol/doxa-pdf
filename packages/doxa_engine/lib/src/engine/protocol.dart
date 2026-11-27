@@ -27,7 +27,14 @@ final class CloseCommand extends EngineCommand {
   final int documentId;
 }
 
-enum QueryKind { pageDetails, outline, pageLinks, pageText, annotations }
+enum QueryKind {
+  pageDetails,
+  outline,
+  pageLinks,
+  pageText,
+  annotations,
+  signatureCount,
+}
 
 final class QueryCommand extends EngineCommand {
   const QueryCommand(super.id, this.kind, this.documentId, [this.pageIndex]);
@@ -61,6 +68,13 @@ final class DeleteAnnotationsEdit extends AnnotationEdit {
   const DeleteAnnotationsEdit(this.pageIndex, this.ids);
   final int pageIndex;
   final List<String> ids;
+}
+
+/// Saves the editing instance to [path] (ADR-0008).
+final class SaveCommand extends EngineCommand {
+  const SaveCommand(super.id, this.documentId, this.path);
+  final int documentId;
+  final String path;
 }
 
 final class RenderCommand extends EngineCommand {

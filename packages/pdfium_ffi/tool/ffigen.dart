@@ -22,6 +22,7 @@ const headers = [
   'fpdf_ppo.h',
   'fpdf_progressive.h',
   'fpdf_save.h',
+  'fpdf_signature.h',
   'fpdf_text.h',
   'fpdf_transformpage.h',
 ];

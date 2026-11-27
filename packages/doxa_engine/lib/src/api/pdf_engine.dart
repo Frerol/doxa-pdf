@@ -75,6 +75,18 @@ abstract interface class PdfEngine {
     List<String> ids,
   );
 
+  /// Saves the document with its annotation changes to [path], which may
+  /// be the file it was opened from or a copy (FR-SAVE-002, FR-SAVE-005).
+  /// A full save goes to a temp file next to [path], is verified by
+  /// reopening it, and then replaces [path]; a [SaveFailed] leaves [path]
+  /// as it was (ADR-0008). Saving rewrites the whole file, which breaks
+  /// digital signatures: check [signatureCount] first.
+  Future<SaveResult> save(DocumentHandle document, String path);
+
+  /// The number of digital signatures in the document. A save breaks them
+  /// (ADR-0008), so the app warns or offers "Save a copy" first.
+  Future<int> signatureCount(DocumentHandle document);
+
   /// Searches every page in order and streams the hits page by page.
   /// Cancelling the subscription stops the search.
   Stream<SearchHit> search(DocumentHandle document, SearchQuery query);

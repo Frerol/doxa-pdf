@@ -42,6 +42,7 @@ final class FakeDocument {
     this.password,
     this.outline = const [],
     this.metadata = const DocumentMetadata(),
+    this.signatureCount = 0,
   });
 
   final List<FakePage> pages;
@@ -50,6 +51,9 @@ final class FakeDocument {
   final String? password;
   final List<OutlineNode> outline;
   final DocumentMetadata metadata;
+
+  /// Digital signatures, which a save would break.
+  final int signatureCount;
 }
 
 /// In-memory [PdfEngine] for widget and controller tests, with no native
@@ -66,6 +70,12 @@ final class FakePdfEngine implements PdfEngine {
   final Duration renderDelay;
 
   final renderLog = <RenderRequest>[];
+
+  /// Every save, as (document id, path), in order; for tests.
+  final saveLog = <(int, String)>[];
+
+  /// What the next saves return; [Saved] by default.
+  SaveResult saveResult = const Saved(0);
   final _open = <int, FakeDocument>{};
 
   /// Annotations per open document and page, once changed.
@@ -168,6 +178,17 @@ final class FakePdfEngine implements PdfEngine {
       list.add(annotation);
     }
   }
+
+  @override
+  Future<SaveResult> save(DocumentHandle document, String path) async {
+    _document(document);
+    saveLog.add((document.id, path));
+    return saveResult;
+  }
+
+  @override
+  Future<int> signatureCount(DocumentHandle document) async =>
+      _document(document).signatureCount;
 
   @override
   Future<Annotation> updateAnnotation(

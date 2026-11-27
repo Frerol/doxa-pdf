@@ -29,6 +29,14 @@ abstract interface class EngineBackend {
   /// Applies [edit] to the editing instance. Returns the changed
   /// annotation for an update, null otherwise.
   Annotation? edit(int documentId, AnnotationEdit edit);
+
+  /// Saves the editing instance to [path] (ADR-0008). When [path] is the
+  /// file the document was opened from, the render instance reopens on
+  /// the saved file.
+  SaveResult save(int documentId, String path);
+
+  /// The number of digital signatures in the document.
+  int signatureCount(int documentId);
   RenderedPixels render(RenderRequest request);
 
   /// Closes every document and releases the library.

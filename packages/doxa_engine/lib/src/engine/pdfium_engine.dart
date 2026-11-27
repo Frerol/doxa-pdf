@@ -126,6 +126,16 @@ final class PdfiumEngine implements PdfEngine {
     List<String> ids,
   ) => _edit(document, DeleteAnnotationsEdit(pageIndex, ids));
 
+  @override
+  Future<SaveResult> save(DocumentHandle document, String path) async {
+    final id = _nextId++;
+    return await _request(id, SaveCommand(id, document.id, path)) as SaveResult;
+  }
+
+  @override
+  Future<int> signatureCount(DocumentHandle document) =>
+      _query<int>(QueryKind.signatureCount, document);
+
   Future<Annotation?> _edit(
     DocumentHandle document,
     AnnotationEdit edit,

@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
@@ -13,6 +14,7 @@ import '../api/types.dart';
 import 'annotation_reader.dart';
 import 'annotation_writer.dart';
 import 'backend.dart';
+import 'document_saver.dart';
 import 'protocol.dart';
 
 typedef _DocPtr = Pointer<fpdf_document_t__>;
@@ -28,6 +30,7 @@ typedef _PagePtr = Pointer<fpdf_page_t__>;
 final class PdfiumBackend implements EngineBackend {
   PdfiumBackend(this._pdf) : _annotations = AnnotationReader(_pdf) {
     _writer = AnnotationWriter(_pdf, _annotations);
+    saver = DocumentSaver(_pdf, _annotations);
     final config = calloc<FPDF_LIBRARY_CONFIG_>()..ref.version = 2;
     _pdf.FPDF_InitLibraryWithConfig(config);
     calloc.free(config);
@@ -47,6 +50,9 @@ final class PdfiumBackend implements EngineBackend {
   final PdfiumBindings _pdf;
   final AnnotationReader _annotations;
   late final AnnotationWriter _writer;
+
+  /// Saves editing instances; tests set its `fault`.
+  late final DocumentSaver saver;
   final _docs = <int, _Document>{};
   var _disposed = false;
 
@@ -383,6 +389,13 @@ final class PdfiumBackend implements EngineBackend {
   @override
   Annotation? edit(int documentId, AnnotationEdit edit) {
     final doc = editInstance(documentId);
+    _document(documentId).changedPages.addAll(switch (edit) {
+      AddAnnotationsEdit(:final annotations) => [
+        for (final a in annotations) a.pageIndex,
+      ],
+      UpdateAnnotationEdit(:final annotation) => [annotation.pageIndex],
+      DeleteAnnotationsEdit(:final pageIndex) => [pageIndex],
+    });
     switch (edit) {
       case AddAnnotationsEdit(:final annotations):
         _writer.add(doc, annotations);
@@ -394,6 +407,48 @@ final class PdfiumBackend implements EngineBackend {
         return null;
     }
   }
+
+  @override
+  SaveResult save(int documentId, String path) {
+    final document = _document(documentId);
+    final result = saver.save(
+      editInstance(documentId),
+      path: path,
+      password: document.password,
+      changedPages: document.changedPages,
+    );
+    if (result is Saved) {
+      document.changedPages.clear();
+      final source = document.source;
+      if (source is FileSource &&
+          File(source.path).absolute.path == File(path).absolute.path) {
+        _reopenRender(document);
+      }
+    }
+    return result;
+  }
+
+  /// Reopens the render instance on the saved file, so it does not read
+  /// the old one lazily (ADR-0005). Page text stays valid: a save changes
+  /// annotations, not page content.
+  void _reopenRender(_Document document) {
+    final loaded = _load(document.source, document.password);
+    if (loaded == null) return; // The old instance keeps serving.
+    for (final page in document.pages.values) {
+      _pdf.FPDF_ClosePage(page);
+    }
+    document.pages.clear();
+    _pdf.FPDF_CloseDocument(document.render);
+    document.buffer?.free();
+    document
+      ..render = loaded.doc
+      ..buffer = loaded.buffer;
+  }
+
+  @override
+  int signatureCount(int documentId) =>
+      _pdf.FPDF_GetSignatureCount(_document(documentId).render)
+          .clamp(0, 1 << 30);
 
   @override
   PageText pageText(int documentId, int pageIndex) {
@@ -603,11 +658,14 @@ bool _isSurrogate(int code) => code >= 0xD800 && code <= 0xDFFF;
 final class _Document {
   _Document(this.render, this.buffer, this.source, this.password);
 
-  final _DocPtr render;
-  final _Buffer? buffer;
+  _DocPtr render;
+  _Buffer? buffer;
   final DocumentSource source;
   final String? password;
   ({_DocPtr doc, _Buffer? buffer})? edit;
+
+  /// Pages whose annotations changed since the last save.
+  final changedPages = <int>{};
   final pages = <int, _PagePtr>{}; // insertion order = LRU order
   final texts = <int, PageText>{};
 }

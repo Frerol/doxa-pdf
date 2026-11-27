@@ -6559,6 +6559,154 @@ class PdfiumBindings {
         int Function(ffi.Pointer<fpdf_pageobject_t__>, int, int)
       >();
 
+  int FPDFSignatureObj_GetByteRange(
+    ffi.Pointer<fpdf_signature_t__> signature,
+    ffi.Pointer<ffi.Int> buffer,
+    int length,
+  ) {
+    return _FPDFSignatureObj_GetByteRange(signature, buffer, length);
+  }
+
+  late final _FPDFSignatureObj_GetByteRangePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.UnsignedLong Function(
+            ffi.Pointer<fpdf_signature_t__>,
+            ffi.Pointer<ffi.Int>,
+            ffi.UnsignedLong,
+          )
+        >
+      >('FPDFSignatureObj_GetByteRange');
+  late final _FPDFSignatureObj_GetByteRange =
+      _FPDFSignatureObj_GetByteRangePtr.asFunction<
+        int Function(ffi.Pointer<fpdf_signature_t__>, ffi.Pointer<ffi.Int>, int)
+      >();
+
+  int FPDFSignatureObj_GetContents(
+    ffi.Pointer<fpdf_signature_t__> signature,
+    ffi.Pointer<ffi.Void> buffer,
+    int length,
+  ) {
+    return _FPDFSignatureObj_GetContents(signature, buffer, length);
+  }
+
+  late final _FPDFSignatureObj_GetContentsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.UnsignedLong Function(
+            ffi.Pointer<fpdf_signature_t__>,
+            ffi.Pointer<ffi.Void>,
+            ffi.UnsignedLong,
+          )
+        >
+      >('FPDFSignatureObj_GetContents');
+  late final _FPDFSignatureObj_GetContents =
+      _FPDFSignatureObj_GetContentsPtr.asFunction<
+        int Function(
+          ffi.Pointer<fpdf_signature_t__>,
+          ffi.Pointer<ffi.Void>,
+          int,
+        )
+      >();
+
+  int FPDFSignatureObj_GetDocMDPPermission(
+    ffi.Pointer<fpdf_signature_t__> signature,
+  ) {
+    return _FPDFSignatureObj_GetDocMDPPermission(signature);
+  }
+
+  late final _FPDFSignatureObj_GetDocMDPPermissionPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.UnsignedInt Function(ffi.Pointer<fpdf_signature_t__>)
+        >
+      >('FPDFSignatureObj_GetDocMDPPermission');
+  late final _FPDFSignatureObj_GetDocMDPPermission =
+      _FPDFSignatureObj_GetDocMDPPermissionPtr.asFunction<
+        int Function(ffi.Pointer<fpdf_signature_t__>)
+      >();
+
+  int FPDFSignatureObj_GetReason(
+    ffi.Pointer<fpdf_signature_t__> signature,
+    ffi.Pointer<ffi.Void> buffer,
+    int length,
+  ) {
+    return _FPDFSignatureObj_GetReason(signature, buffer, length);
+  }
+
+  late final _FPDFSignatureObj_GetReasonPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.UnsignedLong Function(
+            ffi.Pointer<fpdf_signature_t__>,
+            ffi.Pointer<ffi.Void>,
+            ffi.UnsignedLong,
+          )
+        >
+      >('FPDFSignatureObj_GetReason');
+  late final _FPDFSignatureObj_GetReason =
+      _FPDFSignatureObj_GetReasonPtr.asFunction<
+        int Function(
+          ffi.Pointer<fpdf_signature_t__>,
+          ffi.Pointer<ffi.Void>,
+          int,
+        )
+      >();
+
+  int FPDFSignatureObj_GetSubFilter(
+    ffi.Pointer<fpdf_signature_t__> signature,
+    ffi.Pointer<ffi.Char> buffer,
+    int length,
+  ) {
+    return _FPDFSignatureObj_GetSubFilter(signature, buffer, length);
+  }
+
+  late final _FPDFSignatureObj_GetSubFilterPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.UnsignedLong Function(
+            ffi.Pointer<fpdf_signature_t__>,
+            ffi.Pointer<ffi.Char>,
+            ffi.UnsignedLong,
+          )
+        >
+      >('FPDFSignatureObj_GetSubFilter');
+  late final _FPDFSignatureObj_GetSubFilter =
+      _FPDFSignatureObj_GetSubFilterPtr.asFunction<
+        int Function(
+          ffi.Pointer<fpdf_signature_t__>,
+          ffi.Pointer<ffi.Char>,
+          int,
+        )
+      >();
+
+  int FPDFSignatureObj_GetTime(
+    ffi.Pointer<fpdf_signature_t__> signature,
+    ffi.Pointer<ffi.Char> buffer,
+    int length,
+  ) {
+    return _FPDFSignatureObj_GetTime(signature, buffer, length);
+  }
+
+  late final _FPDFSignatureObj_GetTimePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.UnsignedLong Function(
+            ffi.Pointer<fpdf_signature_t__>,
+            ffi.Pointer<ffi.Char>,
+            ffi.UnsignedLong,
+          )
+        >
+      >('FPDFSignatureObj_GetTime');
+  late final _FPDFSignatureObj_GetTime =
+      _FPDFSignatureObj_GetTimePtr.asFunction<
+        int Function(
+          ffi.Pointer<fpdf_signature_t__>,
+          ffi.Pointer<ffi.Char>,
+          int,
+        )
+      >();
+
   ffi.Pointer<fpdf_font_t__> FPDFTextObj_GetFont(
     ffi.Pointer<fpdf_pageobject_t__> text,
   ) {
@@ -8213,6 +8361,43 @@ class PdfiumBindings {
   late final _FPDF_GetSecurityHandlerRevision =
       _FPDF_GetSecurityHandlerRevisionPtr.asFunction<
         int Function(ffi.Pointer<fpdf_document_t__>)
+      >();
+
+  int FPDF_GetSignatureCount(ffi.Pointer<fpdf_document_t__> document) {
+    return _FPDF_GetSignatureCount(document);
+  }
+
+  late final _FPDF_GetSignatureCountPtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Int Function(ffi.Pointer<fpdf_document_t__>)>
+      >('FPDF_GetSignatureCount');
+  late final _FPDF_GetSignatureCount =
+      _FPDF_GetSignatureCountPtr.asFunction<
+        int Function(ffi.Pointer<fpdf_document_t__>)
+      >();
+
+  ffi.Pointer<fpdf_signature_t__> FPDF_GetSignatureObject(
+    ffi.Pointer<fpdf_document_t__> document,
+    int index,
+  ) {
+    return _FPDF_GetSignatureObject(document, index);
+  }
+
+  late final _FPDF_GetSignatureObjectPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<fpdf_signature_t__> Function(
+            ffi.Pointer<fpdf_document_t__>,
+            ffi.Int,
+          )
+        >
+      >('FPDF_GetSignatureObject');
+  late final _FPDF_GetSignatureObject =
+      _FPDF_GetSignatureObjectPtr.asFunction<
+        ffi.Pointer<fpdf_signature_t__> Function(
+          ffi.Pointer<fpdf_document_t__>,
+          int,
+        )
       >();
 
   int FPDF_GetTrailerEnds(
