@@ -46,6 +46,12 @@ See the [requirements](docs/plan/02-requirements.md) and [roadmap](docs/plan/08-
 Alphas, betas and release candidates are published as signed APKs on [GitHub Releases](https://github.com/Frerol/doxa-pdf/releases),
 one per processor type (ABI). Most phones and tablets need `arm64-v8a`. Each release lists the SHA-256 of every file in `SHA256SUMS`.
 
+Every APK is signed with the same certificate. Its SHA-256 fingerprint, for apps such as AppVerifier, is:
+
+```
+0D:13:29:80:C6:02:1A:7E:BA:42:48:65:A1:CB:EA:3D:C1:98:CB:38:01:E7:57:DA:D5:DB:E5:09:1B:71:BB:96
+```
+
 ### With Obtainium (updates included)
 
 [Obtainium](https://github.com/ImranR98/Obtainium) installs apps from their release pages and keeps them up to date.
