@@ -2,6 +2,7 @@
 
 import 'dart:math' as math;
 
+import 'package:flutter/rendering.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -185,28 +186,13 @@ class _ViewOptionsDialogState extends State<ViewOptionsDialog> {
                     _Header(l10n.viewScrolling),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: SegmentedButton<ViewScrolling>(
-                        showSelectedIcon: false,
-                        segments: [
-                          ButtonSegment(
-                            value: ViewScrolling.paged,
-                            label: Text(l10n.scrollPaged),
-                          ),
-                          ButtonSegment(
-                            value: ViewScrolling.vertical,
-                            label: Text(l10n.scrollVertical),
-                          ),
-                          ButtonSegment(
-                            value: ViewScrolling.horizontal,
-                            label: Text(l10n.scrollHorizontal),
-                          ),
-                        ],
-                        selected: {scrolling},
-                        onSelectionChanged: (choice) => _set(
+                      child: _ScrollingChoice(
+                        selected: scrolling,
+                        onSelected: (choice) => _set(
                           withLayout(
                             options,
                             ViewLayout.singlePage,
-                            scrolling: choice.single,
+                            scrolling: choice,
                           ),
                         ),
                       ),
@@ -323,13 +309,15 @@ class _ChoiceTile extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
-    required this.child,
+    this.child,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  final Widget child;
+
+  /// Shown above the label; none for a text-only choice.
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -353,9 +341,13 @@ class _ChoiceTile extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              // Centred when a neighbour's longer label makes the row taller.
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                child,
-                const SizedBox(height: 8),
+                if (child case final child?) ...[
+                  child,
+                  const SizedBox(height: 8),
+                ],
                 Text(label, textAlign: TextAlign.center),
               ],
             ),
@@ -367,34 +359,242 @@ class _ChoiceTile extends StatelessWidget {
 }
 
 /// Tiles in a row, all as wide and tall as the largest one's content, at
-/// the start of the line; scaled down only where the line is too narrow.
-class _UniformTiles extends StatelessWidget {
-  const _UniformTiles({required this.children});
-  final List<Widget> children;
+/// the start of the line. Where the line is narrower, the tiles narrow
+/// together and their labels wrap. A row that still misses by a little is
+/// scaled down slightly; one that misses by more (large text on a phone)
+/// stacks, each tile as wide as the line, so text and touch targets keep
+/// their size (UX §6).
+class _UniformTiles extends MultiChildRenderObjectWidget {
+  const _UniformTiles({required super.children});
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: AlignmentDirectional.centerStart,
-    child: FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: AlignmentDirectional.centerStart,
-      // A row of equal flex children is as wide as its widest child times
-      // their count, so every tile takes the widest content's width.
-      child: IntrinsicWidth(
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (i, child) in children.indexed) ...[
-                if (i > 0) const SizedBox(width: 8),
-                Expanded(child: child),
-              ],
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderUniformTiles(Directionality.of(context));
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderUniformTiles renderObject,
+  ) => renderObject.textDirection = Directionality.of(context);
+}
+
+class _UniformTilesData extends ContainerBoxParentData<RenderBox> {}
+
+class _RenderUniformTiles extends RenderBox
+    with
+        ContainerRenderObjectMixin<RenderBox, _UniformTilesData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, _UniformTilesData> {
+  _RenderUniformTiles(this._textDirection);
+
+  static const _gap = 8.0;
+
+  /// The smallest scale a row may take before the tiles stack instead.
+  static const _minScale = 0.8;
+
+  TextDirection _textDirection;
+  set textDirection(TextDirection value) {
+    if (value == _textDirection) return;
+    _textDirection = value;
+    markNeedsLayout();
+  }
+
+  /// The scale of the row laid out last; 1 when it fits or stacks.
+  double _scale = 1;
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! _UniformTilesData) {
+      child.parentData = _UniformTilesData();
+    }
+  }
+
+  double _widest(double Function(RenderBox child) width) =>
+      getChildrenAsList().fold(0, (w, child) => math.max(w, width(child)));
+
+  double get _gaps => _gap * math.max(0, childCount - 1);
+
+  /// The tiles' width and scale in a row of [maxWidth], or null when
+  /// they stack.
+  ({double tile, double scale})? _row(double maxWidth) {
+    if (childCount == 0) return null;
+    final natural = _widest((c) => c.getMaxIntrinsicWidth(double.infinity));
+    final fitted = (maxWidth - _gaps) / childCount;
+    if (natural <= fitted) return (tile: natural, scale: 1);
+    final narrowest = _widest((c) => c.getMinIntrinsicWidth(double.infinity));
+    if (narrowest <= fitted) return (tile: fitted, scale: 1);
+    final scale = maxWidth / (narrowest * childCount + _gaps);
+    return scale >= _minScale ? (tile: narrowest, scale: scale) : null;
+  }
+
+  /// The height of each tile in a row of tiles [tile] wide, unscaled.
+  double _rowHeight(double tile) =>
+      _widest((c) => c.getMinIntrinsicHeight(tile));
+
+  double _height(double width) {
+    if (childCount == 0) return 0;
+    if (_row(width) case (:final tile, :final scale)) {
+      return _rowHeight(tile) * scale;
+    }
+    return getChildrenAsList().fold<double>(
+          0,
+          (h, child) => h + child.getMinIntrinsicHeight(width),
+        ) +
+        _gaps;
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) =>
+      _widest((c) => c.getMinIntrinsicWidth(height));
+
+  @override
+  double computeMaxIntrinsicWidth(double height) =>
+      _widest((c) => c.getMaxIntrinsicWidth(height)) * childCount + _gaps;
+
+  @override
+  double computeMinIntrinsicHeight(double width) => _height(width);
+
+  @override
+  double computeMaxIntrinsicHeight(double width) => _height(width);
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final width = constraints.maxWidth;
+    final row = _row(width);
+    final rowWidth = row == null
+        ? width
+        : (row.tile * childCount + _gaps) * row.scale;
+    return constraints.constrain(Size(rowWidth, _height(width)));
+  }
+
+  @override
+  void performLayout() {
+    final width = constraints.maxWidth;
+    final tiles = getChildrenAsList();
+    _scale = 1;
+    if (tiles.isEmpty) {
+      size = constraints.smallest;
+      return;
+    }
+    if (_row(width) case (:final tile, :final scale)) {
+      final height = _rowHeight(tile);
+      final rowWidth = tile * childCount + _gaps;
+      _scale = scale;
+      size = constraints.constrain(Size(rowWidth * scale, height * scale));
+      // At the start of the line when the parent makes it wider.
+      final lineWidth = size.width / scale;
+      for (final (i, child) in tiles.indexed) {
+        child.layout(BoxConstraints.tight(Size(tile, height)));
+        final start = i * (tile + _gap);
+        final x = _textDirection == TextDirection.ltr
+            ? start
+            : lineWidth - start - tile;
+        (child.parentData! as _UniformTilesData).offset = Offset(x, 0);
+      }
+      return;
+    }
+    var y = 0.0;
+    for (final child in tiles) {
+      child.layout(BoxConstraints.tightFor(width: width), parentUsesSize: true);
+      (child.parentData! as _UniformTilesData).offset = Offset(0, y);
+      y += child.size.height + _gap;
+    }
+    size = constraints.constrain(Size(width, y - _gap));
+  }
+
+  Matrix4 get _transform => Matrix4.diagonal3Values(_scale, _scale, 1);
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (_scale == 1) {
+      defaultPaint(context, offset);
+      return;
+    }
+    context.pushTransform(needsCompositing, offset, _transform, defaultPaint);
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    if (_scale == 1) {
+      return defaultHitTestChildren(result, position: position);
+    }
+    return result.addWithPaintTransform(
+      transform: _transform,
+      position: position,
+      hitTest: (result, position) =>
+          defaultHitTestChildren(result, position: position),
+    );
+  }
+
+  @override
+  void applyPaintTransform(RenderBox child, Matrix4 transform) {
+    if (_scale != 1) transform.multiply(_transform);
+    super.applyPaintTransform(child, transform);
+  }
+}
+
+/// Page by page, vertical and horizontal: a segmented button where each
+/// label fits on one line (its height is fixed, so a second line would be
+/// cut), otherwise the same choices as tiles, so large text stays whole
+/// (UX §6).
+class _ScrollingChoice extends StatelessWidget {
+  const _ScrollingChoice({required this.selected, required this.onSelected});
+
+  final ViewScrolling selected;
+  final ValueChanged<ViewScrolling> onSelected;
+
+  /// A segment's room besides its label: padding and borders.
+  static const _segmentPadding = 32.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final choices = [
+      (ViewScrolling.paged, l10n.scrollPaged),
+      (ViewScrolling.vertical, l10n.scrollVertical),
+      (ViewScrolling.horizontal, l10n.scrollHorizontal),
+    ];
+    final style = Theme.of(context).textTheme.labelLarge;
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    double width(String label) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: direction,
+        textScaler: scaler,
+      )..layout();
+      final width = painter.width;
+      painter.dispose();
+      return width;
+    }
+
+    final segment =
+        choices.map((c) => width(c.$2)).fold(0.0, math.max) + _segmentPadding;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (segment * choices.length <= constraints.maxWidth) {
+          return SegmentedButton<ViewScrolling>(
+            showSelectedIcon: false,
+            segments: [
+              for (final (value, label) in choices)
+                ButtonSegment(value: value, label: Text(label)),
             ],
-          ),
-        ),
-      ),
-    ),
-  );
+            selected: {selected},
+            onSelectionChanged: (choice) => onSelected(choice.single),
+          );
+        }
+        return _UniformTiles(
+          children: [
+            for (final (value, label) in choices)
+              _ChoiceTile(
+                label: label,
+                selected: value == selected,
+                onTap: () => onSelected(value),
+              ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 /// Single page, two pages and cover + two pages.
@@ -499,6 +699,9 @@ class _Swatch extends StatelessWidget {
       child: Text(
         'Aa',
         style: TextStyle(color: ink, fontWeight: FontWeight.w600),
+        // A sample in a fixed-size swatch, like an icon: text size
+        // settings would push it out of the swatch.
+        textScaler: TextScaler.noScaling,
       ),
     ),
   );
@@ -598,6 +801,7 @@ class _ColourGridDialog extends StatelessWidget {
             child: Text(
               'Aa',
               style: TextStyle(color: ink, fontWeight: FontWeight.w600),
+              textScaler: TextScaler.noScaling,
             ),
           ),
         ),

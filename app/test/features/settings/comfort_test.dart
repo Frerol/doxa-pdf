@@ -365,9 +365,10 @@ void main() {
       AppSettings settings, {
       SettingsController? controller,
       String path = 'doc.pdf',
+      Size size = const Size(800, 1200),
     }) async {
       tester.view
-        ..physicalSize = const Size(800, 1200)
+        ..physicalSize = size
         ..devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       screenOn = [];
@@ -522,17 +523,17 @@ void main() {
       expect(reader.options.mode, ReaderMode.continuous);
       await tester.tap(find.byTooltip('View options'));
       await tester.pumpAndSettle();
-      bool chosen(String label) => tester
-          .widget<SegmentedButton<ViewScrolling>>(
-            find.byType(SegmentedButton<ViewScrolling>),
-          )
-          .selected
-          .contains(switch (label) {
-            'Vertical' => ViewScrolling.vertical,
-            'Horizontal' => ViewScrolling.horizontal,
-            _ => ViewScrolling.paged,
-          });
+      // A segmented button or tiles, by the room for the labels: read the
+      // choice from what accessibility services see, the same for both.
+      bool chosen(String label) =>
+          tester
+              .getSemantics(find.text(label))
+              .flagsCollection
+              .isSelected
+              .toBoolOrNull() ??
+          false;
       expect(chosen('Vertical'), isTrue);
+      expect(chosen('Horizontal'), isFalse);
 
       // Page by page: the single page turns sideways.
       await tester.tap(find.text('Page by page'));
@@ -632,6 +633,34 @@ void main() {
       await tester.tapAt(const Offset(400, 600));
       await settle(tester);
       expect(find.byType(AppBar), findsNothing);
+    });
+
+    testWidgets('view options stay legible at the largest text size '
+        '(UX §6, #80)', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await show(tester, const AppSettings(), size: const Size(480, 900));
+      await tester.tap(find.byTooltip('View options'));
+      await tester.pumpAndSettle();
+      // The choice tiles keep full-size text and touch targets instead of
+      // shrinking to fit one line.
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      final label = tester.getSize(find.text('Single page'));
+      expect(label.height, greaterThanOrEqualTo(28));
+      // Scrolling choices never break a word across lines.
+      for (final word in ['Vertical', 'Horizontal']) {
+        await tester.ensureVisible(find.text(word));
+        expect(tester.getSize(find.text(word)).height, lessThan(2 * 28));
+      }
+      expect(tester.takeException(), isNull);
+      await tester.ensureVisible(find.text('Two pages'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Two pages'));
+      await tester.pumpAndSettle();
+      expect(
+        view(tester).controller.options.mode,
+        isNot(ReaderMode.continuous),
+      );
     });
 
     testWidgets('keeps the screen on while open (FR-VIEW-013)', (tester) async {
