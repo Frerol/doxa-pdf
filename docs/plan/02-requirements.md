@@ -225,6 +225,7 @@ Reference devices are defined in [QA §4](06-quality-assurance.md#4-performance-
 | NFR-UX-003 | Screen reader labels for all controls (TalkBack, Narrator, Orca); page text exposed for reading where feasible. |
 | NFR-UX-004 | Minimum touch target 48 dp; contrast meets WCAG 2.1 AA; respects OS text scale. |
 | NFR-UX-005 | Localization through ARB files; English and pt-BR complete at 1.0.0; RTL-ready layouts. |
+| NFR-UX-006 | By 1.3.0 the interface is also complete in Spanish, French, German and European Portuguese (pt-PT), translated by the community on a translation platform chosen in an ADR ([roadmap M7](08-roadmap.md#m7--130-stores-accessibility--languages)). |
 
 ### 2.5 Security & privacy (SEC)
 | ID | Requirement |
