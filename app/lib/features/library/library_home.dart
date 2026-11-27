@@ -125,7 +125,9 @@ class _LibraryHomeState extends State<LibraryHome> {
     super.initState();
     _incoming = widget.pdfDocuments?.incomingPdfs.listen((_) => _onIncoming());
     _selection.addListener(() => setState(() {}));
-    _readerTabs.addListener(_saveTabs);
+    _readerTabs
+      ..addListener(_saveTabs)
+      ..addListener(_markActiveRead);
     // Incoming documents open after the restored tabs, as new tabs.
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _restoring = _restoreTabs().whenComplete(_onIncoming),
@@ -139,6 +141,7 @@ class _LibraryHomeState extends State<LibraryHome> {
     _thumbnailsChanged.dispose();
     _readerTabs
       ..removeListener(_saveTabs)
+      ..removeListener(_markActiveRead)
       ..dispose();
     _selection.dispose();
     super.dispose();
@@ -395,6 +398,24 @@ class _LibraryHomeState extends State<LibraryHome> {
     unawaited(
       library.saveOpenTabs(ids, active: active).catchError((Object error) {
         debugPrint('Doxa: cannot save open tabs: $error');
+      }),
+    );
+  }
+
+  /// The library document of the tab shown last.
+  int? _activeId;
+
+  /// Records the shown tab's document as read now when another tab is
+  /// shown, so recents and "Continue reading" follow tab switches.
+  void _markActiveRead() {
+    final id = _readerTabs.active?.libraryId;
+    if (id == _activeId) return;
+    _activeId = id;
+    final library = widget.library;
+    if (id == null || library == null) return;
+    unawaited(
+      library.markRead(id).catchError((Object error) {
+        debugPrint('Doxa: cannot record the shown tab: $error');
       }),
     );
   }

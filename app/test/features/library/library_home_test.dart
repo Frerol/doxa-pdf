@@ -146,9 +146,10 @@ void main() {
   late FakePdfEngine engine;
   late FakeLibraryFolders folders;
   late FakeDocumentFiles files;
-  final now = DateTime(2026, 11, 26, 10);
+  late DateTime now;
 
   setUp(() {
+    now = DateTime(2026, 11, 26, 10);
     db = LibraryDatabase(
       DatabaseConnection(
         NativeDatabase.memory(),
@@ -846,6 +847,34 @@ void main() {
       expect(reader.initialRightToLeft, isTrue);
       expect(engine.openDocumentCount, 1);
     });
+
+    testWidgets(
+      'the tab shown last leads recents and Continue reading (#119)',
+      (tester) async {
+        await openBoth(tester);
+        now = now.add(const Duration(minutes: 5));
+        await tester.tap(
+          find.descendant(
+            of: find.byType(ReaderTabRow),
+            matching: find.text('Calculus.pdf'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(shownTitle(tester), 'Calculus.pdf');
+
+        await closeReader(tester);
+        final card = find
+            .ancestor(
+              of: find.text('Continue reading'.toUpperCase()),
+              matching: find.byType(InkWell),
+            )
+            .first;
+        expect(
+          find.descendant(of: card, matching: find.text('Calculus.pdf')),
+          findsOneWidget,
+        );
+      },
+    );
 
     testWidgets('opening an open document shows its tab, not a second one', (
       tester,
