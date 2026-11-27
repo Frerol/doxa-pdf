@@ -27,6 +27,11 @@ abstract final class DoxaMarker {
   /// ink is drawn by the pen.
   static const toolKey = 'DoxaTool';
 
+  /// The private key with the text a markup covers (FR-MARK-010). It is
+  /// not `/Contents`, which other readers show as the note and which holds
+  /// the user's note on the markup (FR-NOTE-002).
+  static const textKey = 'DoxaText';
+
   /// A new `/NM` for an annotation Doxa creates.
   static String newId() => '$idPrefix${AnnotationId.generate()}';
 
@@ -180,8 +185,8 @@ final class TextMarkup extends Annotation {
   /// `/QuadPoints`, one quad per line fragment.
   final List<PdfQuad> quads;
 
-  /// The text the markup covers, for review and export (FR-MARK-010).
-  /// Doxa writes it to `/Contents` when the user has not written a note.
+  /// The text the markup covers, for review and export (FR-MARK-010),
+  /// kept in [DoxaMarker.textKey]. A note on the markup is [contents].
   final String? text;
 
   @override
