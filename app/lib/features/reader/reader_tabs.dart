@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:doxa_engine/doxa_engine.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -378,7 +379,7 @@ class ReaderTabRow extends StatelessWidget implements PreferredSizeWidget {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.close, size: 18),
+                            icon: const Icon(LucideIcons.x, size: 18),
                             tooltip: l10n.closeTab(all[i].title),
                             visualDensity: VisualDensity.compact,
                             onPressed: () => tabs.close(i),
@@ -416,7 +417,7 @@ class _TabsButton extends StatelessWidget {
       icon: Stack(
         alignment: Alignment.center,
         children: [
-          const Icon(Icons.crop_square),
+          const Icon(LucideIcons.square),
           Text(
             count > 99 ? '99+' : '$count',
             style: Theme.of(context).textTheme.labelSmall
@@ -490,11 +491,7 @@ class _TabCard extends StatelessWidget {
     final placeholder = ColoredBox(
       color: scheme.surfaceContainerHighest,
       child: Center(
-        child: Icon(
-          Icons.picture_as_pdf_outlined,
-          size: 40,
-          color: scheme.outline,
-        ),
+        child: Icon(LucideIcons.fileText, size: 40, color: scheme.outline),
       ),
     );
     final thumbnail = tab.thumbnail;
@@ -533,7 +530,7 @@ class _TabCard extends StatelessWidget {
                     Align(
                       alignment: AlignmentDirectional.topEnd,
                       child: IconButton.filledTonal(
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(LucideIcons.x),
                         tooltip: l10n.closeTab(tab.title),
                         onPressed: onClose,
                       ),

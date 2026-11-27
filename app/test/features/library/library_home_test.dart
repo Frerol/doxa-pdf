@@ -243,8 +243,15 @@ void main() {
       await openPicked(tester, pdf(1, 'Calculus.pdf'));
       await closeReader(tester);
       await seeAll(tester, 'recents');
-      await tester.tap(find.byTooltip('Add to favorites'));
+      final addFavorite = find.byTooltip('Add to favorites');
+      final removeFavorite = find.byTooltip('Remove from favorites');
+      bool? favoriteSelected(Finder button) =>
+          tester.getSemantics(button).flagsCollection.isSelected.toBoolOrNull();
+
+      expect(favoriteSelected(addFavorite), isFalse);
+      await tester.tap(addFavorite);
       await tester.pumpAndSettle();
+      expect(favoriteSelected(removeFavorite), isTrue);
       await tester.tap(find.byTooltip('Show menu'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Remove from recents'));

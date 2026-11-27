@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/scheduler.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -304,12 +305,12 @@ class _ReaderHistoryControlState extends State<ReaderHistoryControl> {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(LucideIcons.arrowLeft),
               tooltip: l10n.historyBack,
               onPressed: controller.canGoBack ? controller.goBack : null,
             ),
             IconButton(
-              icon: const Icon(Icons.arrow_forward),
+              icon: const Icon(LucideIcons.arrowRight),
               tooltip: l10n.historyForward,
               onPressed: controller.canGoForward ? controller.goForward : null,
             ),

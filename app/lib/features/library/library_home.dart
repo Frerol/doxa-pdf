@@ -7,6 +7,7 @@ import 'package:doxa_engine/doxa_engine.dart';
 import 'package:doxa_platform/doxa_platform.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:intl/intl.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -588,7 +589,7 @@ class _LibraryHomeState extends State<LibraryHome> {
     return [
       if (_section == HomeSection.recents && library != null)
         IconButton(
-          icon: const Icon(Icons.playlist_remove),
+          icon: const Icon(LucideIcons.listX),
           tooltip: l10n.removeFromRecents,
           onPressed: () => _onSelected((documents) async {
             for (final d in documents) {
@@ -600,7 +601,7 @@ class _LibraryHomeState extends State<LibraryHome> {
           authorities.length == 1 &&
           uris.every(actions.canMove))
         IconButton(
-          icon: const Icon(Icons.drive_file_move_outlined),
+          icon: const Icon(LucideIcons.folderSymlink),
           tooltip: l10n.moveDocument,
           onPressed: () => _onSelected(
             (documents) =>
@@ -609,7 +610,7 @@ class _LibraryHomeState extends State<LibraryHome> {
         ),
       if (actions != null && uris.every(actions.canChange))
         IconButton(
-          icon: const Icon(Icons.delete_outline),
+          icon: const Icon(LucideIcons.trash2),
           tooltip: l10n.deleteDocument,
           onPressed: () => _onSelected(
             (documents) => actions.deleteAll(context, [
@@ -622,7 +623,7 @@ class _LibraryHomeState extends State<LibraryHome> {
 
   List<Widget> _menuActions(AppLocalizations l10n) => [
     IconButton(
-      icon: const Icon(Icons.settings_outlined),
+      icon: const Icon(LucideIcons.settings),
       tooltip: l10n.settingsTitle,
       onPressed: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
@@ -633,7 +634,7 @@ class _LibraryHomeState extends State<LibraryHome> {
     ),
     if (widget.devDocumentsDir case final dir?)
       IconButton(
-        icon: const Icon(Icons.developer_mode_outlined),
+        icon: const Icon(LucideIcons.codeXml),
         tooltip: l10n.devDocumentsTitle,
         onPressed: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
@@ -653,7 +654,7 @@ class _LibraryHomeState extends State<LibraryHome> {
       ? null
       : FloatingActionButton.extended(
           onPressed: _picking ? null : _pick,
-          icon: const Icon(Icons.folder_open),
+          icon: const Icon(LucideIcons.folderOpen),
           label: Text(l10n.openFile),
         );
 
@@ -701,7 +702,7 @@ class _LibraryHomeState extends State<LibraryHome> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(LucideIcons.search),
             tooltip: l10n.librarySearch,
             onPressed: () => _showSection(HomeSection.recents, search: true),
           ),
@@ -759,13 +760,13 @@ class _LibraryHomeState extends State<LibraryHome> {
               actions: [
                 if (_searching)
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(LucideIcons.x),
                     tooltip: l10n.libraryCloseSearch,
                     onPressed: () => _setSearching(false),
                   )
                 else
                   IconButton(
-                    icon: const Icon(Icons.search),
+                    icon: const Icon(LucideIcons.search),
                     tooltip: l10n.librarySearch,
                     onPressed: () => _setSearching(true),
                   ),
@@ -1041,7 +1042,6 @@ class _DocumentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     final fileItems = fileActionItems<_DocumentAction>(
       l10n,
       actions,
@@ -1073,8 +1073,9 @@ class _DocumentTile extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: Icon(favorite ? Icons.star : Icons.star_border),
-                  color: favorite ? theme.colorScheme.primary : null,
+                  icon: const Icon(LucideIcons.star),
+                  isSelected: favorite,
+                  style: iconToggleStyle(context),
                   tooltip: favorite
                       ? l10n.removeFromFavorites
                       : l10n.addToFavorites,
@@ -1121,7 +1122,7 @@ class _Thumbnail extends StatelessWidget {
       width: _size.width,
       height: _size.height,
       color: scheme.surfaceContainerHighest,
-      child: Icon(Icons.picture_as_pdf_outlined, color: scheme.outline),
+      child: Icon(LucideIcons.fileText, color: scheme.outline),
     );
     final file = this.file;
     if (file == null) return placeholder;
@@ -1195,7 +1196,7 @@ class _FolderListState extends State<_FolderList>
             if (query.isEmpty || foldName(f.displayName).contains(query)) f,
         ];
         final add = ListTile(
-          leading: const Icon(Icons.create_new_folder_outlined),
+          leading: const Icon(LucideIcons.folderPlus),
           title: Text(l10n.addFolder),
           onTap: widget.onAdd,
         );
@@ -1213,7 +1214,7 @@ class _FolderListState extends State<_FolderList>
             add,
             for (final folder in shown)
               ListTile(
-                leading: const Icon(Icons.folder_outlined),
+                leading: const Icon(LucideIcons.folder),
                 title: Text(folder.displayName),
                 onTap: () => widget.onBrowse(folder),
                 trailing: PopupMenuButton<LibraryFolder>(

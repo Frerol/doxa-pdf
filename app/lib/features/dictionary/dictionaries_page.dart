@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -57,12 +58,12 @@ class DictionariesPage extends StatelessWidget {
         actions: [
           if (importer != null) ...[
             IconButton(
-              icon: const Icon(Icons.file_open_outlined),
+              icon: const Icon(LucideIcons.fileInput),
               tooltip: l10n.dictionaryImport,
               onPressed: () => unawaited(importer.pickFiles(context)),
             ),
             IconButton(
-              icon: const Icon(Icons.drive_folder_upload_outlined),
+              icon: const Icon(LucideIcons.folderInput),
               tooltip: l10n.dictionaryImportFolder,
               onPressed: () => unawaited(importer.pickFolder(context)),
             ),
@@ -124,7 +125,7 @@ class DictionariesPage extends StatelessWidget {
                   onChanged: (on) => unawaited(library.setEnabled(d.id, on)),
                 ),
                 trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(LucideIcons.trash2),
                   tooltip: l10n.dictionaryRemoveTooltip(d.name),
                   onPressed: () => _remove(context, d),
                 ),
@@ -151,12 +152,12 @@ class _ImportButtons extends StatelessWidget {
       runSpacing: 8,
       children: [
         OutlinedButton.icon(
-          icon: const Icon(Icons.file_open_outlined),
+          icon: const Icon(LucideIcons.fileInput),
           label: Text(l10n.dictionaryImport),
           onPressed: () => unawaited(importer.pickFiles(context)),
         ),
         OutlinedButton.icon(
-          icon: const Icon(Icons.drive_folder_upload_outlined),
+          icon: const Icon(LucideIcons.folderInput),
           label: Text(l10n.dictionaryImportFolder),
           onPressed: () => unawaited(importer.pickFolder(context)),
         ),

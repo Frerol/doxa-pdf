@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:doxa_platform/doxa_platform.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -196,7 +197,7 @@ class _FolderPageState extends State<FolderPage> {
     return [
       if (pdfs.every((pdf) => actions.canMove(pdf.uri)))
         IconButton(
-          icon: const Icon(Icons.drive_file_move_outlined),
+          icon: const Icon(LucideIcons.folderSymlink),
           tooltip: l10n.moveDocument,
           onPressed: () => _onSelected(
             (actions, pdfs) =>
@@ -204,7 +205,7 @@ class _FolderPageState extends State<FolderPage> {
           ),
         ),
       IconButton(
-        icon: const Icon(Icons.delete_outline),
+        icon: const Icon(LucideIcons.trash2),
         tooltip: l10n.deleteDocument,
         onPressed: () => _onSelected(
           (actions, pdfs) => actions.deleteAll(context, [
@@ -257,7 +258,7 @@ class _FolderPageState extends State<FolderPage> {
                   : Text(widget.title, overflow: TextOverflow.ellipsis),
               actions: [
                 IconButton(
-                  icon: Icon(_searching ? Icons.close : Icons.search),
+                  icon: Icon(_searching ? LucideIcons.x : LucideIcons.search),
                   tooltip: _searching
                       ? l10n.libraryCloseSearch
                       : l10n.librarySearch,
@@ -267,7 +268,7 @@ class _FolderPageState extends State<FolderPage> {
                   }),
                 ),
                 PopupMenuButton<FolderSort>(
-                  icon: const Icon(Icons.sort),
+                  icon: const Icon(LucideIcons.arrowDownWideNarrow),
                   tooltip: l10n.sortBy,
                   initialValue: _sort,
                   onSelected: _setSort,
@@ -338,7 +339,7 @@ class _FolderPageState extends State<FolderPage> {
         final entry = shown[i];
         if (entry.isDirectory) {
           return ListTile(
-            leading: const Icon(Icons.folder_outlined),
+            leading: const Icon(LucideIcons.folder),
             title: Text(entry.name),
             // Only PDFs are selected; folders wait until selection ends.
             enabled: !selecting,
@@ -363,7 +364,7 @@ class _FolderPageState extends State<FolderPage> {
           selected: selected,
           leading: SelectedMark(
             selected: selected,
-            child: const Icon(Icons.picture_as_pdf_outlined),
+            child: const Icon(LucideIcons.fileText),
           ),
           title: Text(entry.name, maxLines: 2, overflow: TextOverflow.ellipsis),
           subtitle: details.isEmpty ? null : Text(details),
