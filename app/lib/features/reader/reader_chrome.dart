@@ -24,12 +24,23 @@ List<Widget> readerChrome({
     left: 8,
     child: ReaderPageIndicator(controller: controller, onPressed: onGoToPage),
   ),
-  if (controller.info.pageCount > 1)
-    Positioned.fill(child: ReaderScrubber(controller: controller)),
-  Positioned(
-    left: 8,
-    bottom: ReaderScrubber.thickness + 8,
-    child: ReaderHistoryControl(controller: controller),
+  // Clear of the system bars and the tablet's taskbar, which can sit over
+  // the bottom of the page area.
+  Positioned.fill(
+    child: SafeArea(
+      top: false,
+      child: Stack(
+        children: [
+          if (controller.info.pageCount > 1)
+            Positioned.fill(child: ReaderScrubber(controller: controller)),
+          Positioned(
+            left: 8,
+            bottom: ReaderScrubber.thickness + 8,
+            child: ReaderHistoryControl(controller: controller),
+          ),
+        ],
+      ),
+    ),
   ),
 ];
 

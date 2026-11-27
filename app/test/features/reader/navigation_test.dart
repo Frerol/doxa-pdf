@@ -492,6 +492,28 @@ void main() {
       });
     }
 
+    testWidgets('the scrubber and history stay clear of the taskbar (#109)', (
+      tester,
+    ) async {
+      tester.view.padding = const FakeViewPadding(bottom: 48);
+      addTearDown(tester.view.resetPadding);
+      await show(tester);
+      final controller = controllerOf(tester);
+      controller.setOptions(const ReaderOptions(mode: ReaderMode.singlePage));
+      controller.goToPage(5, record: true);
+      await settle(tester);
+      final screen = tester.view.physicalSize.height;
+      final grip = find.descendant(
+        of: find.byType(ReaderScrubber),
+        matching: find.byType(GestureDetector),
+      );
+      expect(tester.getRect(grip).bottom, lessThanOrEqualTo(screen - 48));
+      expect(
+        tester.getRect(find.byType(ReaderHistoryControl)).bottom,
+        lessThanOrEqualTo(screen - 48),
+      );
+    });
+
     testWidgets('the history control shows after a jump, then fades (#109)', (
       tester,
     ) async {
