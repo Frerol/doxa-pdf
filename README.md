@@ -41,6 +41,39 @@ standard PDF annotations, so your notes open in any reader. It runs offline, has
 Form filling, signatures, EPUB, OPDS, KoSync and cloud accounts come after the Android, Linux and Windows releases.
 See the [requirements](docs/plan/02-requirements.md) and [roadmap](docs/plan/08-roadmap.md).
 
+## Install on Android
+
+Alphas, betas and release candidates are published as signed APKs on [GitHub Releases](https://github.com/Frerol/doxa-pdf/releases),
+one per processor type (ABI). Most phones and tablets need `arm64-v8a`. Each release lists the SHA-256 of every file in `SHA256SUMS`.
+
+Every APK is signed with the same certificate. Its SHA-256 fingerprint, for apps such as AppVerifier, is:
+
+```
+0D:13:29:80:C6:02:1A:7E:BA:42:48:65:A1:CB:EA:3D:C1:98:CB:38:01:E7:57:DA:D5:DB:E5:09:1B:71:BB:96
+```
+
+### With Obtainium (updates included)
+
+[Obtainium](https://github.com/ImranR98/Obtainium) installs apps from their release pages and keeps them up to date.
+
+1. In Obtainium, tap **Add app** and enter `https://github.com/Frerol/doxa-pdf`.
+2. Turn on **Include prereleases**: until 1.0.0, every Doxa release is a pre-release.
+3. In **Filter APKs by regular expression**, enter the filter for your device:
+
+   | Device | Filter |
+   |---|---|
+   | Most phones and tablets (`arm64-v8a`) | `^doxa-pdf-.+-arm64-v8a\.apk$` |
+   | Older 32-bit ARM devices (`armeabi-v7a`) | `^doxa-pdf-.+-armeabi-v7a\.apk$` |
+   | Emulators and x86 devices (`x86_64`) | `^doxa-pdf-.+-x86_64\.apk$` |
+
+4. Tap **Add**, then **Install**.
+
+### By hand
+
+Download the APK for your device from the [latest release](https://github.com/Frerol/doxa-pdf/releases) and open it. Android asks
+you to allow installs from your browser or file manager the first time. Install later versions the same way, over the old one: your
+library and settings are kept.
+
 ## Documentation
 
 - [Engineering plan index](docs/README.md)
