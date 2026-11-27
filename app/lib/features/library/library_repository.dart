@@ -152,6 +152,17 @@ final class LibraryRepository {
     );
   }
 
+  /// Records document [id] as read now, for example when its tab is shown
+  /// again: it moves to the top of recents and of "Continue reading"
+  /// (FR-FILE-004, FR-BOOK-002).
+  Future<void> markRead(int id) =>
+      (_db.update(_db.documents)..where((d) => d.id.equals(id))).write(
+        DocumentsCompanion(
+          inRecents: const Value(true),
+          lastOpenedAt: Value(_clock()),
+        ),
+      );
+
   Future<void> setFavorite(int id, bool favorite) =>
       (_db.update(_db.documents)..where((d) => d.id.equals(id))).write(
         DocumentsCompanion(favorite: Value(favorite)),
