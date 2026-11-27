@@ -64,8 +64,8 @@ An **offline dictionary** (look up the selected word) is also in the MVP, from t
 
 ### In scope for 1.x
 The MVP comes first and becomes **1.0.0**: Android-only public alphas, betas and release candidates ([11 — MVP](11-mvp.md)). It covers Tiers 1 and 2 plus **OCR**,
-because scanned study material is common. The 1.x releases then bring the same feature set to Linux (1.1.0) and Windows (1.2.0), plus localization (at least English and Brazilian
-Portuguese), accessibility, and distribution through GitHub Releases, F-Droid, Google Play, Flathub and a
+because scanned study material is common. The 1.x releases then bring the same feature set to Linux (1.1.0) and Windows (1.2.0), plus localization (English and Brazilian
+Portuguese from the start; Spanish, French, German and European Portuguese by 1.3.0), accessibility, and distribution through GitHub Releases, F-Droid, Google Play, Flathub and a
 Windows installer/winget (1.3.0).
 
 ### Planned after the three platforms (see [roadmap](08-roadmap.md))

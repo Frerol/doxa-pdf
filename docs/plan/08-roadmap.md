@@ -44,8 +44,11 @@ Desktop layouts (expanded size class, side panels), keyboard shortcuts, FILE-009
 ## M6 — 1.2.0 Windows
 Windows Ink/pen input, file associations, MSIX/Inno installer, code signing.
 
-## M7 — 1.3.0 Stores & accessibility
-MARK-012 · SET-004, 005 · accessibility audit · store listings (Google Play, F-Droid, Flathub, winget) · [success criteria](01-vision-and-scope.md#7-success-criteria) met.
+## M7 — 1.3.0 Stores, accessibility & languages
+MARK-012 · SET-004, 005 · NFR-UX-006 · accessibility audit · store listings (Google Play, F-Droid, Flathub, winget) · [success criteria](01-vision-and-scope.md#7-success-criteria) met.
+- **More interface languages** (maintainer decision 2026-11-27): Spanish, French, German and European Portuguese (pt-PT, separate from pt-BR),
+  translated by the community on a translation platform such as Weblate. An ADR picks the platform before any work starts. The store listings
+  are translated into the same languages.
 
 ## Later candidates (order to be decided with the community)
 1. Annotation sync via user-owned storage (FR-UTIL-006).
