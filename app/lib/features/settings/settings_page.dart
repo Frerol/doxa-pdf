@@ -4,6 +4,7 @@ import 'package:doxa_dict/doxa_dict.dart' show foldDiacritics;
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import '../../src/app_version.dart';
 import '../dictionary/dictionaries_page.dart';
 import '../dictionary/dictionary_library.dart';
 import '../reader/color_mode.dart';
@@ -50,6 +51,9 @@ typedef _Setting = ({
   )
   build,
 });
+
+const _applicationName = 'Doxa PDF';
+final _displayVersion = appVersion.split('+').first;
 
 final List<_Setting> _settings = [
   (
@@ -260,6 +264,29 @@ final List<_Setting> _settings = [
       );
     },
   ),
+  (
+    category: SettingsCategory.about,
+    section: (l10n) => l10n.settingsLicenses,
+    title: (l10n) => l10n.settingsLicenses,
+    description: (_) =>
+        '$_applicationName $_displayVersion · open source licence license',
+    build: (context, _, _) => ListTile(
+      leading: const Icon(Icons.description_outlined),
+      title: Text(AppLocalizations.of(context).settingsLicenses),
+      subtitle: Text('$_applicationName $_displayVersion'),
+      onTap: () => showLicensePage(
+        context: context,
+        applicationName: _applicationName,
+        applicationVersion: _displayVersion,
+        applicationIcon: Image.asset(
+          'assets/brand/doxa-glyph.png',
+          width: 48,
+          height: 48,
+        ),
+        applicationLegalese: 'GPL-3.0-or-later',
+      ),
+    ),
+  ),
 ];
 
 String _categoryName(AppLocalizations l10n, SettingsCategory category) =>
@@ -358,7 +385,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 _CategoryTile(
                   icon: Icons.info_outline,
                   title: l10n.settingsAbout,
-                  summary: l10n.settingsSupport,
+                  summary: '${l10n.settingsSupport} · ${l10n.settingsLicenses}',
                   onTap: () => _open(context, SettingsCategory.about),
                 ),
               ],

@@ -886,6 +886,7 @@
     }
   },
   "settingsAbout": "About",
+  "settingsLicenses": "Open-source licenses",
   "settingsSupport": "Support Doxa",
   "settingsSupportHint": "Buy the developer a coffee on Ko-fi",
   "settingsGeneral": "General",
