@@ -4,6 +4,7 @@ import 'package:doxa_core/doxa_core.dart';
 import 'package:doxa_engine/doxa_engine.dart';
 import 'package:doxa_engine/testing.dart';
 import 'package:doxa_pdf/features/reader/navigation_panel.dart';
+import 'package:doxa_pdf/features/reader/reader_chrome.dart';
 import 'package:doxa_pdf/features/reader/reader_controller.dart';
 import 'package:doxa_pdf/features/reader/reader_geometry.dart';
 import 'package:doxa_pdf/features/reader/reader_page.dart';
@@ -293,7 +294,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(ThumbnailGrid), findsNothing);
         expect(find.text('Document tabs'), findsOneWidget);
-        expect(find.text('ii (2 of 10)'), findsOneWidget);
+        expect(find.text('ii (2 / 10)'), findsOneWidget);
         expect(controller.zoom, zoom);
       },
     );
@@ -304,7 +305,7 @@ void main() {
       await show(tester);
       controllerOf(tester).goToPage(2);
       await settle(tester);
-      final position = find.text('1 (3 of 10)');
+      final position = find.text('1 (3 / 10)');
 
       await openThumbnails(tester);
       await tester.tap(find.byType(BackButton).hitTestable());
@@ -400,8 +401,8 @@ void main() {
       tester,
     ) async {
       await show(tester);
-      expect(find.text('i (1 of 10)'), findsOneWidget);
-      await tester.tap(find.text('i (1 of 10)'));
+      expect(find.text('i (1 / 10)'), findsOneWidget);
+      await tester.tap(find.text('i (1 / 10)'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'nope');
       await tester.tap(find.text('Go'));
@@ -413,11 +414,104 @@ void main() {
       await tester.enterText(find.byType(TextField), '5');
       await tester.tap(find.text('Go'));
       await settle(tester);
-      expect(find.text('5 (7 of 10)'), findsOneWidget);
+      expect(find.text('5 (7 / 10)'), findsOneWidget);
       // The jump can be undone (FR-VIEW-011).
       await tester.tap(find.byTooltip('Back to previous position'));
       await settle(tester);
-      expect(find.text('i (1 of 10)'), findsOneWidget);
+      expect(find.text('i (1 / 10)'), findsOneWidget);
+    });
+
+    testWidgets('the indicator names the last page of a spread (#109)', (
+      tester,
+    ) async {
+      await show(tester);
+      final controller = controllerOf(tester);
+      controller.setOptions(
+        const ReaderOptions(mode: ReaderMode.twoPages, coverPage: false),
+      );
+      controller.goToPage(2);
+      await settle(tester);
+      // Pages 3 and 4 (labels 1 and 2) are on screen.
+      expect(find.text('2 (4 / 10)'), findsOneWidget);
+      expect(find.text('1 (3 / 10)'), findsNothing);
+    });
+
+    for (final mode in [ReaderMode.continuous, ReaderMode.singlePage]) {
+      testWidgets('dragging the scrubber turns pages live, one jump back '
+          '(${mode.name}, #109)', (tester) async {
+        await show(tester);
+        final controller = controllerOf(tester);
+        controller.setOptions(ReaderOptions(mode: mode));
+        await settle(tester);
+        final area = tester.getRect(find.byType(ReaderScrubber));
+        final grip = find.descendant(
+          of: find.byType(ReaderScrubber),
+          matching: find.byType(GestureDetector),
+        );
+        final vertical = mode == ReaderMode.continuous;
+        // Scrolling continuously, the grip sits on the right edge.
+        if (vertical) {
+          expect(tester.getCenter(grip).dx, greaterThan(area.center.dx));
+        } else {
+          expect(tester.getCenter(grip).dy, greaterThan(area.center.dy));
+        }
+
+        final drag = await tester.startGesture(tester.getCenter(grip));
+        final end = area.bottomRight;
+        for (var i = 1; i <= 4; i++) {
+          final to = vertical
+              ? Offset(
+                  tester.getCenter(grip).dx,
+                  area.top + area.height * i / 8,
+                )
+              : Offset(
+                  area.left + area.width * i / 8,
+                  tester.getCenter(grip).dy,
+                );
+          await drag.moveTo(to);
+          await tester.pump();
+        }
+        // Pages turn while the finger is still down.
+        final midway = controller.currentPage;
+        expect(midway, greaterThan(1));
+        await drag.moveTo(
+          vertical
+              ? Offset(tester.getCenter(grip).dx, end.dy)
+              : Offset(end.dx, tester.getCenter(grip).dy),
+        );
+        await tester.pump();
+        await drag.up();
+        await settle(tester);
+        expect(controller.currentPage, greaterThan(midway));
+
+        // The whole drag is one jump: Back returns to the first page.
+        controller.goBack();
+        await settle(tester);
+        expect(controller.currentPage, 0);
+        expect(controller.canGoBack, isFalse);
+      });
+    }
+
+    testWidgets('the history control shows after a jump, then fades (#109)', (
+      tester,
+    ) async {
+      await show(tester);
+      expect(find.byTooltip('Back to previous position'), findsNothing);
+      controllerOf(tester).goToPage(5, record: true);
+      await settle(tester);
+      expect(find.byTooltip('Back to previous position'), findsOneWidget);
+      double opacity() => tester
+          .widget<AnimatedOpacity>(
+            find.ancestor(
+              of: find.byTooltip('Back to previous position'),
+              matching: find.byType(AnimatedOpacity),
+            ),
+          )
+          .opacity;
+      expect(opacity(), 1);
+      await tester.pump(ReaderHistoryControl.idleAfter * 2);
+      await tester.pumpAndSettle();
+      expect(opacity(), lessThan(1));
     });
 
     testWidgets('back leaves the document even after a jump', (tester) async {
@@ -494,7 +588,7 @@ void main() {
       );
       await tester.tap(child);
       await settle(tester);
-      expect(find.text('3 (5 of 10)'), findsOneWidget);
+      expect(find.text('3 (5 / 10)'), findsOneWidget);
       expect(panel, findsOneWidget);
     });
 
@@ -622,7 +716,7 @@ void main() {
       await tester.tap(find.text('Chapter 1'));
       await tester.pumpAndSettle();
       expect(find.byType(ReaderSidePanel), findsNothing);
-      expect(find.text('1 (3 of 10)'), findsOneWidget);
+      expect(find.text('1 (3 / 10)'), findsOneWidget);
     });
 
     testWidgets('system Back closes phone contents and returns to the reader', (
@@ -641,7 +735,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(ReaderSidePanel), findsNothing);
       expect(controllerOf(tester), same(controller));
-      expect(find.text('5 (7 of 10)'), findsOneWidget);
+      expect(find.text('5 (7 / 10)'), findsOneWidget);
     });
 
     testWidgets('external links ask first (FR-VIEW-010)', (tester) async {
@@ -660,7 +754,7 @@ void main() {
         ),
       );
       await show(tester);
-      final page = find.text('i (1 of 10)');
+      final page = find.text('i (1 / 10)');
       await tester.tap(page);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '1');
@@ -722,7 +816,7 @@ void main() {
       await settle(tester);
       await tester.tapAt(linkPoint(tester, 525)); // To page 7.
       await settle(tester);
-      expect(find.text('6 (8 of 10)'), findsOneWidget);
+      expect(find.text('6 (8 / 10)'), findsOneWidget);
       controllerOf(tester).goToPage(2);
       await settle(tester);
       await tester.tapAt(linkPoint(tester, 325)); // Another file.
@@ -766,8 +860,14 @@ void main() {
         final shownHeight = tester.getSize(find.byType(ReaderView)).height;
         expect(find.byType(AppBar), findsOneWidget);
 
+        expect(find.byType(ReaderPageIndicator), findsOneWidget);
+        expect(find.byType(ReaderScrubber), findsOneWidget);
+
         await tapMiddle(tester);
         expect(find.byType(AppBar), findsNothing);
+        // The page controls hide with the bars (#109).
+        expect(find.byType(ReaderPageIndicator), findsNothing);
+        expect(find.byType(ReaderScrubber), findsNothing);
         expect(modes.last, SystemUiMode.immersiveSticky.toString());
         // The page gets the room the bars leave.
         expect(
@@ -789,7 +889,7 @@ void main() {
         await settle(tester);
         await tester.tapAt(linkPoint(tester, 525)); // To page 7.
         await settle(tester);
-        expect(find.text('6 (8 of 10)'), findsOneWidget);
+        expect(find.text('6 (8 / 10)'), findsOneWidget);
         expect(modes, isEmpty);
       });
 

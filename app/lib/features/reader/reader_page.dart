@@ -17,6 +17,7 @@ import '../settings/settings_page.dart';
 import 'color_mode.dart';
 import 'frame_probe.dart';
 import 'navigation_panel.dart';
+import 'reader_chrome.dart';
 import 'reader_controller.dart';
 import 'reader_geometry.dart';
 import 'reader_view.dart';
@@ -509,11 +510,6 @@ class _ReaderPageState extends State<ReaderPage> {
               actions: [
                 ?widget.tabsButton,
                 if (controller != null && controller.info.pageCount > 0) ...[
-                  _HistoryButtons(controller: controller),
-                  _PageIndicator(
-                    controller: controller,
-                    onPressed: () => _goToPage(controller),
-                  ),
                   IconButton(
                     icon: const Icon(Icons.search),
                     tooltip: l10n.searchTooltip,
@@ -538,10 +534,6 @@ class _ReaderPageState extends State<ReaderPage> {
                 ],
               ],
             ),
-      bottomNavigationBar:
-          !showBars || controller == null || controller.info.pageCount < 2
-          ? null
-          : _PageScrubber(controller: controller),
       body: switch ((controller, _failure)) {
         (final ReaderController c, _) => _withPanel(
           c,
@@ -569,6 +561,8 @@ class _ReaderPageState extends State<ReaderPage> {
                   ),
                 ),
               ),
+              if (showBars && c.info.pageCount > 0)
+                ...readerChrome(controller: c, onGoToPage: () => _goToPage(c)),
               if (_selection case final selection?)
                 Positioned.fill(
                   child: _SelectionBar(selection: selection, reader: c),
@@ -605,114 +599,6 @@ class _ReaderPageState extends State<ReaderPage> {
         });
       },
       child: body,
-    );
-  }
-}
-
-/// Back and forward through link and outline jumps (FR-VIEW-011).
-class _HistoryButtons extends StatelessWidget {
-  const _HistoryButtons({required this.controller});
-  final ReaderController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return ValueListenableBuilder(
-      valueListenable: controller.history,
-      builder: (context, _, _) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (controller.canGoBack)
-            IconButton(
-              icon: const Icon(Icons.undo),
-              tooltip: l10n.historyBack,
-              onPressed: controller.goBack,
-            ),
-          if (controller.canGoForward)
-            IconButton(
-              icon: const Icon(Icons.redo),
-              tooltip: l10n.historyForward,
-              onPressed: controller.goForward,
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The current page with its label (FR-VIEW-014); opens "Go to page".
-class _PageIndicator extends StatelessWidget {
-  const _PageIndicator({required this.controller, required this.onPressed});
-  final ReaderController controller;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return ValueListenableBuilder(
-      valueListenable: controller.page,
-      builder: (context, page, _) => TextButton(
-        onPressed: onPressed,
-        child: Text(
-          pageIndicatorText(l10n, controller, page),
-          style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
-        ),
-      ),
-    );
-  }
-}
-
-/// "iv (4 of 120)" when the page has a label, else "4 of 120".
-String pageIndicatorText(
-  AppLocalizations l10n,
-  ReaderController controller,
-  int page,
-) {
-  final count = controller.info.pageCount;
-  final label = controller.info.pageLabels[page];
-  return label == null || label == '${page + 1}'
-      ? l10n.pageOfCount(page + 1, count)
-      : l10n.pageLabelOfCount(label, page + 1, count);
-}
-
-/// A page slider whose thumb shows the page label (FR-VIEW-009).
-class _PageScrubber extends StatefulWidget {
-  const _PageScrubber({required this.controller});
-  final ReaderController controller;
-
-  @override
-  State<_PageScrubber> createState() => _PageScrubberState();
-}
-
-class _PageScrubberState extends State<_PageScrubber> {
-  double? _dragging;
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = widget.controller;
-    final last = controller.info.pageCount - 1;
-    return SafeArea(
-      top: false,
-      child: SizedBox(
-        height: 56,
-        child: ValueListenableBuilder(
-          valueListenable: controller.page,
-          builder: (context, page, _) {
-            final value = _dragging ?? page.toDouble();
-            return Slider(
-              value: value.clamp(0, last.toDouble()),
-              max: last.toDouble(),
-              divisions: last,
-              label: controller.pageLabel(value.round()),
-              onChanged: (v) => setState(() => _dragging = v),
-              onChangeEnd: (v) {
-                setState(() => _dragging = null);
-                controller.goToPage(v.round(), record: true);
-              },
-            );
-          },
-        ),
-      ),
     );
   }
 }

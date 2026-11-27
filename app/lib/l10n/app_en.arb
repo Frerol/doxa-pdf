@@ -120,7 +120,11 @@
   "@historyForward": {
     "description": "Button that redoes a jump undone with back."
   },
-  "pageOfCount": "{number} of {count}",
+  "pageScrubber": "Page",
+  "@pageScrubber": {
+    "description": "Accessibility label of the scrubber grip that turns pages."
+  },
+  "pageOfCount": "{number} / {count}",
   "@pageOfCount": {
     "description": "Page indicator for a page without a label.",
     "placeholders": {
@@ -132,7 +136,7 @@
       }
     }
   },
-  "pageLabelOfCount": "{label} ({number} of {count})",
+  "pageLabelOfCount": "{label} ({number} / {count})",
   "@pageLabelOfCount": {
     "description": "Page indicator with the PDF page label, such as a roman numeral.",
     "placeholders": {
