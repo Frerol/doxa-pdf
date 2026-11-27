@@ -7,6 +7,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../dictionary/dictionaries_page.dart';
 import '../dictionary/dictionary_library.dart';
 import '../reader/color_mode.dart';
+import '../reader/reader_geometry.dart';
 import 'app_settings.dart';
 
 /// Swatches offered for the custom page colours (FR-VIEW-016).
@@ -120,6 +121,26 @@ final List<_Setting> _settings = [
         value: settings.value.keepScreenOn,
         onChanged: (on) =>
             settings.update(settings.value.copyWith(keepScreenOn: on)),
+      );
+    },
+  ),
+  (
+    category: SettingsCategory.viewing,
+    section: (l10n) => l10n.settingsReading,
+    title: (l10n) => l10n.settingsFitMode,
+    description: (l10n) => l10n.settingsFitModeHint,
+    build: (context, settings) {
+      final l10n = AppLocalizations.of(context);
+      return _ChoiceTile<FitMode>(
+        title: l10n.settingsFitMode,
+        description: l10n.settingsFitModeHint,
+        value: settings.value.fitMode,
+        choices: {
+          FitMode.page: l10n.readerFitPage,
+          FitMode.width: l10n.readerFitWidth,
+        },
+        onChanged: (mode) =>
+            settings.update(settings.value.copyWith(fitMode: mode)),
       );
     },
   ),

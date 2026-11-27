@@ -224,7 +224,11 @@ class _ReaderViewState extends State<ReaderView>
 
   void _animateTo(ViewState target) {
     _ticker.stop();
-    _turnFrom = (zoom: _controller.zoom, offset: _controller.offset);
+    _turnFrom = (
+      zoom: _controller.zoom,
+      offset: _controller.offset,
+      atFit: _controller.atFit,
+    );
     _turnTo = target;
     _turn.forward(from: 0);
   }
@@ -236,6 +240,7 @@ class _ReaderViewState extends State<ReaderView>
     _controller.setView((
       zoom: from.zoom + (to.zoom - from.zoom) * t,
       offset: Offset.lerp(from.offset, to.offset, t)!,
+      atFit: _turn.value == 1 ? to.atFit : from.atFit,
     ));
   }
 
@@ -336,7 +341,9 @@ class _ReaderViewState extends State<ReaderView>
     _ticker.stop();
     final layout = _controller.layout;
     final delta = event.scrollDelta;
-    if (layout != null && layout.paged && _controller.zoom <= 1.05) {
+    if (layout != null &&
+        layout.paged &&
+        (_controller.atFit || _controller.zoom <= 1.05)) {
       // One page per wheel step; steps during the turn animation are ignored.
       final step = delta.dy.abs() >= delta.dx.abs() ? delta.dy : delta.dx;
       if (step == 0 || _turn.isAnimating) return;
@@ -361,6 +368,11 @@ class _ReaderViewState extends State<ReaderView>
         final size = constraints.biggest;
         final ratio = MediaQuery.devicePixelRatioOf(context);
         // Layout only changes numbers in the controller; it never rebuilds.
+        if (_turn.isAnimating &&
+            (size != _controller.viewSize ||
+                ratio != _controller.devicePixelRatio)) {
+          _turn.stop();
+        }
         _controller.resize(size, ratio);
         return Listener(
           onPointerSignal: _onPointerSignal,

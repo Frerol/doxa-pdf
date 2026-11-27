@@ -8,6 +8,7 @@ import 'package:doxa_pdf/features/reader/reader_controller.dart';
 import 'package:doxa_pdf/features/reader/reader_geometry.dart';
 import 'package:doxa_pdf/features/reader/reader_page.dart';
 import 'package:doxa_pdf/features/reader/reader_view.dart';
+import 'package:doxa_pdf/features/reader/thumbnail_grid.dart';
 import 'package:doxa_pdf/l10n/gen/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -204,7 +205,11 @@ void main() {
   group('page', () {
     late List<String> opened;
 
-    Future<void> show(WidgetTester tester) async {
+    Future<void> show(
+      WidgetTester tester, {
+      FakeDocument? document,
+      PreferredSizeWidget? tabRow,
+    }) async {
       tester.view
         ..physicalSize = const Size(800, 1200)
         ..devicePixelRatio = 1;
@@ -220,10 +225,13 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('en'),
           home: ReaderPage(
-            engine: Future.value(FakePdfEngine({'book.pdf': book()})),
+            engine: Future.value(
+              FakePdfEngine({'book.pdf': document ?? book()}),
+            ),
             source: const FileSource('book.pdf'),
             title: 'book.pdf',
             decoder: decoder.call,
+            tabRow: tabRow,
             openUri: (uri) async {
               opened.add(uri);
               return true;
@@ -236,6 +244,157 @@ void main() {
 
     ReaderController controllerOf(WidgetTester tester) =>
         tester.widget<ReaderView>(find.byType(ReaderView)).controller;
+
+    Offset linkPoint(WidgetTester tester, double pdfY) {
+      final controller = controllerOf(tester);
+      final page = controller.layout!.pageRect(2);
+      final point = Offset(
+        page.left + page.width * (100 / 400),
+        page.top + page.height * ((600 - pdfY) / 600),
+      );
+      final origin = tester.getTopLeft(find.byType(ReaderView));
+      return origin + (point - controller.offset) * controller.zoom;
+    }
+
+    Future<void> openThumbnails(WidgetTester tester) async {
+      await tester.tap(find.byTooltip('Thumbnails'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets(
+      'the thumbnail route jumps and keeps paged zoom (FR-VIEW-008)',
+      (tester) async {
+        await show(
+          tester,
+          tabRow: const PreferredSize(
+            preferredSize: Size.fromHeight(32),
+            child: Text('Document tabs'),
+          ),
+        );
+        final controller = controllerOf(tester);
+        controller.setOptions(const ReaderOptions(mode: ReaderMode.singlePage));
+        controller.zoomTo(2.5);
+        final zoom = controller.zoom;
+        expect(zoom, greaterThan(1));
+        await settle(tester);
+        expect(find.text('Document tabs'), findsOneWidget);
+
+        await openThumbnails(tester);
+        expect(find.text('Thumbnails'), findsOneWidget);
+        expect(find.byType(ReaderView).hitTestable(), findsNothing);
+        expect(find.text('Document tabs').hitTestable(), findsNothing);
+        final current = tester.widget<Text>(find.text('i'));
+        expect(
+          current.style?.color,
+          Theme.of(tester.element(find.text('i'))).colorScheme.primary,
+        );
+
+        await tester.tap(find.text('ii'));
+        await tester.pumpAndSettle();
+        expect(find.byType(ThumbnailGrid), findsNothing);
+        expect(find.text('Document tabs'), findsOneWidget);
+        expect(find.text('ii (2 of 10)'), findsOneWidget);
+        expect(controller.zoom, zoom);
+      },
+    );
+
+    testWidgets('both Back controls close the grid in place (FR-VIEW-008)', (
+      tester,
+    ) async {
+      await show(tester);
+      controllerOf(tester).goToPage(2);
+      await settle(tester);
+      final position = find.text('1 (3 of 10)');
+
+      await openThumbnails(tester);
+      await tester.tap(find.byType(BackButton).hitTestable());
+      await tester.pumpAndSettle();
+      expect(find.byType(ThumbnailGrid), findsNothing);
+      expect(position, findsOneWidget);
+
+      await openThumbnails(tester);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(ThumbnailGrid), findsNothing);
+      expect(position, findsOneWidget);
+    });
+
+    testWidgets('wider grids fit more thumbnails per row (FR-VIEW-008)', (
+      tester,
+    ) async {
+      // The grid is its own page, so it can be opened on a wide screen and
+      // then narrowed; the reader's app bar does not matter here.
+      await show(tester);
+      await openThumbnails(tester);
+      tester.view.physicalSize = const Size(360, 800);
+      await settle(tester);
+
+      int firstRowCount() {
+        final firstY = tester.getCenter(find.text('i')).dy;
+        final labels = find.descendant(
+          of: find.byType(GridView),
+          matching: find.byType(Text),
+        );
+        return labels.evaluate().where((element) {
+          final label = find.byElementPredicate((other) => other == element);
+          return (tester.getCenter(label).dy - firstY).abs() < 0.1;
+        }).length;
+      }
+
+      final phone = firstRowCount();
+      tester.view.physicalSize = const Size(800, 1200);
+      await settle(tester);
+      final portrait = firstRowCount();
+      expect(portrait, greaterThan(phone));
+      tester.view.physicalSize = const Size(1280, 800);
+      await settle(tester);
+      expect(firstRowCount(), greaterThan(portrait));
+    });
+
+    testWidgets(
+      'requests visible thumbnails near the current page (FR-VIEW-008)',
+      (tester) async {
+        await show(
+          tester,
+          document: FakeDocument(
+            pages: List.filled(1001, const FakePage(width: 400, height: 600)),
+          ),
+        );
+        final controller = controllerOf(tester);
+        final engine = controller.engine as FakePdfEngine;
+        controller.goToPage(710);
+        await settle(tester);
+        final before = engine.renderLog.length;
+        await openThumbnails(tester);
+
+        expect(find.text('711').hitTestable(), findsOneWidget);
+        expect(find.text('1'), findsNothing);
+        final grid = tester.getRect(find.byType(GridView));
+        final visiblePages = <int>{};
+        final cells = find.descendant(
+          of: find.byType(GridView),
+          matching: find.byType(InkWell),
+        );
+        for (final element in cells.evaluate()) {
+          final cell = find.byElementPredicate((other) => other == element);
+          if (!grid.overlaps(tester.getRect(cell))) continue;
+          final label = tester.widget<Text>(
+            find.descendant(of: cell, matching: find.byType(Text)),
+          );
+          visiblePages.add(int.parse(label.data!) - 1);
+        }
+        final requests = engine.renderLog.skip(before).toList();
+        expect(requests, isNotEmpty);
+        expect(
+          requests.map((request) => request.priority),
+          everyElement(RenderPriority.thumbnail),
+        );
+        expect(
+          requests.map((request) => request.pageIndex),
+          everyElement(isIn(visiblePages)),
+        );
+      },
+    );
 
     testWidgets('shows the page label and goes to a typed page', (
       tester,
@@ -304,78 +463,185 @@ void main() {
       expect(find.text('Home'), findsOneWidget);
     });
 
-    testWidgets('the outline and thumbnails navigate (FR-VIEW-007/008)', (
+    testWidgets('contents jumps leave the tablet panel open (FR-VIEW-007)', (
       tester,
     ) async {
       await show(tester);
-      // The reference tablet in landscape: beside the open panel a page is
-      // still taller than the view, so a jump into page 5 shows page 5.
       tester.view.physicalSize = const Size(1280, 800);
       await settle(tester);
-      // The side panel opens from its app-bar button (UX §5).
       await tester.tap(find.byTooltip('Side panel'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Outline'));
-      await tester.pumpAndSettle();
+      await settle(tester);
+
+      expect(find.text('Contents'), findsOneWidget);
       expect(find.text('Preface'), findsOneWidget);
-      // The title opens the chapter; the arrow shows its sections.
-      await tester.tap(find.byIcon(Icons.expand_more));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Section 1.1'));
+      expect(find.byTooltip('Pages'), findsNothing);
+      expect(find.text('ii'), findsNothing);
+      expect(find.text('Section 1.1'), findsNothing);
+      final chapter = find.text('Chapter 1');
+      final panel = find.byType(ReaderSidePanel);
+      final chapterPage = find.descendant(of: panel, matching: find.text('1'));
+      expect(
+        tester.getCenter(chapterPage).dx,
+        greaterThan(tester.getCenter(chapter).dx),
+      );
+
+      await tester.tap(find.byTooltip('Expand entry'));
+      await settle(tester);
+      final child = find.text('Section 1.1');
+      expect(
+        tester.getTopLeft(child).dx,
+        greaterThan(tester.getTopLeft(find.text('Preface')).dx),
+      );
+      await tester.tap(child);
       await settle(tester);
       expect(find.text('3 (5 of 10)'), findsOneWidget);
-
-      // Beside the page, the panel stays open after a jump.
-      await tester.tap(find.byTooltip('Pages'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('ii'));
-      await settle(tester);
-      expect(find.text('ii (2 of 10)'), findsOneWidget);
+      expect(panel, findsOneWidget);
     });
 
-    testWidgets('the side panel sits beside the page on tablets (UX §5)', (
+    testWidgets('contents can expand, collapse and find nested entries', (
       tester,
     ) async {
       await show(tester);
-      tester.view.physicalSize = const Size(1280, 800);
-      await settle(tester);
-      final full = tester.getSize(find.byType(ReaderView)).width;
       await tester.tap(find.byTooltip('Side panel'));
       await settle(tester);
-      // Thumbnails show first; the page makes room instead of being covered.
-      expect(find.byType(ReaderSidePanel), findsOneWidget);
-      expect(find.text('ii'), findsOneWidget);
-      expect(
-        tester.getSize(find.byType(ReaderView)).width,
-        lessThanOrEqualTo(full - ReaderSidePanel.width),
-      );
-      // Resizing the page while thumbnails listen must not rebuild them
-      // during layout.
-      await tester.tap(find.byTooltip('Side panel'));
+      await tester.tap(find.byTooltip('Expand all'));
       await settle(tester);
-      await tester.tap(find.byTooltip('Side panel'));
+      expect(find.text('Section 1.1'), findsOneWidget);
+      await tester.tap(find.byTooltip('Collapse all'));
       await settle(tester);
-      expect(tester.takeException(), isNull);
-
-      await tester.tap(find.byTooltip('Side panel'));
+      expect(find.text('Section 1.1'), findsNothing);
+      await tester.tap(find.byTooltip('Search contents'));
       await settle(tester);
-      expect(find.byType(ReaderSidePanel), findsNothing);
-      expect(tester.getSize(find.byType(ReaderView)).width, full);
+      await tester.enterText(find.byType(TextField), 'SECTION');
+      await settle(tester);
+      expect(find.text('Section 1.1'), findsOneWidget);
+      expect(find.text('Preface'), findsNothing);
     });
 
-    testWidgets('on phones the side panel covers the page and closes', (
+    testWidgets(
+      'the left dock narrows the reader and refits the page (UX §7)',
+      (tester) async {
+        await show(tester);
+        final view = find.byType(ReaderView);
+        final panel = find.byType(ReaderSidePanel);
+        final controller = controllerOf(tester);
+        final fullViewport = tester.getRect(view);
+        final fullPageWidth = controller.layout!.pageRect(0).width;
+
+        await tester.tap(find.byTooltip('Side panel'));
+        await settle(tester);
+        final dockedViewport = tester.getRect(view);
+        expect(
+          tester.getRect(panel).right,
+          lessThanOrEqualTo(dockedViewport.left),
+        );
+        expect(dockedViewport.right, fullViewport.right);
+        expect(dockedViewport.width, lessThan(fullViewport.width));
+        expect(controller.layout!.pageRect(0).width, lessThan(fullPageWidth));
+        expect(
+          controller.layout!.pageRect(0).width * controller.zoom,
+          closeTo(dockedViewport.width, 1e-6),
+        );
+
+        await tester.tap(find.byTooltip('Close'));
+        await settle(tester);
+        expect(panel, findsNothing);
+        expect(tester.getRect(view), fullViewport);
+        expect(
+          controller.layout!.pageRect(0).width,
+          closeTo(fullPageWidth, 1e-6),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('docking reapplies an explicit fit-page view', (tester) async {
+      await show(tester);
+      final controller = controllerOf(tester);
+      controller.fitPage();
+      final fitted = controller.layout!.pageRect(0).width * controller.zoom;
+      await tester.tap(find.byTooltip('Side panel'));
+      await settle(tester);
+
+      final page = controller.layout!.pageRect(0);
+      expect(page.width * controller.zoom, lessThan(fitted));
+      expect(
+        page.width * controller.zoom,
+        closeTo(controller.viewSize.width, 1e-6),
+      );
+    });
+
+    testWidgets(
+      'docking clips a zoomed page without changing its scale or position',
+      (tester) async {
+        await show(tester);
+        final controller = controllerOf(tester);
+        controller.goToPage(2);
+        controller.zoomTo(2.5);
+        await settle(tester);
+        // Where page 3 sits on the screen, and how wide it is there.
+        Rect onScreen() {
+          final rect = controller.layout!.pageRect(2);
+          return Rect.fromPoints(
+            (rect.topLeft - controller.offset) * controller.zoom,
+            (rect.bottomRight - controller.offset) * controller.zoom,
+          );
+        }
+
+        final before = onScreen();
+        final pageWidth = before.width;
+        void expectSameView() {
+          final now = onScreen();
+          expect(now.width, closeTo(before.width, 1e-6));
+          expect(now.left, closeTo(before.left, 1e-6));
+          expect(now.top, closeTo(before.top, 1e-6));
+        }
+
+        await tester.tap(find.byTooltip('Side panel'));
+        await settle(tester);
+        expectSameView();
+        expect(controller.viewSize.width, lessThan(pageWidth));
+
+        await tester.tap(find.byTooltip('Side panel'));
+        await settle(tester);
+        expectSameView();
+      },
+    );
+
+    testWidgets('on phones a contents jump closes the full-screen route', (
       tester,
     ) async {
       await show(tester);
       tester.view.physicalSize = const Size(400, 800);
       await settle(tester);
       await tester.tap(find.byTooltip('Side panel'));
-      await settle(tester);
+      await tester.pumpAndSettle();
       expect(find.byType(ReaderSidePanel), findsOneWidget);
-      await tester.tap(find.text('ii'));
-      await settle(tester);
+      expect(find.byType(ReaderView), findsNothing);
+      expect(find.byType(BackButton), findsOneWidget);
+      await tester.tap(find.text('Chapter 1'));
+      await tester.pumpAndSettle();
       expect(find.byType(ReaderSidePanel), findsNothing);
-      expect(find.text('ii (2 of 10)'), findsOneWidget);
+      expect(find.text('1 (3 of 10)'), findsOneWidget);
+    });
+
+    testWidgets('system Back closes phone contents and returns to the reader', (
+      tester,
+    ) async {
+      await show(tester);
+      tester.view.physicalSize = const Size(400, 800);
+      await settle(tester);
+      final controller = controllerOf(tester);
+      controller.goToPage(6);
+      await settle(tester);
+      await tester.tap(find.byTooltip('Side panel'));
+      await tester.pumpAndSettle();
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(ReaderSidePanel), findsNothing);
+      expect(controllerOf(tester), same(controller));
+      expect(find.text('5 (7 of 10)'), findsOneWidget);
     });
 
     testWidgets('external links ask first (FR-VIEW-010)', (tester) async {
@@ -400,10 +666,7 @@ void main() {
       await tester.enterText(find.byType(TextField), '1');
       await tester.tap(find.text('Go'));
       await settle(tester);
-      // Page 2 fills the 800 px width: 2 px per pt. The web link is at
-      // PDF (100, 425): screen (200, (600 - 425) * 2) below the app bar.
-      final reader = tester.getTopLeft(find.byType(ReaderView));
-      await tester.tapAt(reader + const Offset(200, 350));
+      await tester.tapAt(linkPoint(tester, 425));
       await settle(tester);
       expect(find.text('Open this link in another app?'), findsOneWidget);
       expect(find.text('https://example.org/'), findsOneWidget);
@@ -411,7 +674,7 @@ void main() {
       await settle(tester);
       expect(opened, ['https://example.org/']);
 
-      await tester.tapAt(reader + const Offset(200, 350));
+      await tester.tapAt(linkPoint(tester, 425));
       await settle(tester);
       await tester.tap(find.text('Copy link'));
       await settle(tester);
@@ -446,8 +709,7 @@ void main() {
       await settle(tester);
       controllerOf(tester).goToPage(2);
       await settle(tester);
-      final reader = tester.getTopLeft(find.byType(ReaderView));
-      await tester.tapAt(reader + const Offset(200, 350));
+      await tester.tapAt(linkPoint(tester, 425));
       await settle(tester);
       await tester.tap(find.text('Open'));
       await settle(tester);
@@ -458,13 +720,12 @@ void main() {
       await show(tester);
       controllerOf(tester).goToPage(2);
       await settle(tester);
-      final reader = tester.getTopLeft(find.byType(ReaderView));
-      await tester.tapAt(reader + const Offset(200, 150)); // To page 7.
+      await tester.tapAt(linkPoint(tester, 525)); // To page 7.
       await settle(tester);
       expect(find.text('6 (8 of 10)'), findsOneWidget);
       controllerOf(tester).goToPage(2);
       await settle(tester);
-      await tester.tapAt(reader + const Offset(200, 550)); // Another file.
+      await tester.tapAt(linkPoint(tester, 325)); // Another file.
       await settle(tester);
       expect(
         find.text(
@@ -526,8 +787,7 @@ void main() {
         await show(tester);
         controllerOf(tester).goToPage(2);
         await settle(tester);
-        final reader = tester.getTopLeft(find.byType(ReaderView));
-        await tester.tapAt(reader + const Offset(200, 150)); // To page 7.
+        await tester.tapAt(linkPoint(tester, 525)); // To page 7.
         await settle(tester);
         expect(find.text('6 (8 of 10)'), findsOneWidget);
         expect(modes, isEmpty);

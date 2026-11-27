@@ -51,6 +51,7 @@ class DoxaApp extends StatefulWidget {
     this.dictionaryLookup,
     this.dictionaryImports,
     this.openUri,
+    this.clock = DateTime.now,
   });
 
   final Future<PdfEngine> Function() engine;
@@ -93,6 +94,9 @@ class DoxaApp extends StatefulWidget {
   /// Folder listed by the temporary developer document list; by default the
   /// app's own folder on Android, and none elsewhere.
   final String? devDocumentsDir;
+
+  /// The time the library labels last reads against ("today").
+  final DateTime Function() clock;
 
   @override
   State<DoxaApp> createState() => _DoxaAppState();
@@ -207,6 +211,7 @@ class _DoxaAppState extends State<DoxaApp> with WidgetsBindingObserver {
         devDocumentsDir:
             widget.devDocumentsDir ??
             (Platform.isAndroid ? androidDevDocumentsDir : null),
+        clock: widget.clock,
       ),
     );
   }

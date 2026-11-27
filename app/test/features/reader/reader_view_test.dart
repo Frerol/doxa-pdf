@@ -7,6 +7,8 @@ import 'package:doxa_engine/testing.dart';
 import 'package:doxa_pdf/features/reader/reader_controller.dart';
 import 'package:doxa_pdf/features/reader/reader_page.dart';
 import 'package:doxa_pdf/features/reader/reader_view.dart';
+import 'package:doxa_pdf/features/settings/app_settings.dart';
+import 'package:doxa_pdf/features/settings/settings_page.dart';
 import 'package:doxa_pdf/l10n/gen/app_localizations.dart';
 import 'package:doxa_pdf/src/doxa_app.dart';
 import 'package:flutter/gestures.dart';
@@ -109,17 +111,26 @@ void main() {
 
   testWidgets('a double tap zooms in and out (FR-VIEW-004)', (tester) async {
     await showReader(tester);
+    tester.view.physicalSize = const Size(400, 360);
+    await tester.pump();
+    final fit = controller.zoom;
+    const point = Offset(200, 100);
+    final documentPoint = controller.toDocument(point);
     Future<void> doubleTap() async {
-      await tester.tapAt(const Offset(100, 100));
+      await tester.tapAt(point);
       await tester.pump(const Duration(milliseconds: 50));
-      await tester.tapAt(const Offset(100, 100));
+      await tester.tapAt(point);
       await settle(tester);
     }
 
     await doubleTap();
-    expect(controller.zoom, ReaderController.smartZoomLevel);
+    expect(controller.zoom, greaterThan(fit));
+    expect(
+      (controller.toDocument(point) - documentPoint).distance,
+      closeTo(0, 1e-6),
+    );
     await doubleTap();
-    expect(controller.zoom, 1);
+    expect(controller.zoom, closeTo(fit, 1e-6));
   });
 
   testWidgets('the mouse wheel scrolls', (tester) async {
@@ -143,7 +154,11 @@ void main() {
   });
 
   group('ReaderPage', () {
-    Future<void> showPage(WidgetTester tester, String path) async {
+    Future<void> showPage(
+      WidgetTester tester,
+      String path, {
+      SettingsController? settings,
+    }) async {
       final decoder = await FakeDecoder.create(tester);
       await tester.pumpWidget(
         localized(
@@ -152,6 +167,7 @@ void main() {
             engine: Future.value(fakeEngine()),
             source: FileSource(path),
             title: path,
+            settings: settings,
             decoder: decoder.call,
           ),
         ),
@@ -159,18 +175,47 @@ void main() {
       await settle(tester);
     }
 
-    testWidgets('opens a document and offers zoom presets', (tester) async {
+    testWidgets('opens with default page fit and no zoom menu (FR-VIEW-004)', (
+      tester,
+    ) async {
       await showPage(tester, 'book.pdf');
-      expect(find.byType(ReaderView), findsOneWidget);
-      await tester.tap(find.byTooltip('Zoom'));
-      await tester.pumpAndSettle();
-      expect(find.text('Fit width'), findsOneWidget);
-      expect(find.text('Fit page'), findsOneWidget);
-      await tester.tap(find.text('2×'));
-      await settle(tester);
       final view = tester.widget<ReaderView>(find.byType(ReaderView));
-      expect(view.controller.zoom, 2);
+      final reader = view.controller;
+      final page = reader.layout!.pageRect(0);
+      expect(reader.visibleRect.height, closeTo(page.height, 1e-6));
+      expect(find.byTooltip('Zoom'), findsNothing);
+      expect(find.byIcon(Icons.zoom_in), findsNothing);
     });
+
+    testWidgets(
+      'the saved fit choice applies when opening a document (FR-VIEW-004)',
+      (tester) async {
+        final store = MemorySettingsStore();
+        final settings = SettingsController(store);
+        final restored = SettingsController(store);
+        addTearDown(settings.dispose);
+        addTearDown(restored.dispose);
+        await tester.pumpWidget(localized(SettingsPage(settings: settings)));
+        await tester.tap(find.text('Viewing'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Page fit'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Fit width'));
+        await tester.pumpAndSettle();
+        await settings.flush();
+        await restored.load();
+        // Drop the settings routes, or the reader opens beneath them.
+        await tester.pumpWidget(const SizedBox());
+
+        await showPage(tester, 'book.pdf', settings: restored);
+        final reader = tester
+            .widget<ReaderView>(find.byType(ReaderView))
+            .controller;
+        final page = reader.layout!.pageRect(0);
+        expect(reader.visibleRect.width, closeTo(page.width, 1e-6));
+        expect(reader.visibleRect.height, lessThan(page.height));
+      },
+    );
 
     testWidgets('reports an engine that cannot start', (tester) async {
       await tester.pumpWidget(

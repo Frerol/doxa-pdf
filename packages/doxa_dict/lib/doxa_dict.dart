@@ -7,5 +7,6 @@ export 'src/dictionary_data.dart';
 export 'src/dictionary_field.dart';
 export 'src/dictionary_format_exception.dart';
 export 'src/lookup_normalization.dart' show foldDiacritics;
-export 'src/stardict_index.dart';
+export 'src/stardict_index.dart'
+    show StarDictIndex, StarDictIndexEntry, StarDictSynonyms;
 export 'src/stardict_info.dart';

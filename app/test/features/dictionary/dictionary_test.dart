@@ -100,6 +100,38 @@ void main() {
       expect(File('$installed/beta/LICENSE.txt').existsSync(), isTrue);
     });
 
+    test(
+      'FR-TEXT-010 generates its own sidecar outside the pack size',
+      () async {
+        writeSet(staging, 'Alpha', {'cat': 'animal'});
+        File('${staging.path}/Alpha.fold').writeAsStringSync('pack-supplied');
+        final report = installStaged(installed, staging.path);
+        expect(report.added, ['Alpha']);
+
+        final library = DictionaryLibrary(installed);
+        await library.load();
+        final entry = library.all.single;
+        final dictionary = Dictionary.open(
+          File(entry.ifoPath),
+          scanWithoutFoldIndex: false,
+        );
+        try {
+          expect(dictionary.hasFoldIndex, isTrue);
+          expect(dictionary.lookup('CAT').single.headword, 'cat');
+        } finally {
+          dictionary.close();
+        }
+        final files = File(entry.ifoPath).parent.listSync().whereType<File>();
+        final bytes = files
+            .where((file) => !file.path.endsWith('.fold'))
+            .fold(0, (size, file) => size + file.lengthSync());
+        expect(entry.sizeBytes, bytes);
+        final fold = files.singleWhere((file) => file.path.endsWith('.fold'));
+        await library.remove(entry.id);
+        expect(fold.existsSync(), isFalse);
+      },
+    );
+
     test('names a missing file, rejects a bad set, skips a duplicate', () {
       writeSet(Directory('${staging.path}/ok'), 'Alpha', {'cat': 'x'});
       installStaged(installed, staging.path);
@@ -179,6 +211,27 @@ void main() {
   });
 
   group('lookup (FR-TEXT-008, FR-TEXT-010)', () {
+    test('rebuilds a corrupt sidecar while serving exact lookups', () async {
+      final folder = Directory('${root.path}/a');
+      writeSet(folder, 'Alpha', {'cat': 'animal'});
+      final fold = File('${folder.path}/Alpha.fold')..writeAsBytesSync([0]);
+      final library = DictionaryLibrary(root.path);
+      await library.load();
+      final lookup = IsolateDictionaryLookup();
+      addTearDown(lookup.close);
+      final folded = lookup.lookup('CAT', library.enabled);
+      final exact = await lookup.lookup('cat', library.enabled);
+      expect(lookupText(exact.groups), contains('animal'));
+      expect(lookupText((await folded).groups), contains('animal'));
+      final dictionary = Dictionary.open(File(library.enabled.single.ifoPath));
+      try {
+        expect(dictionary.hasFoldIndex, isTrue);
+        expect(fold.existsSync(), isTrue);
+      } finally {
+        dictionary.close();
+      }
+    });
+
     test('runs on a worker, in the given order, past a damaged set', () async {
       writeSet(Directory('${root.path}/a'), 'Alpha', {'cat': 'animal'});
       writeSet(Directory('${root.path}/b'), 'Beta', {

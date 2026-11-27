@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'dictionary_format_exception.dart';
@@ -59,8 +60,20 @@ final class StarDictIndex {
 
   int get length => _table.length;
 
+  /// The longest UTF-8 key in the original StarDict table, in bytes.
+  int get maxWordBytes => _table.maxWordBytes;
+
   /// Returns the entry at a zero-based ordinal.
   StarDictIndexEntry operator [](int ordinal) {
+    final (:offset, :size) = definitionRangeAt(ordinal);
+    return (headword: headwordAt(ordinal), offset: offset, size: size);
+  }
+
+  /// The headword at [ordinal], without reading its definition range.
+  String headwordAt(int ordinal) => _table.wordAt(ordinal);
+
+  /// The definition range at [ordinal], without decoding its headword.
+  ({int offset, int size}) definitionRangeAt(int ordinal) {
     final payload = _table.wordEnd(ordinal) + 1;
     final data = _table.data;
     final first = data.getUint32(payload);
@@ -68,11 +81,7 @@ final class StarDictIndex {
     final offset = _offsetBytes == 4
         ? first
         : (first << 32) | data.getUint32(payload + 4);
-    return (
-      headword: _table.wordAt(ordinal),
-      offset: offset,
-      size: data.getUint32(payload + _offsetBytes),
-    );
+    return (offset: offset, size: data.getUint32(payload + _offsetBytes));
   }
 
   /// Returns all matching ordinals in file order, including duplicates.
@@ -153,6 +162,9 @@ final class StarDictSynonyms {
 
   int get length => _table.length;
 
+  /// The longest UTF-8 key in the original StarDict table, in bytes.
+  int get maxWordBytes => _table.maxWordBytes;
+
   String aliasAt(int index) => _table.wordAt(index);
 
   int ordinalAt(int index) => _table.data.getUint32(_table.wordEnd(index) + 1);
@@ -226,13 +238,14 @@ final class _BoundedOutput implements Sink<List<int>> {
 }
 
 final class _WordTable {
-  _WordTable(this._bytes, this._starts, this._payloadBytes)
+  _WordTable(this._bytes, this._starts, this._payloadBytes, this.maxWordBytes)
     : data = ByteData.sublistView(_bytes);
 
   final Uint8List _bytes;
   final Uint32List _starts;
   final int _payloadBytes;
   final ByteData data;
+  final int maxWordBytes;
 
   int get length => _starts.length;
 
@@ -250,6 +263,7 @@ final class _WordTable {
     final starts = Uint32List(count);
     var start = 0;
     var previousEnd = 0;
+    var maxWordBytes = 0;
     for (var i = 0; i < count; i++) {
       final end = bytes.indexOf(0, start);
       if (end < 0 || bytes.length - end - 1 < payloadBytes) {
@@ -265,6 +279,7 @@ final class _WordTable {
           _compare(bytes, starts[i - 1], previousEnd, bytes, start, end) > 0) {
         throw DictionaryFormatException('Unsorted $file entry at $i');
       }
+      if (end - start > maxWordBytes) maxWordBytes = end - start;
       starts[i] = start;
       previousEnd = end;
       start = end + 1 + payloadBytes;
@@ -273,7 +288,7 @@ final class _WordTable {
     if (start != bytes.length) {
       throw DictionaryFormatException('Incorrect $file entry count');
     }
-    return _WordTable(bytes, starts, payloadBytes);
+    return _WordTable(bytes, starts, payloadBytes, maxWordBytes);
   }
 
   int wordEnd(int ordinal) {
@@ -282,19 +297,8 @@ final class _WordTable {
     return next - 1 - _payloadBytes;
   }
 
-  String wordAt(int ordinal) {
-    final end = wordEnd(ordinal);
-    final start = _starts[ordinal];
-    final word = const Utf8Decoder().convert(_bytes, start, end);
-    // Dart's decoder skips an initial BOM. Within the index it is word data.
-    if (end - start >= 3 &&
-        _bytes[start] == 0xef &&
-        _bytes[start + 1] == 0xbb &&
-        _bytes[start + 2] == 0xbf) {
-      return '\uFEFF$word';
-    }
-    return word;
-  }
+  String wordAt(int ordinal) =>
+      _decodeWord(_bytes, _starts[ordinal], wordEnd(ordinal));
 
   List<int> lookup(String word, {required bool ignoreAsciiCase}) {
     final key = utf8.encode(word);
@@ -352,4 +356,161 @@ final class _WordTable {
 
   static int _asciiLower(int byte) =>
       byte >= 0x41 && byte <= 0x5a ? byte + 0x20 : byte;
+}
+
+/// Visits validated StarDict word records without retaining an index in memory.
+/// A compressed input is decoded incrementally with the same bounds as parsing.
+void visitStarDictWords(
+  File file,
+  StarDictInfo info, {
+  required bool synonyms,
+  required bool gzip,
+  required void Function(String word, int ordinal) visit,
+}) {
+  final count = synonyms ? info.synWordCount : info.wordCount;
+  if (count == null) {
+    throw const DictionaryFormatException('Missing synwordcount for .syn');
+  }
+  final payload = synonyms ? 4 : info.idxOffsetBits ~/ 8 + 4;
+  final visitor = _WordVisitor(
+    count,
+    payload,
+    synonyms ? null : info.idxFileSize,
+    gzip ? StarDictIndex.maxGzipIndexSize : null,
+    synonyms ? info.wordCount : null,
+    visit,
+  );
+  final input = file.openSync();
+  try {
+    final decoder = gzip
+        ? GZipCodec().decoder.startChunkedConversion(visitor)
+        : null;
+    while (true) {
+      final bytes = input.readSync(64 * 1024);
+      if (bytes.isEmpty) break;
+      (decoder ?? visitor).add(bytes);
+    }
+    visitor.finish();
+    if (decoder != null) {
+      visitor.checkingEnd = true;
+      decoder
+        ..add(StarDictIndex._endProbe)
+        ..close();
+      if (!visitor.reachedEnd) {
+        throw const DictionaryFormatException('Truncated gzip index stream');
+      }
+    }
+  } on FormatException {
+    throw const DictionaryFormatException('Invalid gzip or UTF-8 index data');
+  } finally {
+    visitor.close();
+    input.closeSync();
+  }
+}
+
+final class _WordVisitor implements Sink<List<int>> {
+  _WordVisitor(
+    this.count,
+    this.payload,
+    this.expectedSize,
+    this.maxSize,
+    this.targetCount,
+    this.visit,
+  );
+
+  final int count;
+  final int payload;
+  final int? expectedSize;
+  final int? maxSize;
+  final int? targetCount;
+  final void Function(String, int) visit;
+  final _pending = BytesBuilder(copy: false);
+  int _terminator = -1;
+  int _read = 0;
+  int _ordinal = 0;
+  bool checkingEnd = false;
+  bool reachedEnd = false;
+
+  @override
+  void add(List<int> chunk) {
+    if (checkingEnd) {
+      if (reachedEnd || chunk.length != 1 || chunk.single != 0x5a) {
+        throw const DictionaryFormatException('Invalid gzip index ending');
+      }
+      reachedEnd = true;
+      return;
+    }
+    _read += chunk.length;
+    if (_read > (expectedSize ?? maxSize ?? _read) ||
+        _read > (maxSize ?? _read)) {
+      throw const DictionaryFormatException('Index exceeds declared size');
+    }
+
+    var offset = 0;
+    if (_pending.isNotEmpty) {
+      if (_terminator < 0) {
+        final end = chunk.indexOf(0);
+        if (end >= 0) _terminator = _pending.length + end;
+      }
+      offset = _terminator < 0
+          ? chunk.length
+          : min(chunk.length, _terminator + 1 + payload - _pending.length);
+      _pending.add(chunk.sublist(0, offset));
+      if (_terminator >= 0 && _pending.length == _terminator + 1 + payload) {
+        _record(_pending.takeBytes(), 0, _terminator);
+        _terminator = -1;
+      }
+    }
+    while (offset < chunk.length) {
+      final end = chunk.indexOf(0, offset);
+      if (end < 0 || end + 1 + payload > chunk.length) {
+        _terminator = end < 0 ? -1 : end - offset;
+        _pending.add(chunk.sublist(offset));
+        return;
+      }
+      _record(chunk, offset, end);
+      offset = end + 1 + payload;
+    }
+  }
+
+  void _record(List<int> bytes, int start, int end) {
+    if (_ordinal >= count) {
+      throw const DictionaryFormatException('Incorrect index entry count');
+    }
+    final targetCount = this.targetCount;
+    var target = _ordinal++;
+    if (targetCount != null) {
+      target = 0;
+      for (var i = end + 1; i <= end + 4; i++) {
+        target = (target << 8) | bytes[i];
+      }
+      if (target >= targetCount) {
+        throw const DictionaryFormatException('Out-of-range .syn ordinal');
+      }
+    }
+    visit(_decodeWord(bytes, start, end), target);
+  }
+
+  void finish() {
+    if (_pending.isNotEmpty ||
+        _ordinal != count ||
+        (expectedSize != null && expectedSize != _read)) {
+      throw const DictionaryFormatException('Incorrect index size or count');
+    }
+  }
+
+  @override
+  void close() {}
+}
+
+String _decodeWord(List<int> bytes, int start, int end) {
+  final word = const Utf8Decoder().convert(bytes, start, end);
+  // Dart's decoder skips an initial BOM. Within the index it is word data.
+  if (end - start >= 3 &&
+      bytes[start] == 0xef &&
+      bytes[start + 1] == 0xbb &&
+      bytes[start + 2] == 0xbf) {
+    return '\uFEFF$word';
+  }
+  return word;
 }

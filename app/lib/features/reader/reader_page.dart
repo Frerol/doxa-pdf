@@ -22,6 +22,7 @@ import 'reader_geometry.dart';
 import 'reader_view.dart';
 import 'search_session.dart';
 import 'text_selection.dart';
+import 'thumbnail_grid.dart';
 
 /// Opens external links in another app; injectable for tests.
 typedef UriOpener = Future<bool> Function(String uri);
@@ -122,11 +123,10 @@ class _ReaderPageState extends State<ReaderPage> {
   /// and they are drawn over the page instead of resizing it.
   bool _fullscreen = false;
 
-  /// The side panel (UX §5): whether it is open and what it shows.
+  /// Whether the tablet dock is open (UX §7).
   bool _panelOpen = false;
-  PanelSection _panelSection = PanelSection.pages;
 
-  /// Widths from which the panel sits beside the page instead of over it.
+  /// Minimum width for docking beside the page.
   static const _panelBesideWidth = 600.0;
 
   /// Whether the app bar, tab row and scrubber show. A tap in the middle of
@@ -155,6 +155,7 @@ class _ReaderPageState extends State<ReaderPage> {
   /// Settings can change while the document is open (custom colours from
   /// the view options, keep screen on).
   void _onSettings() {
+    _controller?.setFitMode(widget.settings!.value.fitMode);
     _applyKeepScreenOn();
     if (mounted) setState(() {});
   }
@@ -218,6 +219,7 @@ class _ReaderPageState extends State<ReaderPage> {
               tapZones: settings.tapZones,
               keepZoomOnTurn: settings.keepZoomOnTurn,
             ),
+            fitMode: settings.fitMode,
             initialPosition: widget.initialPosition,
           );
           controller.page.addListener(_scheduleSave);
@@ -360,6 +362,41 @@ class _ReaderPageState extends State<ReaderPage> {
     if (page != null) controller.goToPage(page, record: true);
   }
 
+  Future<void> _togglePanel(ReaderController controller) async {
+    if (MediaQuery.sizeOf(context).width >= _panelBesideWidth) {
+      controller.keepScaleOnNextResize();
+      setState(() => _panelOpen = !_panelOpen);
+      return;
+    }
+
+    final target = await Navigator.of(context).push<LinkTarget>(
+      MaterialPageRoute<LinkTarget>(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: Text(AppLocalizations.of(context).outlineTab)),
+          body: SafeArea(
+            top: false,
+            child: ReaderSidePanel(
+              controller: controller,
+              onFollow: (target) => Navigator.of(context).pop(target),
+            ),
+          ),
+        ),
+      ),
+    );
+    if (mounted && _controller == controller && target != null) {
+      await _follow(target);
+    }
+  }
+
+  Future<void> _openThumbnails(ReaderController controller) async {
+    final page = await Navigator.of(context).push<int>(
+      MaterialPageRoute(builder: (_) => ThumbnailGrid(controller: controller)),
+    );
+    if (page != null && mounted && identical(controller, _controller)) {
+      controller.goToPage(page, record: true);
+    }
+  }
+
   /// The page with the side panel: beside it on wide screens, over it on
   /// phones, where picking an entry closes it.
   Widget _withPanel(
@@ -367,32 +404,35 @@ class _ReaderPageState extends State<ReaderPage> {
     required bool showPanel,
     required Widget child,
   }) {
-    if (!showPanel) return child;
-    final beside = MediaQuery.sizeOf(context).width >= _panelBesideWidth;
-    final panel = ReaderSidePanel(
-      controller: controller,
-      section: _panelSection,
-      onSection: (section) => setState(() => _panelSection = section),
-      onFollow: (target) {
-        if (!beside) setState(() => _panelOpen = false);
-        unawaited(_follow(target));
-      },
-    );
-    if (!beside) {
-      return Stack(
-        children: [
-          child,
-          Positioned.fill(child: panel),
-        ],
-      );
-    }
-    final line = Theme.of(context).colorScheme.outlineVariant;
+    final size = MediaQuery.sizeOf(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      textDirection: TextDirection.ltr,
       children: [
-        SizedBox(width: ReaderSidePanel.width, child: panel),
-        VerticalDivider(width: 1, color: line),
-        Expanded(child: child),
+        if (showPanel) ...[
+          SizedBox(
+            width: size.width * (size.width > size.height ? 0.25 : 0.4),
+            child: SafeArea(
+              bottom: false,
+              left: false,
+              right: false,
+              child: ReaderSidePanel(
+                key: ObjectKey(controller),
+                controller: controller,
+                onClose: () {
+                  controller.keepScaleOnNextResize();
+                  setState(() => _panelOpen = false);
+                },
+                onFollow: (target) => unawaited(_follow(target)),
+              ),
+            ),
+          ),
+          VerticalDivider(
+            width: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ],
+        Expanded(key: const ValueKey('reader-area'), child: child),
       ],
     );
   }
@@ -417,6 +457,11 @@ class _ReaderPageState extends State<ReaderPage> {
     final showBars = _barsShown || _searchOpen;
     final canPop = Navigator.of(context).canPop();
     final hasPanel = controller != null && controller.info.pageCount > 0;
+    final dockPanel =
+        hasPanel &&
+        _panelOpen &&
+        MediaQuery.sizeOf(context).width >= _panelBesideWidth;
+    final leadingWidth = (canPop ? 48.0 : 0.0) + (hasPanel ? 96.0 : 0.0) + 8;
     final body = Scaffold(
       // In full screen the page keeps its size while the bars come and go:
       // the bars are drawn over it instead of resizing it.
@@ -433,9 +478,8 @@ class _ReaderPageState extends State<ReaderPage> {
               }),
             )
           : AppBar(
-              // The contents button opens the drawer; no extra menu button.
               automaticallyImplyLeading: false,
-              leadingWidth: (canPop ? 48.0 : 0) + (hasPanel ? 48.0 : 0) + 8,
+              leadingWidth: leadingWidth,
               leading: Row(
                 children: [
                   const SizedBox(width: 4),
@@ -445,8 +489,14 @@ class _ReaderPageState extends State<ReaderPage> {
                       icon: const Icon(Icons.view_sidebar_outlined),
                       selectedIcon: const Icon(Icons.view_sidebar),
                       tooltip: l10n.sidePanel,
-                      isSelected: _panelOpen,
-                      onPressed: () => setState(() => _panelOpen = !_panelOpen),
+                      isSelected: dockPanel,
+                      onPressed: () => _togglePanel(controller),
+                    ),
+                  if (hasPanel)
+                    IconButton(
+                      icon: const Icon(Icons.grid_view_outlined),
+                      tooltip: l10n.thumbnails,
+                      onPressed: () => _openThumbnails(controller),
                     ),
                 ],
               ),
@@ -466,7 +516,6 @@ class _ReaderPageState extends State<ReaderPage> {
                     tooltip: l10n.searchTooltip,
                     onPressed: () => setState(() => _searchOpen = true),
                   ),
-                  _ZoomMenu(controller: controller),
                   IconButton(
                     icon: const Icon(Icons.chrome_reader_mode_outlined),
                     tooltip: l10n.viewOptions,
@@ -493,7 +542,7 @@ class _ReaderPageState extends State<ReaderPage> {
         (final ReaderController c, _) => _withPanel(
           c,
           // The panel stays when the bars hide (UX §7).
-          showPanel: hasPanel && _panelOpen,
+          showPanel: dockPanel,
           child: Stack(
             children: [
               Positioned.fill(
@@ -761,37 +810,6 @@ class _Message extends StatelessWidget {
       child: Text(text, textAlign: TextAlign.center),
     ),
   );
-}
-
-/// Fit width, fit page and zoom presets (FR-VIEW-004).
-class _ZoomMenu extends StatelessWidget {
-  const _ZoomMenu({required this.controller});
-  final ReaderController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return PopupMenuButton<void Function()>(
-      icon: const Icon(Icons.zoom_in),
-      tooltip: l10n.readerZoomMenu,
-      onSelected: (action) => action(),
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: controller.fitWidth,
-          child: Text(l10n.readerFitWidth),
-        ),
-        PopupMenuItem(
-          value: controller.fitPage,
-          child: Text(l10n.readerFitPage),
-        ),
-        for (final factor in const [2, 4])
-          PopupMenuItem(
-            value: () => controller.zoomTo(factor.toDouble()),
-            child: Text(l10n.readerZoomFactor(factor)),
-          ),
-      ],
-    );
-  }
 }
 
 /// View options (docs/plan/05-ux-design.md §2): the page layout and how

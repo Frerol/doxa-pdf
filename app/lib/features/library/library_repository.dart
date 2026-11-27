@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 
+import '../reader/reader_geometry.dart';
 import 'library_database.dart';
 
 /// Where the reader was in a document (FR-VIEW-006): a zero-based page and
@@ -89,6 +90,7 @@ final class LibraryRepository {
                 displayName: displayName,
                 uri: Value(uri),
                 lastOpenedAt: now,
+                zoom: const Value(fitReadingZoom),
               ),
             );
         return _byId(id);
