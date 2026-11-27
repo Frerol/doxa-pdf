@@ -20,6 +20,8 @@ Future<(ReaderController, FakePdfEngine, FakeDecoder)> openReader(
   int cacheBudgetBytes = 160 << 20,
   ReaderOptions options = const ReaderOptions(),
   ReadingPosition? initialPosition,
+  FitMode fitMode = FitMode.page,
+  bool zoomOutPastFit = false,
 }) async {
   final engine = FakePdfEngine({
     'book.pdf': FakeDocument(
@@ -37,6 +39,8 @@ Future<(ReaderController, FakePdfEngine, FakeDecoder)> openReader(
     cacheBudgetBytes: cacheBudgetBytes,
     options: options,
     initialPosition: initialPosition,
+    fitMode: fitMode,
+    zoomOutPastFit: zoomOutPastFit,
   );
   addTearDown(controller.dispose);
   return (controller, engine, decoder);
@@ -148,7 +152,11 @@ void main() {
   });
 
   testReader('clamps the view to the document', (tester) async {
-    final (controller, _, _) = await openReader(tester, pages: 3);
+    final (controller, _, _) = await openReader(
+      tester,
+      pages: 3,
+      zoomOutPastFit: true,
+    );
     controller.resize(viewSize, 1);
     controller.panBy(const Offset(100, 100));
     expect(controller.offset, Offset.zero);
@@ -163,7 +171,7 @@ void main() {
   testReader('zooms around the focal point and limits the zoom', (
     tester,
   ) async {
-    final (controller, _, _) = await openReader(tester);
+    final (controller, _, _) = await openReader(tester, zoomOutPastFit: true);
     controller.resize(viewSize, 1);
     const focal = Offset(100, 300);
     final before = controller.toDocument(focal);
@@ -174,6 +182,69 @@ void main() {
     expect(controller.zoom, ReaderController.maxZoom);
     controller.zoomAround(0, before, focal);
     expect(controller.zoom, ReaderController.minZoom);
+  });
+
+  testReader('a pinch out stops at the fit of a single page (#120)', (
+    tester,
+  ) async {
+    final (controller, _, _) = await openReader(
+      tester,
+      options: const ReaderOptions(mode: ReaderMode.singlePage),
+    );
+    controller.resize(const Size(800, 600), 1);
+    controller.goToPage(10);
+    final fit = controller.visibleRect;
+    const focal = Offset(700, 100);
+    controller.zoomAround(2, controller.toDocument(focal), focal);
+    controller.zoomAround(0.3, controller.toDocument(focal), focal);
+
+    // Back at the fit, centred on the page: its neighbours stay hidden.
+    expect(controller.atFit, isTrue);
+    expect(controller.currentPage, 10);
+    expect(controller.zoom, closeTo(controller.lowestZoom, 1e-9));
+    expect(controller.visibleRect.center, fit.center);
+    expect(controller.visibleRect.size, fit.size);
+  });
+
+  testReader('the fit width is the floor of a continuous view (#120)', (
+    tester,
+  ) async {
+    final (controller, _, _) = await openReader(tester, fitMode: FitMode.width);
+    controller.resize(viewSize, 1);
+    controller.goToPage(10);
+    const focal = Offset(200, 300);
+    controller.zoomAround(2, controller.toDocument(focal), focal);
+    final point = controller.toDocument(focal);
+    controller.zoomAround(0.5, point, focal);
+
+    final page = controller.layout!.pageRect(10);
+    expect(controller.visibleRect.width, closeTo(page.width, 1e-6));
+    expect(controller.visibleRect.left, closeTo(page.left, 1e-6));
+    // The view stays where it was read instead of jumping to the page top.
+    expect(controller.toDocument(focal).dy, closeTo(point.dy, 1e-6));
+  });
+
+  testReader('the zoom-out setting lifts and restores the floor (#120)', (
+    tester,
+  ) async {
+    final (controller, _, _) = await openReader(
+      tester,
+      options: const ReaderOptions(mode: ReaderMode.singlePage),
+      zoomOutPastFit: true,
+    );
+    controller.resize(const Size(800, 600), 1);
+    final fit = controller.visibleRect;
+    const focal = Offset(400, 300);
+    controller.zoomAround(
+      controller.zoom / 2,
+      controller.toDocument(focal),
+      focal,
+    );
+    expect(controller.visibleRect.width, greaterThan(fit.width));
+
+    controller.setZoomOutPastFit(false);
+    expect(controller.atFit, isTrue);
+    expect(controller.visibleRect.size, fit.size);
   });
 
   testReader('resize re-fits the current page or its width (FR-VIEW-004)', (

@@ -184,6 +184,8 @@
   "settingsScreen": "Tela",
   "settingsKeepScreenOnHint": "A tela não apaga enquanto um documento está aberto",
   "settingsFitModeHint": "Como as páginas cabem na tela antes do zoom",
+  "settingsZoomOutPastFit": "Afastar além do ajuste",
+  "settingsZoomOutPastFitHint": "A pinça pode deixar as páginas menores que o ajuste da página",
   "settingsPageColorsHint": "Normal, noturno, sépia ou cores suas",
   "settingsPageTurning": "Mudança de página",
   "optionTapZonesHint": "Nos layouts página a página, um toque perto da borda esquerda ou direita muda a página",

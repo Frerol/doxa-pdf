@@ -175,14 +175,14 @@ void main() {
       await settle(tester);
     }
 
-    testWidgets('opens with default page fit and no zoom menu (FR-VIEW-004)', (
+    testWidgets('opens with default width fit and no zoom menu (FR-VIEW-004)', (
       tester,
     ) async {
       await showPage(tester, 'book.pdf');
       final view = tester.widget<ReaderView>(find.byType(ReaderView));
       final reader = view.controller;
       final page = reader.layout!.pageRect(0);
-      expect(reader.visibleRect.height, closeTo(page.height, 1e-6));
+      expect(reader.visibleRect.width, closeTo(page.width, 1e-6));
       expect(find.byTooltip('Zoom'), findsNothing);
       expect(find.byIcon(Icons.zoom_in), findsNothing);
     });
@@ -200,7 +200,7 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text('Page fit'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Fit width'));
+        await tester.tap(find.text('Fit page'));
         await tester.pumpAndSettle();
         await settings.flush();
         await restored.load();
@@ -212,8 +212,8 @@ void main() {
             .widget<ReaderView>(find.byType(ReaderView))
             .controller;
         final page = reader.layout!.pageRect(0);
-        expect(reader.visibleRect.width, closeTo(page.width, 1e-6));
-        expect(reader.visibleRect.height, lessThan(page.height));
+        expect(reader.visibleRect.height, closeTo(page.height, 1e-6));
+        expect(reader.visibleRect.width, greaterThan(page.width));
       },
     );
 
