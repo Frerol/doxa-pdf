@@ -116,4 +116,18 @@ void main() {
     await fake.close(doc);
     expect(await fake.annotations(await open(), 0), [existing]);
   });
+
+  test('records saves and reports what the test sets', () async {
+    final fake = FakePdfEngine({
+      'doc.pdf': const FakeDocument(pages: [FakePage()], signatureCount: 1),
+    });
+    final doc = ((await fake.open(
+      const FileSource('doc.pdf'),
+    )) as DocumentOpened).handle;
+    expect(await fake.signatureCount(doc), 1);
+    expect(await fake.save(doc, '/out.pdf'), isA<Saved>());
+    fake.saveResult = const SaveFailed(SaveFailure.noSpace);
+    expect(await fake.save(doc, '/out.pdf'), isA<SaveFailed>());
+    expect(fake.saveLog, [(doc.id, '/out.pdf'), (doc.id, '/out.pdf')]);
+  });
 }

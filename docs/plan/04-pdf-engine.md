@@ -65,7 +65,7 @@ Interop is verified by rendering the saved output with pdf.js, MuPDF and Poppler
 
 ## 5. Engine interface
 
-Implemented in `packages/doxa_engine` (issue #46). Annotation reading arrived in #140 and editing in #141; saving arrives later in M2.
+Implemented in `packages/doxa_engine` (issue #46). Annotation reading arrived in #140, editing in #141 and saving in #142.
 
 ```dart
 abstract interface class PdfEngine {
@@ -84,6 +84,8 @@ abstract interface class PdfEngine {
   Future<void> addAnnotations(DocumentHandle document, List<Annotation> annotations); // Doxa's markup and ink
   Future<Annotation> updateAnnotation(DocumentHandle document, Annotation annotation); // rebuilds Doxa's, patches others'
   Future<void> deleteAnnotations(DocumentHandle document, int pageIndex, List<String> ids); // with their popups
+  Future<SaveResult> save(DocumentHandle document, String path); // full save → temp → verify → rename (ADR-0008)
+  Future<int> signatureCount(DocumentHandle document);            // a save breaks signatures: warn first
   Stream<SearchHit> search(DocumentHandle document, SearchQuery query);    // page by page; cancel the subscription to stop
 
   Future<void> dispose();
@@ -103,4 +105,8 @@ abstract interface class PdfEngine {
   colour changes, since every reader draws markup without one. A change that would need a rebuild (geometry, or the colour of an appearance
   that sets it) fails with `unsupportedEdit`, so nothing another app wrote is lost. Ink appearances are one filled outline per stroke
   (`strokeOutline` in `doxa_ink`), Multiply for the highlighter.
+- `save` writes `FPDF_SaveAsCopy` (flags 0) into a hidden temp file next to the target, flushes it to disk, reopens it to check the page
+  count and the annotations of every page changed since the last save, and renames it over the target. Any failure deletes the temp file and
+  returns `SaveFailed` with the target untouched. Saving over the file the document was opened from also reopens its render instance there.
+  On Android the target is a file in the app's cache, which the platform then writes back through SAF (#143).
 - `FakePdfEngine` (`package:doxa_engine/testing.dart`) lets UI and controller tests run without native code.

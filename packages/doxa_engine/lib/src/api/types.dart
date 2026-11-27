@@ -64,6 +64,38 @@ final class OpenFailed extends OpenResult {
   final String detail;
 }
 
+/// What a save did (FR-SAVE-002). A failed save never changed the target.
+sealed class SaveResult {
+  const SaveResult();
+}
+
+final class Saved extends SaveResult {
+  const Saved(this.bytes);
+
+  /// The size of the saved file.
+  final int bytes;
+}
+
+final class SaveFailed extends SaveResult {
+  const SaveFailed(this.reason, [this.detail = '']);
+  final SaveFailure reason;
+  final String detail;
+}
+
+enum SaveFailure {
+  /// The disk is full.
+  noSpace,
+
+  /// The temp file could not be written.
+  writeFailed,
+
+  /// The written file did not reopen as a good copy of the document.
+  verifyFailed,
+
+  /// The written file could not replace the target.
+  cannotReplace,
+}
+
 enum OpenFailure {
   /// The file is missing or cannot be read.
   file,

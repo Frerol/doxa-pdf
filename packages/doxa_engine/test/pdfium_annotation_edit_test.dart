@@ -268,4 +268,23 @@ void main() {
       expect(await engine.annotations(doc, 0), before);
     });
   });
+
+  test(
+    'edits survive a save and reopen through the engine (FR-SAVE-002)',
+    () async {
+      final doc = await openCopy('annotations.pdf');
+      final added = _markup(0);
+      await engine.addAnnotations(doc, [added]);
+      expect(await engine.signatureCount(doc), 0);
+      final dir = Directory.systemTemp.createTempSync('doxa-engine-save-');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final path = '${dir.path}/saved.pdf';
+      expect(await engine.save(doc, path), isA<Saved>());
+
+      final reopened =
+          ((await engine.open(FileSource(path))) as DocumentOpened).handle;
+      addTearDown(() => engine.close(reopened));
+      expect(await find<TextMarkup>(reopened, 0, added.id), isNotNull);
+    },
+  );
 }
