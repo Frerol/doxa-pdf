@@ -49,6 +49,8 @@ jobs:
           python3 -B -m unittest discover -s tools -p 'test_check_dependency_licenses.py'
           python3 -B -m unittest discover -s tools -p 'test_check_repo_rules.py'
           python3 -B -m unittest discover -s tools -p 'test_build_dictionary.py'
+          python3 -B -m unittest discover -s tools -p 'test_version_code.py'
+          python3 tools/version_code.py --check
           python3 tools/check_dependency_licenses.py pub
       - uses: actions/upload-artifact@v7
         with:

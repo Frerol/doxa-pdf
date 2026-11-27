@@ -1,7 +1,9 @@
 name: doxa_pdf
 description: Free and open-source PDF reader for studying.
 publish_to: none
-version: 0.0.1+1
+# The build number is the Android versionCode, derived from the version by
+# tools/version_code.py (docs/plan/07-build-release.md §4).
+version: 1.0.0-alpha.1+10000110
 resolution: workspace
 
 environment:
