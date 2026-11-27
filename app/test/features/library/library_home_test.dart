@@ -183,6 +183,8 @@ void main() {
         identify: (path) async => 'id:$path',
         libraryFolders: folders,
         documentFiles: files,
+        // The repository's clock, so a read now is labelled "today".
+        clock: () => now,
       ),
     );
     await tester.pumpAndSettle();
