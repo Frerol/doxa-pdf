@@ -141,6 +141,7 @@
   "closeTab": "Fechar {name}",
   "openTabs": "{count, plural, =1{1 aba aberta} other{{count} abas abertas}}",
   "dictionaryAction": "Dicionário",
+  "dictionaryLookUpHint": "Procurar uma palavra",
   "dictionaryCopied": "Definições copiadas.",
   "dictionaryFailed": "Não foi possível ler os dicionários.",
   "dictionaryNotFound": "Nenhum verbete para “{query}”.",

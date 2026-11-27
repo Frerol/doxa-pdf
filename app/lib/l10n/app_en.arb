@@ -620,6 +620,10 @@
   "@dictionaryAction": {
     "description": "Selection action that looks the selected word up in the offline dictionaries (FR-TEXT-008)."
   },
+  "dictionaryLookUpHint": "Look up a word",
+  "@dictionaryLookUpHint": {
+    "description": "Hint of the dictionary lookup field."
+  },
   "dictionaryCopied": "Definitions copied.",
   "@dictionaryCopied": {
     "description": "Shown after copying the lookup results."
