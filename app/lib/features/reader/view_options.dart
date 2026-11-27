@@ -186,28 +186,13 @@ class _ViewOptionsDialogState extends State<ViewOptionsDialog> {
                     _Header(l10n.viewScrolling),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: SegmentedButton<ViewScrolling>(
-                        showSelectedIcon: false,
-                        segments: [
-                          ButtonSegment(
-                            value: ViewScrolling.paged,
-                            label: Text(l10n.scrollPaged),
-                          ),
-                          ButtonSegment(
-                            value: ViewScrolling.vertical,
-                            label: Text(l10n.scrollVertical),
-                          ),
-                          ButtonSegment(
-                            value: ViewScrolling.horizontal,
-                            label: Text(l10n.scrollHorizontal),
-                          ),
-                        ],
-                        selected: {scrolling},
-                        onSelectionChanged: (choice) => _set(
+                      child: _ScrollingChoice(
+                        selected: scrolling,
+                        onSelected: (choice) => _set(
                           withLayout(
                             options,
                             ViewLayout.singlePage,
-                            scrolling: choice.single,
+                            scrolling: choice,
                           ),
                         ),
                       ),
@@ -324,13 +309,15 @@ class _ChoiceTile extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
-    required this.child,
+    this.child,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  final Widget child;
+
+  /// Shown above the label; none for a text-only choice.
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -354,9 +341,13 @@ class _ChoiceTile extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              // Centred when a neighbour's longer label makes the row taller.
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                child,
-                const SizedBox(height: 8),
+                if (child case final child?) ...[
+                  child,
+                  const SizedBox(height: 8),
+                ],
                 Text(label, textAlign: TextAlign.center),
               ],
             ),
@@ -541,6 +532,71 @@ class _RenderUniformTiles extends RenderBox
   }
 }
 
+/// Page by page, vertical and horizontal: a segmented button where each
+/// label fits on one line (its height is fixed, so a second line would be
+/// cut), otherwise the same choices as tiles, so large text stays whole
+/// (UX §6).
+class _ScrollingChoice extends StatelessWidget {
+  const _ScrollingChoice({required this.selected, required this.onSelected});
+
+  final ViewScrolling selected;
+  final ValueChanged<ViewScrolling> onSelected;
+
+  /// A segment's room besides its label: padding and borders.
+  static const _segmentPadding = 32.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final choices = [
+      (ViewScrolling.paged, l10n.scrollPaged),
+      (ViewScrolling.vertical, l10n.scrollVertical),
+      (ViewScrolling.horizontal, l10n.scrollHorizontal),
+    ];
+    final style = Theme.of(context).textTheme.labelLarge;
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    double width(String label) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: direction,
+        textScaler: scaler,
+      )..layout();
+      final width = painter.width;
+      painter.dispose();
+      return width;
+    }
+
+    final segment =
+        choices.map((c) => width(c.$2)).fold(0.0, math.max) + _segmentPadding;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (segment * choices.length <= constraints.maxWidth) {
+          return SegmentedButton<ViewScrolling>(
+            showSelectedIcon: false,
+            segments: [
+              for (final (value, label) in choices)
+                ButtonSegment(value: value, label: Text(label)),
+            ],
+            selected: {selected},
+            onSelectionChanged: (choice) => onSelected(choice.single),
+          );
+        }
+        return _UniformTiles(
+          children: [
+            for (final (value, label) in choices)
+              _ChoiceTile(
+                label: label,
+                selected: value == selected,
+                onTap: () => onSelected(value),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 /// Single page, two pages and cover + two pages.
 class _LayoutGrid extends StatelessWidget {
   const _LayoutGrid({required this.selected, required this.onSelected});
@@ -643,6 +699,9 @@ class _Swatch extends StatelessWidget {
       child: Text(
         'Aa',
         style: TextStyle(color: ink, fontWeight: FontWeight.w600),
+        // A sample in a fixed-size swatch, like an icon: text size
+        // settings would push it out of the swatch.
+        textScaler: TextScaler.noScaling,
       ),
     ),
   );
@@ -742,6 +801,7 @@ class _ColourGridDialog extends StatelessWidget {
             child: Text(
               'Aa',
               style: TextStyle(color: ink, fontWeight: FontWeight.w600),
+              textScaler: TextScaler.noScaling,
             ),
           ),
         ),

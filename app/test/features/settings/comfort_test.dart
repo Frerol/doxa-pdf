@@ -639,7 +639,7 @@ void main() {
         '(UX §6, #80)', (tester) async {
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-      await show(tester, const AppSettings(), size: const Size(360, 780));
+      await show(tester, const AppSettings(), size: const Size(480, 900));
       await tester.tap(find.byTooltip('View options'));
       await tester.pumpAndSettle();
       // The choice tiles keep full-size text and touch targets instead of
@@ -647,7 +647,14 @@ void main() {
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
       final label = tester.getSize(find.text('Single page'));
       expect(label.height, greaterThanOrEqualTo(28));
+      // Scrolling choices never break a word across lines.
+      for (final word in ['Vertical', 'Horizontal']) {
+        await tester.ensureVisible(find.text(word));
+        expect(tester.getSize(find.text(word)).height, lessThan(2 * 28));
+      }
       expect(tester.takeException(), isNull);
+      await tester.ensureVisible(find.text('Two pages'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Two pages'));
       await tester.pumpAndSettle();
       expect(
