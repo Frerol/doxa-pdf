@@ -13,7 +13,11 @@ gradle.beforeProject { project ->
     }
     project.tasks.register('writeDependencyLicenseReport') {
         doLast {
-            def ids = ['debugCompileClasspath', 'debugRuntimeClasspath'].collectMany { name ->
+            // -PlicenseReportConfigurations=releaseRuntimeClasspath reports what
+            // a release APK ships (the release SBOM); the default is the debug graph.
+            def configurations = project.findProperty('licenseReportConfigurations')?.toString()?.split(',')
+                ?: ['debugCompileClasspath', 'debugRuntimeClasspath']
+            def ids = configurations.collectMany { name ->
                 def graph = project.configurations.getByName(name).incoming.resolutionResult
                 def unresolved = graph.allDependencies.findAll { it instanceof UnresolvedDependencyResult }
                 if (unresolved) {
