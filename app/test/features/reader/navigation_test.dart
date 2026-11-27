@@ -8,6 +8,7 @@ import 'package:doxa_pdf/features/reader/reader_controller.dart';
 import 'package:doxa_pdf/features/reader/reader_geometry.dart';
 import 'package:doxa_pdf/features/reader/reader_page.dart';
 import 'package:doxa_pdf/features/reader/reader_view.dart';
+import 'package:doxa_pdf/features/reader/thumbnail_grid.dart';
 import 'package:doxa_pdf/l10n/gen/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -204,7 +205,11 @@ void main() {
   group('page', () {
     late List<String> opened;
 
-    Future<void> show(WidgetTester tester) async {
+    Future<void> show(
+      WidgetTester tester, {
+      FakeDocument? document,
+      PreferredSizeWidget? tabRow,
+    }) async {
       tester.view
         ..physicalSize = const Size(800, 1200)
         ..devicePixelRatio = 1;
@@ -220,10 +225,13 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('en'),
           home: ReaderPage(
-            engine: Future.value(FakePdfEngine({'book.pdf': book()})),
+            engine: Future.value(
+              FakePdfEngine({'book.pdf': document ?? book()}),
+            ),
             source: const FileSource('book.pdf'),
             title: 'book.pdf',
             decoder: decoder.call,
+            tabRow: tabRow,
             openUri: (uri) async {
               opened.add(uri);
               return true;
@@ -247,6 +255,146 @@ void main() {
       final origin = tester.getTopLeft(find.byType(ReaderView));
       return origin + (point - controller.offset) * controller.zoom;
     }
+
+    Future<void> openThumbnails(WidgetTester tester) async {
+      await tester.tap(find.byTooltip('Thumbnails'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets(
+      'the thumbnail route jumps and keeps paged zoom (FR-VIEW-008)',
+      (tester) async {
+        await show(
+          tester,
+          tabRow: const PreferredSize(
+            preferredSize: Size.fromHeight(32),
+            child: Text('Document tabs'),
+          ),
+        );
+        final controller = controllerOf(tester);
+        controller.setOptions(const ReaderOptions(mode: ReaderMode.singlePage));
+        controller.zoomTo(2.5);
+        final zoom = controller.zoom;
+        expect(zoom, greaterThan(1));
+        await settle(tester);
+        expect(find.text('Document tabs'), findsOneWidget);
+
+        await openThumbnails(tester);
+        expect(find.text('Thumbnails'), findsOneWidget);
+        expect(find.byType(ReaderView).hitTestable(), findsNothing);
+        expect(find.text('Document tabs').hitTestable(), findsNothing);
+        final current = tester.widget<Text>(find.text('i'));
+        expect(
+          current.style?.color,
+          Theme.of(tester.element(find.text('i'))).colorScheme.primary,
+        );
+
+        await tester.tap(find.text('ii'));
+        await tester.pumpAndSettle();
+        expect(find.byType(ThumbnailGrid), findsNothing);
+        expect(find.text('Document tabs'), findsOneWidget);
+        expect(find.text('ii (2 of 10)'), findsOneWidget);
+        expect(controller.zoom, zoom);
+      },
+    );
+
+    testWidgets('both Back controls close the grid in place (FR-VIEW-008)', (
+      tester,
+    ) async {
+      await show(tester);
+      controllerOf(tester).goToPage(2);
+      await settle(tester);
+      final position = find.text('1 (3 of 10)');
+
+      await openThumbnails(tester);
+      await tester.tap(find.byType(BackButton).hitTestable());
+      await tester.pumpAndSettle();
+      expect(find.byType(ThumbnailGrid), findsNothing);
+      expect(position, findsOneWidget);
+
+      await openThumbnails(tester);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(ThumbnailGrid), findsNothing);
+      expect(position, findsOneWidget);
+    });
+
+    testWidgets('wider grids fit more thumbnails per row (FR-VIEW-008)', (
+      tester,
+    ) async {
+      // The grid is its own page, so it can be opened on a wide screen and
+      // then narrowed; the reader's app bar does not matter here.
+      await show(tester);
+      await openThumbnails(tester);
+      tester.view.physicalSize = const Size(360, 800);
+      await settle(tester);
+
+      int firstRowCount() {
+        final firstY = tester.getCenter(find.text('i')).dy;
+        final labels = find.descendant(
+          of: find.byType(GridView),
+          matching: find.byType(Text),
+        );
+        return labels.evaluate().where((element) {
+          final label = find.byElementPredicate((other) => other == element);
+          return (tester.getCenter(label).dy - firstY).abs() < 0.1;
+        }).length;
+      }
+
+      final phone = firstRowCount();
+      tester.view.physicalSize = const Size(800, 1200);
+      await settle(tester);
+      final portrait = firstRowCount();
+      expect(portrait, greaterThan(phone));
+      tester.view.physicalSize = const Size(1280, 800);
+      await settle(tester);
+      expect(firstRowCount(), greaterThan(portrait));
+    });
+
+    testWidgets(
+      'requests visible thumbnails near the current page (FR-VIEW-008)',
+      (tester) async {
+        await show(
+          tester,
+          document: FakeDocument(
+            pages: List.filled(1001, const FakePage(width: 400, height: 600)),
+          ),
+        );
+        final controller = controllerOf(tester);
+        final engine = controller.engine as FakePdfEngine;
+        controller.goToPage(710);
+        await settle(tester);
+        final before = engine.renderLog.length;
+        await openThumbnails(tester);
+
+        expect(find.text('711').hitTestable(), findsOneWidget);
+        expect(find.text('1'), findsNothing);
+        final grid = tester.getRect(find.byType(GridView));
+        final visiblePages = <int>{};
+        final cells = find.descendant(
+          of: find.byType(GridView),
+          matching: find.byType(InkWell),
+        );
+        for (final element in cells.evaluate()) {
+          final cell = find.byElementPredicate((other) => other == element);
+          if (!grid.overlaps(tester.getRect(cell))) continue;
+          final label = tester.widget<Text>(
+            find.descendant(of: cell, matching: find.byType(Text)),
+          );
+          visiblePages.add(int.parse(label.data!) - 1);
+        }
+        final requests = engine.renderLog.skip(before).toList();
+        expect(requests, isNotEmpty);
+        expect(
+          requests.map((request) => request.priority),
+          everyElement(RenderPriority.thumbnail),
+        );
+        expect(
+          requests.map((request) => request.pageIndex),
+          everyElement(isIn(visiblePages)),
+        );
+      },
+    );
 
     testWidgets('shows the page label and goes to a typed page', (
       tester,
