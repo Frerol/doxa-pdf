@@ -45,7 +45,9 @@ It stays on the watch list for pathological files.
 | Frames with a blank page (no preview yet) | 0 | 0 | 0 | ✅ |
 | Tile latency p50 / p95 (request → decoded) | 10–36 / 42–98 ms | 14 / 33–47 ms | 11–13 / 119–141 ms | — |
 | Engine render per job p50 / p95 | 2 / 5 ms | 2 / 4 ms | 2 / 31 ms | — |
-| Process memory (RSS) | 256–287 MB | 269–287 MB | **355–385 MB** | ≤ 400 MB (NFR-PERF-006) ⚠️ |
+| Process memory (RSS) | 256–287 MB | 269–287 MB | **355–385 MB** | — |
+
+These RSS measurements exclude graphics memory. See NFR-PERF-006 for the production reader’s total PSS reference and open/close stability requirement.
 
 The maintainer reported that every file "opened very fast and navigated without problems", with "very light hitches when scrolling very fast, barely noticeable".
 No frame exceeded the budget, so the hitches are most likely **visual pop-in**: blurry previews swapped for sharp tiles, or the tile p95 of up to 141 ms on scanned pages.

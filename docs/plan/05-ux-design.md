@@ -118,7 +118,7 @@ maintainer keeps; this section is what the app follows.
   - Opening a document from home **adds a tab**. A document that is already open shows its tab instead.
   - Back returns home and keeps the tabs.
   - There is **no fixed tab limit**. Only the active tab keeps its document open in the engine; the others keep their place and reopen
-    there when shown. One large scanned book alone comes close to the NFR-PERF-006 budget, so several open documents would not fit.
+    there when shown, limiting memory use when several large books are open as tabs (NFR-PERF-006).
 
 ### Reader navigation and chrome (maintainer decisions 2026-11-26)
 Generic requirements for the reader, written from observations of the reference layout (§8) and the maintainer's choices.

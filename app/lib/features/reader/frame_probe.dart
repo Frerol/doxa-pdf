@@ -13,6 +13,8 @@ import 'reader_controller.dart';
 /// `DOXA-PERF` line per interaction (read with `adb logcat -s flutter`),
 /// so frame budgets (NFR-PERF-003) and memory (NFR-PERF-006) can be checked
 /// on the reference tablet with a profile build.
+/// `rssNoGpu` reads VmRSS and excludes graphics memory. Read GPU memory with
+/// `adb shell dumpsys meminfo io.github.frerol.doxapdf` (GL mtrack + EGL mtrack).
 final class FrameProbe {
   FrameProbe({this.budget = const Duration(microseconds: 11111)});
 
@@ -77,7 +79,7 @@ final class FrameProbe {
         'p95=${percentile(.95) / 1000}ms blankFrames=$_blank/$_painted '
         'zoom=${controller.zoom.toStringAsFixed(2)} '
         'cache=${controller.cache.bytes >> 20}MB/${controller.cache.length} '
-        'rss=${_rssMegabytes()}MB';
+        'rssNoGpu=${_rssMegabytes()}MB';
   }
 
   static int _rssMegabytes() {

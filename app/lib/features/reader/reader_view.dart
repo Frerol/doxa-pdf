@@ -107,11 +107,26 @@ class _ReaderViewState extends State<ReaderView>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    final binding = WidgetsBinding.instance;
+    binding.addObserver(this);
+    final state = binding.lifecycleState;
+    if (state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused) {
+      _controller.trimMemory(keepVisible: false);
+    }
   }
 
   @override
   void didHaveMemoryPressure() => _controller.trimMemory();
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.hidden) {
+      _controller.trimMemory(keepVisible: false);
+    } else if (state == AppLifecycleState.resumed) {
+      _controller.resumeRendering();
+    }
+  }
 
   @override
   void dispose() {
