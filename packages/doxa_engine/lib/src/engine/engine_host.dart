@@ -48,6 +48,13 @@ final class EngineHost {
             documentId: command.documentId,
           ),
         );
+      case EditCommand(:final id, :final documentId, :final edit):
+        _enqueue(
+          _Job(id, _Rank.control, () {
+            _checkOpen(documentId);
+            reply(ValueReply(id, backend.edit(documentId, edit)));
+          }, documentId: documentId),
+        );
       case RenderCommand(:final id, :final request):
         _addRender(id, request);
       case SearchCommand(:final id, :final documentId, :final query):

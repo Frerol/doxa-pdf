@@ -6,6 +6,8 @@ library;
 
 import 'dart:isolate';
 
+import 'package:doxa_core/doxa_core.dart';
+
 import '../api/types.dart';
 
 /// Client → engine. [id] matches replies to requests.
@@ -32,6 +34,33 @@ final class QueryCommand extends EngineCommand {
   final QueryKind kind;
   final int documentId;
   final int? pageIndex;
+}
+
+/// Changes annotations in the editing instance (ADR-0008).
+final class EditCommand extends EngineCommand {
+  const EditCommand(super.id, this.documentId, this.edit);
+  final int documentId;
+  final AnnotationEdit edit;
+}
+
+sealed class AnnotationEdit {
+  const AnnotationEdit();
+}
+
+final class AddAnnotationsEdit extends AnnotationEdit {
+  const AddAnnotationsEdit(this.annotations);
+  final List<Annotation> annotations;
+}
+
+final class UpdateAnnotationEdit extends AnnotationEdit {
+  const UpdateAnnotationEdit(this.annotation);
+  final Annotation annotation;
+}
+
+final class DeleteAnnotationsEdit extends AnnotationEdit {
+  const DeleteAnnotationsEdit(this.pageIndex, this.ids);
+  final int pageIndex;
+  final List<String> ids;
 }
 
 final class RenderCommand extends EngineCommand {

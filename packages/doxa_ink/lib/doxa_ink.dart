@@ -8,6 +8,7 @@ library;
 export 'src/arc_smooth.dart';
 export 'src/hit_testing.dart';
 export 'src/ink_sample.dart';
+export 'src/outline.dart';
 export 'src/pressure_curve.dart';
 export 'src/resampling.dart';
 

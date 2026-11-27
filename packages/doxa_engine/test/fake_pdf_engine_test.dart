@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:doxa_core/doxa_core.dart';
 import 'package:doxa_engine/doxa_engine.dart';
 import 'package:doxa_engine/testing.dart';
 import 'package:test/test.dart';
@@ -77,5 +78,42 @@ void main() {
       (1, 0),
     ]);
     expect(hits.first.rects.single.left, 72);
+  });
+
+  test('changes annotations per open document', () async {
+    const existing = OtherAnnotation(
+      id: 'a',
+      pageIndex: 0,
+      rect: PdfRect(0, 0, 10, 10),
+      subtype: 'Square',
+    );
+    final fake = FakePdfEngine({
+      'doc.pdf': const FakeDocument(
+        pages: [
+          FakePage(annotations: [existing]),
+        ],
+      ),
+    });
+    Future<DocumentHandle> open() async => ((await fake.open(
+      const FileSource('doc.pdf'),
+    )) as DocumentOpened).handle;
+    final doc = await open();
+    const added = OtherAnnotation(
+      id: 'b',
+      pageIndex: 0,
+      rect: PdfRect(0, 0, 5, 5),
+      subtype: 'Square',
+    );
+    await fake.addAnnotations(doc, [added]);
+    await fake.updateAnnotation(doc, existing.copyWith(contents: 'x'));
+    await fake.deleteAnnotations(doc, 0, ['b']);
+    expect(await fake.annotations(doc, 0), [existing.copyWith(contents: 'x')]);
+    await expectLater(
+      fake.deleteAnnotations(doc, 0, ['b']),
+      throwsA(isA<PdfEngineException>()),
+    );
+    // Another open document starts from the file's annotations.
+    await fake.close(doc);
+    expect(await fake.annotations(await open(), 0), [existing]);
   });
 }

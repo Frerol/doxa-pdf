@@ -58,6 +58,9 @@ final class RecordingBackend implements EngineBackend {
   List<Annotation> annotations(int documentId, int pageIndex) => const [];
 
   @override
+  Annotation? edit(int documentId, AnnotationEdit edit) => null;
+
+  @override
   PageText pageText(int documentId, int pageIndex) {
     textCalls.add(pageIndex);
     if (failingPages.contains(pageIndex)) {

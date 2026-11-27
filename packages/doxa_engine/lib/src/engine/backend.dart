@@ -25,6 +25,10 @@ abstract interface class EngineBackend {
 
   /// The annotations of one page, read from the editing instance.
   List<Annotation> annotations(int documentId, int pageIndex);
+
+  /// Applies [edit] to the editing instance. Returns the changed
+  /// annotation for an update, null otherwise.
+  Annotation? edit(int documentId, AnnotationEdit edit);
   RenderedPixels render(RenderRequest request);
 
   /// Closes every document and releases the library.

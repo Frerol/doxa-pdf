@@ -434,5 +434,12 @@ enum EngineErrorKind {
   /// The engine isolate has stopped.
   stopped,
 
+  /// No annotation of the page has the given id.
+  unknownAnnotation,
+
+  /// The edit cannot be made without losing what another app wrote, or
+  /// the annotation is not one Doxa can create (FR-ANNO-002).
+  unsupportedEdit,
+
   internal,
 }

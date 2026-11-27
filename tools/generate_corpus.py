@@ -150,7 +150,7 @@ def write_annotations_pdf(path):
         "<< /Type /Annot /Subtype /Highlight /Rect [70 696 330 716] "
         "/QuadPoints [72 714 328 714 72 698 328 698] /C [1 1 0] /CA 0.4 "
         f"/NM ({doxa_markup}) /DoxaVersion (1) /DoxaText (A field notebook) "
-        "/T (Ana) /Contents (Check the date) /M (D:20261127103000Z) /F 4 >>",
+        "/T (Ana) /Contents (Check the date) /M (D:20261127103000Z) /F 4 /Popup 11 0 R >>",
         # 7: foreign underline without /NM, two lines.
         "<< /Type /Annot /Subtype /Underline /Rect [70 656 400 696] "
         "/QuadPoints [72 694 398 694 72 678 398 678 72 674 398 674 72 658 398 658] "
