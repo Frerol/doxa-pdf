@@ -147,6 +147,22 @@ final List<_Setting> _settings = [
   (
     category: SettingsCategory.viewing,
     section: (l10n) => l10n.settingsReading,
+    title: (l10n) => l10n.settingsZoomOutPastFit,
+    description: (l10n) => l10n.settingsZoomOutPastFitHint,
+    build: (context, settings) {
+      final l10n = AppLocalizations.of(context);
+      return SwitchListTile(
+        title: Text(l10n.settingsZoomOutPastFit),
+        subtitle: Text(l10n.settingsZoomOutPastFitHint),
+        value: settings.value.zoomOutPastFit,
+        onChanged: (on) =>
+            settings.update(settings.value.copyWith(zoomOutPastFit: on)),
+      );
+    },
+  ),
+  (
+    category: SettingsCategory.viewing,
+    section: (l10n) => l10n.settingsReading,
     title: (l10n) => l10n.settingsPageColors,
     description: (l10n) => l10n.settingsPageColorsHint,
     build: (context, settings) {

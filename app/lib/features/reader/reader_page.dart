@@ -155,7 +155,9 @@ class _ReaderPageState extends State<ReaderPage> {
   /// Settings can change while the document is open (custom colours from
   /// the view options, keep screen on).
   void _onSettings() {
-    _controller?.setFitMode(widget.settings!.value.fitMode);
+    _controller
+      ?..setFitMode(widget.settings!.value.fitMode)
+      ..setZoomOutPastFit(widget.settings!.value.zoomOutPastFit);
     _applyKeepScreenOn();
     if (mounted) setState(() {});
   }
@@ -220,6 +222,7 @@ class _ReaderPageState extends State<ReaderPage> {
               keepZoomOnTurn: settings.keepZoomOnTurn,
             ),
             fitMode: settings.fitMode,
+            zoomOutPastFit: settings.zoomOutPastFit,
             initialPosition: widget.initialPosition,
           );
           controller.page.addListener(_scheduleSave);

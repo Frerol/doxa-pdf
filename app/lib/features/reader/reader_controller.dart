@@ -62,10 +62,12 @@ final class ReaderController {
     ReaderOptions options = const ReaderOptions(),
     ReadingPosition? initialPosition,
     FitMode fitMode = FitMode.page,
+    bool zoomOutPastFit = false,
   }) : _decode = decoder,
        _options = options, // ignore: prefer_initializing_formals
        _initial = initialPosition,
        _fitMode = fitMode, // ignore: prefer_initializing_formals
+       _zoomOutPastFit = zoomOutPastFit, // ignore: prefer_initializing_formals
        cache = TileCache(budgetBytes: cacheBudgetBytes);
 
   static const minZoom = 0.25;
@@ -105,6 +107,7 @@ final class ReaderController {
   double _devicePixelRatio = 1;
   double _zoom = 1;
   FitMode _fitMode;
+  bool _zoomOutPastFit;
   bool _atFit = true;
   double _ox = 0;
   double _oy = 0;
@@ -276,10 +279,40 @@ final class ReaderController {
     _changed();
   }
 
-  /// Sets the zoom so that [documentPoint] stays under [screenPoint].
+  /// The smallest zoom a pinch reaches: the chosen fit of the page or
+  /// spread on screen, or [minZoom] when zooming out past it is allowed
+  /// (#120). Below the fit, a single page would show its neighbours.
+  double get lowestZoom {
+    final layout = _layout;
+    if (_zoomOutPastFit ||
+        layout == null ||
+        layout.pageCount == 0 ||
+        _viewSize.isEmpty) {
+      return minZoom;
+    }
+    return _fitView(currentSpread).zoom.clamp(minZoom, maxZoom);
+  }
+
+  /// Sets the zoom so that [documentPoint] stays under [screenPoint]. At
+  /// [lowestZoom] the view goes back to the fit of the current page.
   void zoomAround(double zoom, Offset documentPoint, Offset screenPoint) {
+    final lowest = lowestZoom;
+    if (!_zoomOutPastFit && zoom < lowest * (1 - 1e-9)) {
+      if (_layout is! ContinuousLayout) {
+        _fitCurrentPage();
+        return;
+      }
+      // A continuous view keeps its scroll position under the fingers.
+      final fit = _fitView(currentSpread);
+      _atFit = true;
+      _zoom = fit.zoom;
+      _ox = fit.offset.dx;
+      _oy = documentPoint.dy - screenPoint.dy / _zoom;
+      _changed();
+      return;
+    }
     _atFit = false;
-    _zoom = zoom.clamp(minZoom, maxZoom);
+    _zoom = zoom.clamp(lowest, maxZoom);
     _ox = documentPoint.dx - screenPoint.dx / _zoom;
     _oy = documentPoint.dy - screenPoint.dy / _zoom;
     _changed();
@@ -296,6 +329,14 @@ final class ReaderController {
     if (_fitMode == mode) return;
     _fitMode = mode;
     if (_atFit) _fitCurrentPage();
+  }
+
+  /// Allows or stops zooming out past the fit (#120). A view below the fit
+  /// goes back to it when the limit returns.
+  void setZoomOutPastFit(bool allowed) {
+    if (_zoomOutPastFit == allowed) return;
+    _zoomOutPastFit = allowed;
+    if (!allowed && !_atFit && _zoom < lowestZoom) _fitCurrentPage();
   }
 
   /// Fits the current page or spread to the viewport width.
@@ -617,7 +658,7 @@ final class ReaderController {
   }
 
   void _restoreZoom(double zoom) {
-    _atFit = zoom == fitReadingZoom;
+    _atFit = zoom == fitReadingZoom || zoom < lowestZoom;
     if (!_atFit) _zoom = zoom.clamp(minZoom, maxZoom);
   }
 
