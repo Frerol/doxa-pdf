@@ -523,17 +523,17 @@ void main() {
       expect(reader.options.mode, ReaderMode.continuous);
       await tester.tap(find.byTooltip('View options'));
       await tester.pumpAndSettle();
-      bool chosen(String label) => tester
-          .widget<SegmentedButton<ViewScrolling>>(
-            find.byType(SegmentedButton<ViewScrolling>),
-          )
-          .selected
-          .contains(switch (label) {
-            'Vertical' => ViewScrolling.vertical,
-            'Horizontal' => ViewScrolling.horizontal,
-            _ => ViewScrolling.paged,
-          });
+      // A segmented button or tiles, by the room for the labels: read the
+      // choice from what accessibility services see, the same for both.
+      bool chosen(String label) =>
+          tester
+              .getSemantics(find.text(label))
+              .flagsCollection
+              .isSelected
+              .toBoolOrNull() ??
+          false;
       expect(chosen('Vertical'), isTrue);
+      expect(chosen('Horizontal'), isFalse);
 
       // Page by page: the single page turns sideways.
       await tester.tap(find.text('Page by page'));
