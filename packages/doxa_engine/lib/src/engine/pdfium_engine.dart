@@ -107,6 +107,34 @@ final class PdfiumEngine implements PdfEngine {
     int pageIndex,
   ) => _query<List<Annotation>>(QueryKind.annotations, document, pageIndex);
 
+  @override
+  Future<void> addAnnotations(
+    DocumentHandle document,
+    List<Annotation> annotations,
+  ) => _edit(document, AddAnnotationsEdit(annotations));
+
+  @override
+  Future<Annotation> updateAnnotation(
+    DocumentHandle document,
+    Annotation annotation,
+  ) async => (await _edit(document, UpdateAnnotationEdit(annotation)))!;
+
+  @override
+  Future<void> deleteAnnotations(
+    DocumentHandle document,
+    int pageIndex,
+    List<String> ids,
+  ) => _edit(document, DeleteAnnotationsEdit(pageIndex, ids));
+
+  Future<Annotation?> _edit(
+    DocumentHandle document,
+    AnnotationEdit edit,
+  ) async {
+    final id = _nextId++;
+    return await _request(id, EditCommand(id, document.id, edit))
+        as Annotation?;
+  }
+
   Future<T> _query<T>(QueryKind kind, DocumentHandle doc, [int? page]) async {
     final id = _nextId++;
     return await _request(id, QueryCommand(id, kind, doc.id, page)) as T;

@@ -65,7 +65,7 @@ Interop is verified by rendering the saved output with pdf.js, MuPDF and Poppler
 
 ## 5. Engine interface
 
-Implemented in `packages/doxa_engine` (issue #46). Annotation reading arrived in #140; editing and saving arrive later in M2.
+Implemented in `packages/doxa_engine` (issue #46). Annotation reading arrived in #140 and editing in #141; saving arrives later in M2.
 
 ```dart
 abstract interface class PdfEngine {
@@ -81,6 +81,9 @@ abstract interface class PdfEngine {
 
   Future<PageText> pageText(DocumentHandle document, int pageIndex);       // chars + boxes, cached
   Future<List<Annotation>> annotations(DocumentHandle document, int pageIndex); // editing instance; no popups, links or widgets
+  Future<void> addAnnotations(DocumentHandle document, List<Annotation> annotations); // Doxa's markup and ink
+  Future<Annotation> updateAnnotation(DocumentHandle document, Annotation annotation); // rebuilds Doxa's, patches others'
+  Future<void> deleteAnnotations(DocumentHandle document, int pageIndex, List<String> ids); // with their popups
   Stream<SearchHit> search(DocumentHandle document, SearchQuery query);    // page by page; cancel the subscription to stop
 
   Future<void> dispose();
@@ -95,4 +98,9 @@ abstract interface class PdfEngine {
 - `annotations` reads the `doxa_core` model from the editing instance and changes nothing. PDFium reports no `/C` once an annotation has an
   appearance stream (most annotations from other apps), so the colour of the first painted path of the appearance stands in for it.
   A foreign annotation without `/NM` gets an id from its page and position, in memory only.
+- Edits change only the editing instance (ADR-0008). Doxa's own annotations are rebuilt on every change. Another app's annotation is patched
+  key by key and never rebuilt: its colour, opacity, note, author and flags can change, and a foreign markup loses its appearance when its
+  colour changes, since every reader draws markup without one. A change that would need a rebuild (geometry, or the colour of an appearance
+  that sets it) fails with `unsupportedEdit`, so nothing another app wrote is lost. Ink appearances are one filled outline per stroke
+  (`strokeOutline` in `doxa_ink`), Multiply for the highlighter.
 - `FakePdfEngine` (`package:doxa_engine/testing.dart`) lets UI and controller tests run without native code.

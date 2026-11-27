@@ -66,7 +66,7 @@ final class AnnotationReader {
         final annot = _pdf.FPDFPage_GetAnnot(page, i);
         if (annot == nullptr) continue;
         try {
-          final annotation = _annotation(annot, pageIndex, i);
+          final annotation = readOne(annot, pageIndex, i);
           if (annotation != null) annotations.add(annotation);
         } finally {
           _pdf.FPDFPage_CloseAnnot(annot);
@@ -78,7 +78,23 @@ final class AnnotationReader {
     }
   }
 
-  Annotation? _annotation(
+  /// Whether `read` leaves out annotations of this PDFium subtype.
+  static bool isSkipped(int subtype) => _skipped.contains(subtype);
+
+  /// The id `read` gives the annotation at [index] of page [pageIndex]:
+  /// its `/NM`, or, without one, an id from its place, in memory only. It
+  /// is written to the file when that annotation is edited (03 §5).
+  String idOf(Pointer<fpdf_annotation_t__> annot, int pageIndex, int index) {
+    final nm = _string(annot, 'NM');
+    return nm == null || nm.isEmpty ? 'page$pageIndex-annot$index' : nm;
+  }
+
+  /// Whether the annotation has an appearance dictionary.
+  bool hasAppearance(Pointer<fpdf_annotation_t__> annot) => _has(annot, 'AP');
+
+  /// The annotation at [index] of page [pageIndex], or null where `read`
+  /// leaves it out.
+  Annotation? readOne(
     Pointer<fpdf_annotation_t__> annot,
     int pageIndex,
     int index,
@@ -90,9 +106,7 @@ final class AnnotationReader {
       nm: nm,
       versionValue: _string(annot, DoxaMarker.versionKey),
     );
-    // A foreign annotation without /NM gets an id in memory only; it is
-    // written to the file when that annotation is edited (03 §5).
-    final id = nm == null || nm.isEmpty ? 'page$pageIndex-annot$index' : nm;
+    final id = idOf(annot, pageIndex, index);
     final rect = _rect(annot);
     final color = _color(annot);
     final opacity = (_number(annot, 'CA') ?? 1).clamp(0.0, 1.0);

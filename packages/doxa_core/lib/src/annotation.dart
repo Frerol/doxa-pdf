@@ -248,7 +248,9 @@ final class InkStroke {
   /// The centreline, as written to `/InkList`.
   final List<PdfPoint> points;
 
-  /// From 0 to 1, one per point; null without pressure.
+  /// From 0 to 1, one per point, after the user's sensitivity curve
+  /// (FR-INK-002), so the width follows it directly (`strokeWidths` in
+  /// `doxa_ink`); null without pressure.
   final List<double>? pressures;
 
   @override

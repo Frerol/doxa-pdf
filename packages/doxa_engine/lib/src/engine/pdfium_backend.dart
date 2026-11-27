@@ -11,6 +11,7 @@ import 'package:pdfium_ffi/pdfium_ffi.dart';
 
 import '../api/types.dart';
 import 'annotation_reader.dart';
+import 'annotation_writer.dart';
 import 'backend.dart';
 import 'protocol.dart';
 
@@ -26,6 +27,7 @@ typedef _PagePtr = Pointer<fpdf_page_t__>;
 /// `FPDF_ANNOT` and is the only one ever saved (ADR-0008).
 final class PdfiumBackend implements EngineBackend {
   PdfiumBackend(this._pdf) : _annotations = AnnotationReader(_pdf) {
+    _writer = AnnotationWriter(_pdf, _annotations);
     final config = calloc<FPDF_LIBRARY_CONFIG_>()..ref.version = 2;
     _pdf.FPDF_InitLibraryWithConfig(config);
     calloc.free(config);
@@ -44,6 +46,7 @@ final class PdfiumBackend implements EngineBackend {
 
   final PdfiumBindings _pdf;
   final AnnotationReader _annotations;
+  late final AnnotationWriter _writer;
   final _docs = <int, _Document>{};
   var _disposed = false;
 
@@ -375,6 +378,21 @@ final class PdfiumBackend implements EngineBackend {
     // same pages.
     _page(documentId, pageIndex);
     return _annotations.read(editInstance(documentId), pageIndex);
+  }
+
+  @override
+  Annotation? edit(int documentId, AnnotationEdit edit) {
+    final doc = editInstance(documentId);
+    switch (edit) {
+      case AddAnnotationsEdit(:final annotations):
+        _writer.add(doc, annotations);
+        return null;
+      case UpdateAnnotationEdit(:final annotation):
+        return _writer.update(doc, annotation);
+      case DeleteAnnotationsEdit(:final pageIndex, :final ids):
+        _writer.delete(doc, pageIndex, ids);
+        return null;
+    }
   }
 
   @override

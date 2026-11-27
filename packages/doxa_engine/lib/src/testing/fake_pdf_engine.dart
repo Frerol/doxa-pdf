@@ -67,6 +67,9 @@ final class FakePdfEngine implements PdfEngine {
 
   final renderLog = <RenderRequest>[];
   final _open = <int, FakeDocument>{};
+
+  /// Annotations per open document and page, once changed.
+  final _edited = <int, Map<int, List<Annotation>>>{};
   final _generations = <int, int>{};
   var _nextId = 1;
   var _disposed = false;
@@ -108,6 +111,7 @@ final class FakePdfEngine implements PdfEngine {
   @override
   Future<void> close(DocumentHandle document) async {
     _open.remove(document.id);
+    _edited.remove(document.id);
     _generations.remove(document.id);
   }
 
@@ -135,11 +139,69 @@ final class FakePdfEngine implements PdfEngine {
   Future<List<PageLink>> pageLinks(DocumentHandle document, int index) async =>
       _page(document, index).links;
 
+  /// Annotations change in memory, per open document, as the PDFium engine
+  /// changes them in its editing instance; nothing is checked beyond ids.
   @override
   Future<List<Annotation>> annotations(
     DocumentHandle document,
     int index,
-  ) async => _page(document, index).annotations;
+  ) async => List.unmodifiable(_annotationsOf(document, index));
+
+  List<Annotation> _annotationsOf(DocumentHandle document, int index) {
+    final page = _page(document, index);
+    return (_edited[document.id] ??= {})[index] ??= [...page.annotations];
+  }
+
+  @override
+  Future<void> addAnnotations(
+    DocumentHandle document,
+    List<Annotation> annotations,
+  ) async {
+    for (final annotation in annotations) {
+      final list = _annotationsOf(document, annotation.pageIndex);
+      if (list.any((a) => a.id == annotation.id)) {
+        throw PdfEngineException(
+          EngineErrorKind.unsupportedEdit,
+          'Already on page ${annotation.pageIndex}: ${annotation.id}',
+        );
+      }
+      list.add(annotation);
+    }
+  }
+
+  @override
+  Future<Annotation> updateAnnotation(
+    DocumentHandle document,
+    Annotation annotation,
+  ) async {
+    final list = _annotationsOf(document, annotation.pageIndex);
+    final index = list.indexWhere((a) => a.id == annotation.id);
+    if (index < 0) {
+      throw PdfEngineException(
+        EngineErrorKind.unknownAnnotation,
+        'Not on page ${annotation.pageIndex}: ${annotation.id}',
+      );
+    }
+    return list[index] = annotation;
+  }
+
+  @override
+  Future<void> deleteAnnotations(
+    DocumentHandle document,
+    int pageIndex,
+    List<String> ids,
+  ) async {
+    final list = _annotationsOf(document, pageIndex);
+    for (final id in ids) {
+      if (!list.any((a) => a.id == id)) {
+        throw PdfEngineException(
+          EngineErrorKind.unknownAnnotation,
+          'Not on page $pageIndex: $id',
+        );
+      }
+    }
+    list.removeWhere((a) => ids.contains(a.id));
+  }
 
   @override
   Future<PageText> pageText(DocumentHandle document, int index) async =>
