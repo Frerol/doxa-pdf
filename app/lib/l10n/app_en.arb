@@ -802,5 +802,78 @@
   "sidePanel": "Side panel",
   "@sidePanel": {
     "description": "Tooltip of the reader button that opens and closes the side panel with thumbnails and outline (UX §5)."
+  },
+  "settingsSearchHint": "Search settings",
+  "@settingsSearchHint": {
+    "description": "Hint of the search field at the top of Settings (UX §7)."
+  },
+  "settingsNoResults": "No setting matches “{query}”",
+  "@settingsNoResults": {
+    "description": "Shown when the settings search finds nothing.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsGeneral": "General",
+  "@settingsGeneral": {
+    "description": "Settings category: theme, language, screen."
+  },
+  "settingsGeneralSummary": "Theme, language and screen",
+  "@settingsGeneralSummary": {
+    "description": "Subtitle of the General settings category."
+  },
+  "settingsViewing": "Viewing",
+  "@settingsViewing": {
+    "description": "Settings category: page colours and page turning."
+  },
+  "settingsViewingSummary": "Page colours and page turning",
+  "@settingsViewingSummary": {
+    "description": "Subtitle of the Viewing settings category."
+  },
+  "settingsDictionariesSummary": "Offline dictionaries for looking words up",
+  "@settingsDictionariesSummary": {
+    "description": "Subtitle of the Dictionaries settings entry."
+  },
+  "settingsTheme": "Theme",
+  "@settingsTheme": {
+    "description": "Setting: light, dark or system theme."
+  },
+  "settingsThemeHint": "Light, dark or the same as the system",
+  "@settingsThemeHint": {
+    "description": "Description of the theme setting."
+  },
+  "settingsLanguageHint": "The language of Doxa's menus and messages",
+  "@settingsLanguageHint": {
+    "description": "Description of the language setting."
+  },
+  "settingsScreen": "Screen",
+  "@settingsScreen": {
+    "description": "Section header in General settings."
+  },
+  "settingsKeepScreenOnHint": "The screen does not turn off while a document is open",
+  "@settingsKeepScreenOnHint": {
+    "description": "Description of the keep-screen-on setting."
+  },
+  "settingsFitModeHint": "How pages fit the screen before you zoom",
+  "@settingsFitModeHint": {
+    "description": "Description of the page fit setting."
+  },
+  "settingsPageColorsHint": "Normal, night, sepia or your own colours",
+  "@settingsPageColorsHint": {
+    "description": "Description of the default page colours setting."
+  },
+  "settingsPageTurning": "Page turning",
+  "@settingsPageTurning": {
+    "description": "Section header in Viewing settings."
+  },
+  "optionTapZonesHint": "In page-by-page layouts, a tap near the left or right edge turns the page",
+  "@optionTapZonesHint": {
+    "description": "Description of the tap-zones setting."
+  },
+  "optionKeepZoomHint": "The next page opens at the same zoom",
+  "@optionKeepZoomHint": {
+    "description": "Description of the keep-zoom setting."
   }
 }

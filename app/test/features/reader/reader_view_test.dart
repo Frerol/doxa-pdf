@@ -196,12 +196,16 @@ void main() {
         addTearDown(settings.dispose);
         addTearDown(restored.dispose);
         await tester.pumpWidget(localized(SettingsPage(settings: settings)));
-        final choice = find.text('Fit width');
-        await tester.scrollUntilVisible(choice, 120);
-        await tester.tap(choice);
+        await tester.tap(find.text('Viewing'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Page fit'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Fit width'));
         await tester.pumpAndSettle();
         await settings.flush();
         await restored.load();
+        // Drop the settings routes, or the reader opens beneath them.
+        await tester.pumpWidget(const SizedBox());
 
         await showPage(tester, 'book.pdf', settings: restored);
         final reader = tester

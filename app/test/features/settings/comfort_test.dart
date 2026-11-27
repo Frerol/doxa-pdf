@@ -142,6 +142,10 @@ void main() {
 
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('General'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Theme'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Dark'));
       await tester.pumpAndSettle();
       expect(app().themeMode, ThemeMode.dark);
@@ -152,11 +156,15 @@ void main() {
       await tester.pumpAndSettle();
       expect(app().theme!.colorScheme.primary, isNot(dynamicSeed));
 
+      await tester.tap(find.text('Language'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Português (Brasil)'));
       await tester.pumpAndSettle();
       expect(app().locale, const Locale('pt'));
-      expect(find.text('Configurações'), findsOneWidget);
+      expect(find.text('Geral'), findsOneWidget);
 
+      await tester.tap(find.text('Idioma'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Idioma do sistema'));
       await tester.pumpAndSettle();
       expect(app().locale, isNull);
@@ -179,16 +187,95 @@ void main() {
           home: SettingsPage(settings: settings),
         ),
       );
+      await tester.tap(find.text('Viewing'));
+      await tester.pumpAndSettle();
       expect(find.text('Page colour'), findsNothing);
+      await tester.tap(find.text('Page colours for new documents'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Custom'));
       await tester.pumpAndSettle();
       expect(find.text('Page colour'), findsOneWidget);
       await tester.tap(find.bySemanticsLabel('Page colour 2'));
       await tester.pumpAndSettle();
       expect(settings.value.customBackground, customBackgrounds[1]);
+    });
+
+    Future<SettingsController> showSettings(
+      WidgetTester tester, {
+      Locale locale = const Locale('en'),
+    }) async {
+      tester.view
+        ..physicalSize = const Size(800, 1600)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final settings = SettingsController(MemorySettingsStore());
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            ...GlobalMaterialLocalizations.delegates,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: locale,
+          home: SettingsPage(settings: settings),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return settings;
+    }
+
+    testWidgets('each category lists its settings (UX §7)', (tester) async {
+      final settings = await showSettings(tester);
+      await tester.tap(find.text('General'));
+      await tester.pumpAndSettle();
+      expect(find.text('Theme'), findsOneWidget);
+      expect(find.text('Language'), findsWidgets);
+      expect(find.text('Tap the edges to turn pages'), findsNothing);
       await tester.tap(find.text('Keep the screen on while reading'));
       await tester.pumpAndSettle();
       expect(settings.value.keepScreenOn, isTrue);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Viewing'));
+      await tester.pumpAndSettle();
+      expect(find.text('Theme'), findsNothing);
+      final keepZoom = settings.value.keepZoomOnTurn;
+      await tester.tap(find.text('Keep zoom when turning pages'));
+      await tester.pumpAndSettle();
+      expect(settings.value.keepZoomOnTurn, !keepZoom);
+    });
+
+    testWidgets('search finds settings by title or description, ignoring '
+        'case and accents (UX §7)', (tester) async {
+      final settings = await showSettings(tester, locale: const Locale('pt'));
+      // A word of a description, typed without its accent and in capitals.
+      await tester.enterText(find.byType(SearchBar), 'NAO APAGA');
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Manter a tela acesa durante a leitura'),
+        findsOneWidget,
+      );
+      expect(find.text('Tema'), findsNothing);
+      // A result works in place.
+      await tester.tap(find.text('Manter a tela acesa durante a leitura'));
+      await tester.pumpAndSettle();
+      expect(settings.value.keepScreenOn, isTrue);
+
+      await tester.enterText(find.byType(SearchBar), 'zoom');
+      await tester.pumpAndSettle();
+      expect(find.text('Visualização'), findsOneWidget);
+      expect(find.text('Manter a tela acesa durante a leitura'), findsNothing);
+
+      await tester.enterText(find.byType(SearchBar), 'xyzzy');
+      await tester.pumpAndSettle();
+      expect(find.textContaining('xyzzy'), findsWidgets);
+      expect(find.byType(SwitchListTile), findsNothing);
+
+      // Clearing the search brings the categories back.
+      await tester.tap(find.byIcon(Icons.clear));
+      await tester.pumpAndSettle();
+      expect(find.text('Geral'), findsOneWidget);
     });
   });
 
