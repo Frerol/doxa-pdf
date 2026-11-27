@@ -50,6 +50,47 @@
       }
     }
   },
+  "viewLayout": "Layout",
+  "@viewLayout": {
+    "description": "Section of the view options: how pages are arranged."
+  },
+  "layoutCover": "Cover + two pages",
+  "@layoutCover": {
+    "description": "View options layout: the first page alone, then pairs."
+  },
+  "viewScrolling": "Scrolling",
+  "@viewScrolling": {
+    "description": "Section of the view options: how pages move."
+  },
+  "scrollPaged": "Page by page",
+  "@scrollPaged": {
+    "description": "View options scrolling choice: pages turn one by one."
+  },
+  "scrollVertical": "Vertical",
+  "@scrollVertical": {
+    "description": "View options scrolling choice: pages scroll up and down."
+  },
+  "scrollHorizontal": "Horizontal",
+  "@scrollHorizontal": {
+    "description": "View options scrolling choice: pages scroll sideways."
+  },
+  "colorMore": "More",
+  "@colorMore": {
+    "description": "View options: opens more paper and text colour combinations."
+  },
+  "viewColourCombinations": "Paper and text",
+  "@viewColourCombinations": {
+    "description": "Title of the dialog with paper and text colour combinations."
+  },
+  "colourCombination": "Colours {number}",
+  "@colourCombination": {
+    "description": "Accessibility label of a paper and text colour combination.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
   "viewOptions": "View options",
   "@viewOptions": {
     "description": "Title and tooltip of the sheet that chooses the page layout."

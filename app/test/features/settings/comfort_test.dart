@@ -8,6 +8,7 @@ import 'package:doxa_pdf/features/reader/color_mode.dart';
 import 'package:doxa_pdf/features/reader/reader_geometry.dart';
 import 'package:doxa_pdf/features/reader/reader_page.dart';
 import 'package:doxa_pdf/features/reader/reader_view.dart';
+import 'package:doxa_pdf/features/reader/view_options.dart';
 import 'package:doxa_pdf/features/settings/app_settings.dart';
 import 'package:doxa_pdf/features/settings/settings_page.dart';
 import 'package:doxa_pdf/l10n/gen/app_localizations.dart';
@@ -375,13 +376,16 @@ void main() {
       await tester.tap(find.text('Two pages'));
       await tester.pumpAndSettle();
       for (final label in [
-        'Show the cover on its own',
         'Tap the edges to turn pages',
         'Keep zoom when turning pages',
       ]) {
-        await tester.tap(find.widgetWithText(SwitchListTile, label));
+        final tile = find.widgetWithText(SwitchListTile, label);
+        await tester.ensureVisible(tile);
+        await tester.tap(tile);
         await tester.pumpAndSettle();
       }
+      // Each choice applied behind the dialog, which is still open (#110).
+      expect(find.byType(ViewOptionsDialog), findsOneWidget);
       await settings.flush();
       expect(
         reader.options,
@@ -398,16 +402,21 @@ void main() {
       expect(saved, containsPair('tapZones', false));
       expect(saved, containsPair('keepZoomOnTurn', false));
 
-      await tester.tap(
-        find.widgetWithText(SwitchListTile, 'Right-to-left pages'),
+      final rightToLeft = find.widgetWithText(
+        SwitchListTile,
+        'Right-to-left pages',
       );
+      await tester.ensureVisible(rightToLeft);
+      await tester.tap(rightToLeft);
       await tester.pumpAndSettle();
       expect(reader.options.rightToLeft, isTrue);
       await settings.flush();
       expect(store.json, same(saved));
       expect(store.json, isNot(contains('rightToLeft')));
-      await tester.tapAt(const Offset(400, 20));
+      // A tap outside closes it, like OK (maintainer, tablet check).
+      await tester.tapAt(const Offset(4, 4));
       await tester.pumpAndSettle();
+      expect(find.byType(ViewOptionsDialog), findsNothing);
 
       await show(
         tester,
@@ -427,15 +436,87 @@ void main() {
       expect(view(tester).controller.layout, isA<StripLayout>());
     });
 
+    testWidgets('layout tiles and the scrolling choice work together (#110)', (
+      tester,
+    ) async {
+      final settings = SettingsController(MemorySettingsStore());
+      await show(tester, settings.value, controller: settings);
+      final reader = view(tester).controller;
+      expect(reader.options.mode, ReaderMode.continuous);
+      await tester.tap(find.byTooltip('View options'));
+      await tester.pumpAndSettle();
+      bool chosen(String label) => tester
+          .widget<SegmentedButton<ViewScrolling>>(
+            find.byType(SegmentedButton<ViewScrolling>),
+          )
+          .selected
+          .contains(switch (label) {
+            'Vertical' => ViewScrolling.vertical,
+            'Horizontal' => ViewScrolling.horizontal,
+            _ => ViewScrolling.paged,
+          });
+      expect(chosen('Vertical'), isTrue);
+
+      // Page by page: the single page turns sideways.
+      await tester.tap(find.text('Page by page'));
+      await tester.pumpAndSettle();
+      expect(reader.options.mode, ReaderMode.singlePage);
+      expect(reader.layout!.paged, isTrue);
+
+      // Horizontal scrolling: pages side by side, scrolled freely.
+      await tester.tap(find.text('Horizontal'));
+      await tester.pumpAndSettle();
+      expect(reader.options.mode, ReaderMode.horizontal);
+      expect(reader.layout, isA<StripLayout>());
+      expect(reader.layout!.paged, isFalse);
+
+      // Two-page layouts always turn page by page; the cover tile keeps
+      // the first page alone.
+      await tester.tap(find.text('Cover + two pages'));
+      await tester.pumpAndSettle();
+      expect(reader.options.mode, ReaderMode.twoPages);
+      expect(reader.options.coverPage, isTrue);
+      expect(reader.layout!.pagesOf(0), [0]);
+      expect(chosen('Page by page'), isTrue);
+      await tester.tap(find.text('Two pages'));
+      await tester.pumpAndSettle();
+      expect(reader.options.coverPage, isFalse);
+      expect(reader.layout!.pagesOf(0), [0, 1]);
+
+      // Vertical again: back to one page, scrolled up and down.
+      await tester.tap(find.text('Vertical'));
+      await tester.pumpAndSettle();
+      expect(reader.options.mode, ReaderMode.continuous);
+      expect(reader.layout, isA<ContinuousLayout>());
+
+      // The layout tiles share one size, as small as their content.
+      final sizes = {
+        for (final label in ['Single page', 'Two pages', 'Cover + two pages'])
+          tester.getSize(
+            find.ancestor(of: find.text(label), matching: find.byType(InkWell)),
+          ),
+      };
+      expect(sizes, hasLength(1));
+      // As wide as the longest label and the tile's padding, no wider.
+      final longest = tester.getSize(find.text('Cover + two pages')).width;
+      expect(sizes.single.width, closeTo(longest + 24, 1));
+    });
+
     testWidgets('custom colours can be picked in the view options', (
       tester,
     ) async {
       await show(tester, const AppSettings(colorMode: PageColorMode.custom));
       await tester.tap(find.byTooltip('View options'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('More'));
+      await tester.pumpAndSettle();
       await tester.tap(find.bySemanticsLabel('Page colour 2'));
       await tester.pumpAndSettle();
       expect(view(tester).sheetColor, customBackgrounds[1]);
+      // A paper and text combination sets both at once (#110).
+      await tester.tap(find.bySemanticsLabel('Colours 4'));
+      await tester.pumpAndSettle();
+      expect(view(tester).sheetColor, customBackgrounds[3]);
     });
 
     testWidgets('full screen hides the bars; a tap brings them back', (
@@ -458,9 +539,10 @@ void main() {
       await show(tester, const AppSettings());
       await tester.tap(find.byTooltip('View options'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Full screen'));
       await tester.tap(find.text('Full screen'));
       await tester.pumpAndSettle();
-      await tester.tapAt(const Offset(400, 20)); // Close the sheet.
+      await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
       expect(find.byType(AppBar), findsNothing);
       expect(
@@ -509,9 +591,10 @@ void main() {
       await show(tester, const AppSettings());
       await tester.tap(find.byTooltip('View options'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Full screen'));
       await tester.tap(find.text('Full screen'));
       await tester.pumpAndSettle();
-      await tester.tapAt(const Offset(400, 20));
+      await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
       final size = tester.getSize(find.byType(ReaderView));
       await tester.tapAt(const Offset(400, 600));

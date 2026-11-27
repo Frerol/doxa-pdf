@@ -13,7 +13,6 @@ import '../../l10n/gen/app_localizations.dart';
 import '../dictionary/dictionary_library.dart';
 import '../dictionary/dictionary_popup.dart';
 import '../settings/app_settings.dart';
-import '../settings/settings_page.dart';
 import 'color_mode.dart';
 import 'frame_probe.dart';
 import 'navigation_panel.dart';
@@ -24,6 +23,7 @@ import 'reader_view.dart';
 import 'search_session.dart';
 import 'text_selection.dart';
 import 'thumbnail_grid.dart';
+import 'view_options.dart';
 
 /// Opens external links in another app; injectable for tests.
 typedef UriOpener = Future<bool> Function(String uri);
@@ -700,201 +700,6 @@ class _Message extends StatelessWidget {
       child: Text(text, textAlign: TextAlign.center),
     ),
   );
-}
-
-/// View options (docs/plan/05-ux-design.md §2): the page layout and how
-/// pages turn (FR-VIEW-002, FR-VIEW-003, FR-VIEW-017..019).
-Future<void> showViewOptions(
-  BuildContext context,
-  ReaderController controller, {
-  PageColorMode colorMode = PageColorMode.normal,
-  ValueChanged<PageColorMode>? onColorMode,
-  bool fullscreen = false,
-  ValueChanged<bool>? onFullscreen,
-  SettingsController? settings,
-}) => showModalBottomSheet<void>(
-  context: context,
-  showDragHandle: true,
-  isScrollControlled: true,
-  builder: (context) => _ViewOptions(
-    controller: controller,
-    colorMode: colorMode,
-    onColorMode: onColorMode,
-    fullscreen: fullscreen,
-    onFullscreen: onFullscreen,
-    settings: settings,
-  ),
-);
-
-class _ViewOptions extends StatefulWidget {
-  const _ViewOptions({
-    required this.controller,
-    required this.colorMode,
-    required this.onColorMode,
-    required this.fullscreen,
-    required this.onFullscreen,
-    required this.settings,
-  });
-  final ReaderController controller;
-  final SettingsController? settings;
-  final PageColorMode colorMode;
-  final ValueChanged<PageColorMode>? onColorMode;
-  final bool fullscreen;
-  final ValueChanged<bool>? onFullscreen;
-
-  @override
-  State<_ViewOptions> createState() => _ViewOptionsState();
-}
-
-class _ViewOptionsState extends State<_ViewOptions> {
-  ReaderOptions get _options => widget.controller.options;
-  late PageColorMode _colorMode = widget.colorMode;
-  late bool _fullscreen = widget.fullscreen;
-
-  void _set(ReaderOptions options) {
-    final previous = _options;
-    if (options == previous) return;
-    setState(() => widget.controller.setOptions(options));
-    final settings = widget.settings;
-    settings?.update(
-      settings.value.copyWith(
-        readerMode: options.mode == previous.mode ? null : options.mode,
-        coverPage: options.coverPage == previous.coverPage
-            ? null
-            : options.coverPage,
-        tapZones: options.tapZones == previous.tapZones
-            ? null
-            : options.tapZones,
-        keepZoomOnTurn: options.keepZoomOnTurn == previous.keepZoomOnTurn
-            ? null
-            : options.keepZoomOnTurn,
-      ),
-    );
-  }
-
-  Widget _colorOptions(
-    PageColorMode mode,
-    ValueChanged<PageColorMode> onChanged,
-  ) {
-    final l10n = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ListTile(title: Text(l10n.viewPageColors)),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: PageColorModeSelector(mode: mode, onChanged: onChanged),
-        ),
-        if (mode == PageColorMode.custom)
-          if (widget.settings case final settings?)
-            CustomColorsEditor(settings: settings),
-      ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final mode = _options.mode;
-    final modes = [
-      (ReaderMode.continuous, Icons.view_day_outlined, l10n.layoutContinuous),
-      (ReaderMode.singlePage, Icons.crop_portrait, l10n.layoutSinglePage),
-      (ReaderMode.twoPages, Icons.menu_book_outlined, l10n.layoutTwoPages),
-      (ReaderMode.horizontal, Icons.view_week_outlined, l10n.layoutHorizontal),
-    ];
-    return SafeArea(
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-              child: Text(
-                l10n.viewOptions,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            if (widget.settings case final settings?)
-              ValueListenableBuilder<AppSettings>(
-                valueListenable: settings,
-                builder: (context, value, child) => _colorOptions(
-                  value.colorMode,
-                  (mode) =>
-                      settings.update(settings.value.copyWith(colorMode: mode)),
-                ),
-              )
-            else if (widget.onColorMode case final onColorMode?)
-              _colorOptions(_colorMode, (mode) {
-                setState(() => _colorMode = mode);
-                onColorMode(mode);
-              }),
-            if (widget.onFullscreen case final onFullscreen?)
-              SwitchListTile(
-                secondary: const Icon(Icons.fullscreen),
-                title: Text(l10n.viewFullscreen),
-                subtitle: Text(l10n.viewFullscreenHint),
-                value: _fullscreen,
-                onChanged: (on) {
-                  setState(() => _fullscreen = on);
-                  onFullscreen(on);
-                },
-              ),
-            const Divider(),
-            RadioGroup<ReaderMode>(
-              groupValue: mode,
-              onChanged: (value) {
-                if (value != null) _set(_options.copyWith(mode: value));
-              },
-              child: Column(
-                children: [
-                  for (final (value, icon, label) in modes)
-                    RadioListTile<ReaderMode>(
-                      value: value,
-                      secondary: Icon(icon),
-                      title: Text(label),
-                    ),
-                ],
-              ),
-            ),
-            const Divider(),
-            SwitchListTile(
-              title: Text(l10n.optionCoverPage),
-              value: _options.coverPage,
-              onChanged: mode == ReaderMode.twoPages
-                  ? (value) => _set(_options.copyWith(coverPage: value))
-                  : null,
-            ),
-            SwitchListTile(
-              title: Text(l10n.optionRightToLeft),
-              value: _options.rightToLeft,
-              onChanged: mode == ReaderMode.continuous
-                  ? null
-                  : (value) => setState(
-                      () => widget.controller.setOptions(
-                        _options.copyWith(rightToLeft: value),
-                      ),
-                    ),
-            ),
-            SwitchListTile(
-              title: Text(l10n.optionTapZones),
-              value: _options.tapZones,
-              onChanged: _options.paged
-                  ? (value) => _set(_options.copyWith(tapZones: value))
-                  : null,
-            ),
-            SwitchListTile(
-              title: Text(l10n.optionKeepZoom),
-              value: _options.keepZoomOnTurn,
-              onChanged: _options.paged
-                  ? (value) => _set(_options.copyWith(keepZoomOnTurn: value))
-                  : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 /// The search bar (FR-TEXT-001, FR-TEXT-002): query, options, result count
