@@ -247,6 +247,39 @@ void main() {
     expect(controller.visibleRect.size, fit.size);
   });
 
+  testReader('a single page that fits does not move up or down', (
+    tester,
+  ) async {
+    // At fit width the 400 × 600 page fills the width and fits the height,
+    // but its screen-sized cell is taller than the view.
+    final (controller, _, _) = await openReader(
+      tester,
+      options: const ReaderOptions(mode: ReaderMode.singlePage),
+      fitMode: FitMode.width,
+    );
+    controller.resize(const Size(800, 1400), 1);
+    controller.goToPage(3);
+    final page = controller.layout!.pageRect(3);
+    expect(controller.visibleRect.height, greaterThan(page.height));
+    expect(
+      controller.visibleRect.height,
+      lessThan(controller.layout!.spreadRect(3).height),
+    );
+    final before = controller.offset;
+    controller.panBy(const Offset(0, -40));
+    expect(controller.offset.dy, before.dy);
+    controller.panBy(const Offset(0, 40));
+    expect(controller.offset.dy, before.dy);
+    expect(controller.visibleRect.center.dy, closeTo(page.center.dy, 1e-6));
+
+    // Zoomed in, it scrolls up and down to the page's edges, not beyond.
+    controller.zoomTo(controller.zoom * 2);
+    controller.panBy(const Offset(0, 1e6));
+    expect(controller.visibleRect.top, closeTo(page.top, 1e-6));
+    controller.panBy(const Offset(0, -1e6));
+    expect(controller.visibleRect.bottom, closeTo(page.bottom, 1e-6));
+  });
+
   testReader('resize re-fits the current page or its width (FR-VIEW-004)', (
     tester,
   ) async {
