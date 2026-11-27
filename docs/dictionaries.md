@@ -17,8 +17,8 @@ size, downloads it from this project's GitHub Releases (asking first on mobile d
 You can also use **Settings → Dictionaries → Import file**, or **Import folder** for a dictionary that is not in a `.zip`. Turn dictionaries
 on or off there, drag them to change the order in which results appear, or remove them.
 
-> **Status:** the packs below are published with `1.0.0-alpha.1` ([#43](https://github.com/Frerol/doxa-pdf/issues/43)). Until then,
-> import any StarDict dictionary you have.
+> **Status:** the definition packs are published with `1.0.0-alpha.1` ([#43](https://github.com/Frerol/doxa-pdf/issues/43)). The
+> translation packs come with the Translate action ([#100](https://github.com/Frerol/doxa-pdf/issues/100)).
 
 ## Packs built by Doxa
 
@@ -27,10 +27,19 @@ it belongs to, with its SHA-256. Each `.zip` holds a `LICENSE.txt` with the sour
 
 | Pack | Source | Licence | Size | Download |
 |---|---|---|---|---|
-| English | English Wiktionary, via Wiktextract: 1,395,300 headwords | CC BY-SA 4.0 | 117.5 MB | with `1.0.0-alpha.1` |
-| Português | Portuguese Wiktionary, via [Wiktextract](https://kaikki.org): 382,824 headwords | CC BY-SA 4.0 | 20.7 MB | with `1.0.0-alpha.1` |
-| Português → English | English Wiktionary, via Wiktextract: 425,832 headwords | CC BY-SA 4.0 | 20.0 MB | with `1.0.0-alpha.1` |
-| English → Português | English Wiktionary translations, via Wiktextract | CC BY-SA 4.0 | to be measured | with `1.0.0-alpha.1` |
+| English | English Wiktionary, via Wiktextract: 1,395,300 headwords | CC BY-SA 4.0 | 117.5 MB | [`doxa-en.zip`](https://github.com/Frerol/doxa-pdf/releases/download/v1.0.0-alpha.1/doxa-en.zip) |
+| Português | Portuguese Wiktionary, via [Wiktextract](https://kaikki.org): 382,824 headwords | CC BY-SA 4.0 | 20.7 MB | [`doxa-pt.zip`](https://github.com/Frerol/doxa-pdf/releases/download/v1.0.0-alpha.1/doxa-pt.zip) |
+| Português → English | English Wiktionary, via Wiktextract: 425,832 headwords | CC BY-SA 4.0 | 20.0 MB | with the Translate action (#100) |
+| English → Português | English Wiktionary translations, via Wiktextract | CC BY-SA 4.0 | 0.4 MB | with the Translate action (#100) |
+
+SHA-256 of the `1.0.0-alpha.1` packs (also in the release's `dictionaries.json`, which the app checks):
+
+| File | SHA-256 |
+|---|---|
+| `doxa-en.zip` | `acbf7194dbcab832743876710fa1c5d9f625a9ac9d1d265f2f9e7690714ecdfb` |
+| `doxa-pt.zip` | `ae31a4d82304ae991162af8380036451a877d2d80bb70fb6d4f1df01d0983701` |
+
+They were built on 2026-11-27 from the Wiktextract extractions downloaded from kaikki.org on 2026-11-26.
 
 In the Wiktionary packs, an inflected form leads to its dictionary form: "comia" shows its note and the entry for "comer".
 A compact English pack (11.3 MB) can be built from [Open English WordNet](https://github.com/globalwordnet/english-wordnet) 2024 with the same tool.
