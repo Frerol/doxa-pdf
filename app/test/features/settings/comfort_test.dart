@@ -413,11 +413,8 @@ void main() {
       await settings.flush();
       expect(store.json, same(saved));
       expect(store.json, isNot(contains('rightToLeft')));
-      // A tap outside does not close it; OK does.
+      // A tap outside closes it, like OK (maintainer, tablet check).
       await tester.tapAt(const Offset(4, 4));
-      await tester.pumpAndSettle();
-      expect(find.byType(ViewOptionsDialog), findsOneWidget);
-      await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
       expect(find.byType(ViewOptionsDialog), findsNothing);
 
@@ -439,7 +436,7 @@ void main() {
       expect(view(tester).controller.layout, isA<StripLayout>());
     });
 
-    testWidgets('layout tiles and vertical scrolling work together (#110)', (
+    testWidgets('layout tiles and the scrolling choice work together (#110)', (
       tester,
     ) async {
       final settings = SettingsController(MemorySettingsStore());
@@ -448,37 +445,61 @@ void main() {
       expect(reader.options.mode, ReaderMode.continuous);
       await tester.tap(find.byTooltip('View options'));
       await tester.pumpAndSettle();
-      final vertical = find.widgetWithText(
-        SwitchListTile,
-        'Vertical scrolling',
-      );
-      bool verticalOn() => tester.widget<SwitchListTile>(vertical).value;
-      expect(verticalOn(), isTrue);
+      bool chosen(String label) => tester
+          .widget<SegmentedButton<ViewScrolling>>(
+            find.byType(SegmentedButton<ViewScrolling>),
+          )
+          .selected
+          .contains(switch (label) {
+            'Vertical' => ViewScrolling.vertical,
+            'Horizontal' => ViewScrolling.horizontal,
+            _ => ViewScrolling.paged,
+          });
+      expect(chosen('Vertical'), isTrue);
 
-      // Off: the single page turns sideways.
-      await tester.tap(vertical);
+      // Page by page: the single page turns sideways.
+      await tester.tap(find.text('Page by page'));
       await tester.pumpAndSettle();
       expect(reader.options.mode, ReaderMode.singlePage);
-      expect(reader.layout, isA<StripLayout>());
+      expect(reader.layout!.paged, isTrue);
 
-      // Two-page layouts always turn sideways; the cover tile keeps the
-      // first page alone.
+      // Horizontal scrolling: pages side by side, scrolled freely.
+      await tester.tap(find.text('Horizontal'));
+      await tester.pumpAndSettle();
+      expect(reader.options.mode, ReaderMode.horizontal);
+      expect(reader.layout, isA<StripLayout>());
+      expect(reader.layout!.paged, isFalse);
+
+      // Two-page layouts always turn page by page; the cover tile keeps
+      // the first page alone.
       await tester.tap(find.text('Cover + two pages'));
       await tester.pumpAndSettle();
       expect(reader.options.mode, ReaderMode.twoPages);
       expect(reader.options.coverPage, isTrue);
       expect(reader.layout!.pagesOf(0), [0]);
+      expect(chosen('Page by page'), isTrue);
       await tester.tap(find.text('Two pages'));
       await tester.pumpAndSettle();
       expect(reader.options.coverPage, isFalse);
       expect(reader.layout!.pagesOf(0), [0, 1]);
 
-      // On again: back to one page, scrolled vertically.
-      await tester.tap(vertical);
+      // Vertical again: back to one page, scrolled up and down.
+      await tester.tap(find.text('Vertical'));
       await tester.pumpAndSettle();
       expect(reader.options.mode, ReaderMode.continuous);
-      expect(verticalOn(), isTrue);
       expect(reader.layout, isA<ContinuousLayout>());
+
+      // The layout tiles share one size, as small as their content.
+      final sizes = {
+        for (final label in ['Single page', 'Two pages', 'Cover + two pages'])
+          tester.getSize(
+            find.ancestor(of: find.text(label), matching: find.byType(InkWell)),
+          ),
+      };
+      expect(sizes, hasLength(1));
+      // As wide as the longest label and the tile's padding, no wider.
+      final longest = tester.getSize(find.text('Cover + two pages')).width;
+      expect(sizes.single.width, closeTo(longest + 24, 1));
     });
 
     testWidgets('custom colours can be picked in the view options', (

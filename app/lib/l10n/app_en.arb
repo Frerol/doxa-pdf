@@ -58,9 +58,21 @@
   "@layoutCover": {
     "description": "View options layout: the first page alone, then pairs."
   },
-  "viewVerticalScrolling": "Vertical scrolling",
-  "@viewVerticalScrolling": {
-    "description": "View options switch: scroll pages vertically instead of turning them sideways."
+  "viewScrolling": "Scrolling",
+  "@viewScrolling": {
+    "description": "Section of the view options: how pages move."
+  },
+  "scrollPaged": "Page by page",
+  "@scrollPaged": {
+    "description": "View options scrolling choice: pages turn one by one."
+  },
+  "scrollVertical": "Vertical",
+  "@scrollVertical": {
+    "description": "View options scrolling choice: pages scroll up and down."
+  },
+  "scrollHorizontal": "Horizontal",
+  "@scrollHorizontal": {
+    "description": "View options scrolling choice: pages scroll sideways."
   },
   "colorMore": "More",
   "@colorMore": {

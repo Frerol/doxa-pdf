@@ -144,7 +144,8 @@ Each point below is the target for alpha 1 unless it names a feature that is not
 **Zoom**
 - No zoom buttons, percentage or slider in the bars. **Pinch** zooms freely.
 - **Double tap** toggles between fit and about 2.5× around the tapped point.
-- **Fit page** or **fit width** is a setting (Settings → Viewing), default fit page. **Keep zoom when turning pages** is a setting, on by default.
+- **Fit page** or **fit width** is a setting (Settings → Viewing), default fit width (#120). Pinching out stops at the chosen fit unless
+  **Zoom out past the fit** is on. **Keep zoom when turning pages** is a setting, on by default.
 - Desktop keeps its keyboard zoom shortcuts (§4).
 
 **Side panel** (bookmarks, contents, annotations)
@@ -166,11 +167,13 @@ Each point below is the target for alpha 1 unless it names a feature that is not
 - Page editing from the grid (reorder, insert, delete) comes with the page features of a later alpha.
 
 **View options**
-- A **centred dialog** over a dimmed reader (about half the width in landscape, three quarters in portrait). Changes apply live behind it, and
-  it stays open until **OK**.
-- In order: **Layout** as a 2×2 choice grid (single page, two pages, cover + two pages, and reflow when it exists); **Vertical scrolling**
-  as a switch (off = horizontal paging); **Page colour** as three presets (normal, night, sepia) and a "more" button that opens a grid of
-  paper/text combinations with custom colours; **Actions** (rotate, crop) when they are built.
+- A **centred dialog** over a dimmed reader (about half the width in landscape, three quarters in portrait). Changes apply live behind it.
+  It closes with **OK**, a tap outside or Back (maintainer decision after the tablet check of #127, 2026-11-27).
+- In order: **Layout** as a row of choice tiles (single page, two pages, cover + two pages, and reflow when it exists); **Scrolling** as
+  three choices: page by page, vertical or horizontal (two-page layouts are always page by page); **Page colour** as three presets
+  (normal, night, sepia) and a "more" button that opens paper/text combinations and custom colours (a colour wheel and a hex code, #128);
+  **Actions** (rotate, crop) when they are built.
+- Choice tiles are as large as their content, and all tiles of a row share the size of the largest one.
 - Two pages pair from the first page: (1, 2), (3, 4). Cover + two pages shows page 1 alone on the right half, then (2, 3), (4, 5), and a lone last
   page on the left half. Turning moves by spread.
 

@@ -14,24 +14,38 @@ import 'reader_geometry.dart';
 /// The page layouts of the view options' grid (UX §7 "View options").
 enum ViewLayout { singlePage, twoPages, coverTwoPages }
 
-/// The grid's layout for [options]. The horizontal strip of older
-/// versions shows as a single page.
+/// The grid's layout for [options]: scrolled pages are single pages.
 ViewLayout viewLayoutOf(ReaderOptions options) => switch (options.mode) {
   ReaderMode.twoPages when options.coverPage => ViewLayout.coverTwoPages,
   ReaderMode.twoPages => ViewLayout.twoPages,
   _ => ViewLayout.singlePage,
 };
 
-/// The reader options for a [layout] and the vertical scrolling switch.
-/// Two pages are always turned sideways, so choosing them turns vertical
-/// scrolling off, and turning it on goes back to a single page.
+/// How pages move: turned one by one, or scrolled vertically or
+/// horizontally.
+enum ViewScrolling { paged, vertical, horizontal }
+
+/// The scrolling choice for [options].
+ViewScrolling viewScrollingOf(ReaderOptions options) => switch (options.mode) {
+  ReaderMode.continuous => ViewScrolling.vertical,
+  ReaderMode.horizontal => ViewScrolling.horizontal,
+  _ => ViewScrolling.paged,
+};
+
+/// The reader options for a [layout] and a [scrolling] choice. Two pages
+/// are always turned page by page, so choosing them stops scrolling, and
+/// choosing to scroll goes back to a single page.
 ReaderOptions withLayout(
   ReaderOptions options,
   ViewLayout layout, {
-  required bool vertical,
+  required ViewScrolling scrolling,
 }) => switch (layout) {
   ViewLayout.singlePage => options.copyWith(
-    mode: vertical ? ReaderMode.continuous : ReaderMode.singlePage,
+    mode: switch (scrolling) {
+      ViewScrolling.paged => ReaderMode.singlePage,
+      ViewScrolling.vertical => ReaderMode.continuous,
+      ViewScrolling.horizontal => ReaderMode.horizontal,
+    },
   ),
   ViewLayout.twoPages => options.copyWith(
     mode: ReaderMode.twoPages,
@@ -45,7 +59,7 @@ ReaderOptions withLayout(
 
 /// Shows the view options (FR-VIEW-002, FR-VIEW-003, FR-VIEW-005): a
 /// centred dialog over the dimmed reader. Changes apply live behind it;
-/// it closes with OK or Back.
+/// it closes with OK, a tap outside or Back.
 Future<void> showViewOptions(
   BuildContext context,
   ReaderController controller, {
@@ -56,7 +70,6 @@ Future<void> showViewOptions(
   SettingsController? settings,
 }) => showDialog<void>(
   context: context,
-  barrierDismissible: false,
   builder: (context) => ViewOptionsDialog(
     controller: controller,
     colorMode: colorMode,
@@ -133,7 +146,8 @@ class _ViewOptionsDialogState extends State<ViewOptionsDialog> {
     );
     final options = _options;
     final layout = viewLayoutOf(options);
-    final vertical = options.mode == ReaderMode.continuous;
+    final scrolling = viewScrollingOf(options);
+    final vertical = scrolling == ViewScrolling.vertical;
     final settings = widget.settings;
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
@@ -162,19 +176,38 @@ class _ViewOptionsDialogState extends State<ViewOptionsDialog> {
                         withLayout(
                           options,
                           choice,
-                          vertical: vertical && choice == ViewLayout.singlePage,
+                          scrolling: choice == ViewLayout.singlePage
+                              ? scrolling
+                              : ViewScrolling.paged,
                         ),
                       ),
                     ),
-                    SwitchListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                      title: Text(l10n.viewVerticalScrolling),
-                      value: vertical,
-                      onChanged: (on) => _set(
-                        withLayout(
-                          options,
-                          ViewLayout.singlePage,
-                          vertical: on,
+                    _Header(l10n.viewScrolling),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: SegmentedButton<ViewScrolling>(
+                        showSelectedIcon: false,
+                        segments: [
+                          ButtonSegment(
+                            value: ViewScrolling.paged,
+                            label: Text(l10n.scrollPaged),
+                          ),
+                          ButtonSegment(
+                            value: ViewScrolling.vertical,
+                            label: Text(l10n.scrollVertical),
+                          ),
+                          ButtonSegment(
+                            value: ViewScrolling.horizontal,
+                            label: Text(l10n.scrollHorizontal),
+                          ),
+                        ],
+                        selected: {scrolling},
+                        onSelectionChanged: (choice) => _set(
+                          withLayout(
+                            options,
+                            ViewLayout.singlePage,
+                            scrolling: choice.single,
+                          ),
                         ),
                       ),
                     ),
@@ -333,7 +366,38 @@ class _ChoiceTile extends StatelessWidget {
   }
 }
 
-/// Single page, two pages and cover + two pages, two per row.
+/// Tiles in a row, all as wide and tall as the largest one's content, at
+/// the start of the line; scaled down only where the line is too narrow.
+class _UniformTiles extends StatelessWidget {
+  const _UniformTiles({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: AlignmentDirectional.centerStart,
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: AlignmentDirectional.centerStart,
+      // A row of equal flex children is as wide as its widest child times
+      // their count, so every tile takes the widest content's width.
+      child: IntrinsicWidth(
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (i, child) in children.indexed) ...[
+                if (i > 0) const SizedBox(width: 8),
+                Expanded(child: child),
+              ],
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Single page, two pages and cover + two pages.
 class _LayoutGrid extends StatelessWidget {
   const _LayoutGrid({required this.selected, required this.onSelected});
 
@@ -348,13 +412,7 @@ class _LayoutGrid extends StatelessWidget {
       (ViewLayout.twoPages, Icons.menu_book_outlined, l10n.layoutTwoPages),
       (ViewLayout.coverTwoPages, Icons.auto_stories_outlined, l10n.layoutCover),
     ];
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      childAspectRatio: 1.6,
+    return _UniformTiles(
       children: [
         for (final (layout, icon, label) in tiles)
           _ChoiceTile(
@@ -400,27 +458,21 @@ class _PageColours extends StatelessWidget {
         const Color(0xFF5B4636),
       ),
     ];
-    return Row(
+    return _UniformTiles(
       children: [
-        for (final (value, label, paper, ink) in presets) ...[
-          Expanded(
-            child: _ChoiceTile(
-              label: label,
-              selected: value == mode,
-              onTap: () => onChanged(value),
-              child: _Swatch(paper: paper, ink: ink),
-            ),
+        for (final (value, label, paper, ink) in presets)
+          _ChoiceTile(
+            label: label,
+            selected: value == mode,
+            onTap: () => onChanged(value),
+            child: _Swatch(paper: paper, ink: ink),
           ),
-          const SizedBox(width: 8),
-        ],
         if (onMore case final onMore?)
-          Expanded(
-            child: _ChoiceTile(
-              label: l10n.colorMore,
-              selected: mode == PageColorMode.custom,
-              onTap: onMore,
-              child: const Icon(Icons.palette_outlined, size: 32),
-            ),
+          _ChoiceTile(
+            label: l10n.colorMore,
+            selected: mode == PageColorMode.custom,
+            onTap: onMore,
+            child: const Icon(Icons.palette_outlined, size: 32),
           ),
       ],
     );
