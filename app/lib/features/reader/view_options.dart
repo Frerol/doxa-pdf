@@ -2,6 +2,7 @@
 
 import 'dart:math' as math;
 
+import 'package:flutter/rendering.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
@@ -367,34 +368,136 @@ class _ChoiceTile extends StatelessWidget {
 }
 
 /// Tiles in a row, all as wide and tall as the largest one's content, at
-/// the start of the line; scaled down only where the line is too narrow.
-class _UniformTiles extends StatelessWidget {
-  const _UniformTiles({required this.children});
-  final List<Widget> children;
+/// the start of the line. Where the line is narrower, the tiles narrow
+/// together and their labels wrap; where even the longest word does not
+/// fit (large text on a phone), they stack, each as wide as the line.
+/// Text and touch targets keep their size either way (UX §6).
+class _UniformTiles extends MultiChildRenderObjectWidget {
+  const _UniformTiles({required super.children});
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: AlignmentDirectional.centerStart,
-    child: FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: AlignmentDirectional.centerStart,
-      // A row of equal flex children is as wide as its widest child times
-      // their count, so every tile takes the widest content's width.
-      child: IntrinsicWidth(
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (i, child) in children.indexed) ...[
-                if (i > 0) const SizedBox(width: 8),
-                Expanded(child: child),
-              ],
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderUniformTiles(Directionality.of(context));
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderUniformTiles renderObject,
+  ) => renderObject.textDirection = Directionality.of(context);
+}
+
+class _UniformTilesData extends ContainerBoxParentData<RenderBox> {}
+
+class _RenderUniformTiles extends RenderBox
+    with
+        ContainerRenderObjectMixin<RenderBox, _UniformTilesData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, _UniformTilesData> {
+  _RenderUniformTiles(this._textDirection);
+
+  static const _gap = 8.0;
+
+  TextDirection _textDirection;
+  set textDirection(TextDirection value) {
+    if (value == _textDirection) return;
+    _textDirection = value;
+    markNeedsLayout();
+  }
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! _UniformTilesData) {
+      child.parentData = _UniformTilesData();
+    }
+  }
+
+  double _widest(double Function(RenderBox child) width) =>
+      getChildrenAsList().fold(0, (w, child) => math.max(w, width(child)));
+
+  double get _gaps => _gap * math.max(0, childCount - 1);
+
+  /// The tiles' width in a row of [maxWidth], or null when they stack.
+  double? _rowTile(double maxWidth) {
+    if (childCount == 0) return null;
+    final natural = _widest((c) => c.getMaxIntrinsicWidth(double.infinity));
+    final fitted = (maxWidth - _gaps) / childCount;
+    if (natural <= fitted) return natural;
+    final narrowest = _widest((c) => c.getMinIntrinsicWidth(double.infinity));
+    return narrowest <= fitted ? fitted : null;
+  }
+
+  double _height(double width) {
+    if (childCount == 0) return 0;
+    if (_rowTile(width) case final tile?) {
+      return _widest((c) => c.getMinIntrinsicHeight(tile));
+    }
+    return getChildrenAsList().fold<double>(
+          0,
+          (h, child) => h + child.getMinIntrinsicHeight(width),
+        ) +
+        _gaps;
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) =>
+      _widest((c) => c.getMinIntrinsicWidth(height));
+
+  @override
+  double computeMaxIntrinsicWidth(double height) =>
+      _widest((c) => c.getMaxIntrinsicWidth(height)) * childCount + _gaps;
+
+  @override
+  double computeMinIntrinsicHeight(double width) => _height(width);
+
+  @override
+  double computeMaxIntrinsicHeight(double width) => _height(width);
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final width = constraints.maxWidth;
+    final tile = _rowTile(width);
+    return constraints.constrain(
+      Size(tile == null ? width : tile * childCount + _gaps, _height(width)),
+    );
+  }
+
+  @override
+  void performLayout() {
+    final width = constraints.maxWidth;
+    final tiles = getChildrenAsList();
+    if (tiles.isEmpty) {
+      size = constraints.smallest;
+      return;
+    }
+    if (_rowTile(width) case final tile?) {
+      final height = _height(width);
+      size = constraints.constrain(Size(tile * childCount + _gaps, height));
+      // At the start of the line when the parent makes it wider.
+      for (final (i, child) in tiles.indexed) {
+        child.layout(BoxConstraints.tight(Size(tile, height)));
+        final start = i * (tile + _gap);
+        final x = _textDirection == TextDirection.ltr
+            ? start
+            : size.width - start - tile;
+        (child.parentData! as _UniformTilesData).offset = Offset(x, 0);
+      }
+      return;
+    }
+    var y = 0.0;
+    for (final child in tiles) {
+      child.layout(BoxConstraints.tightFor(width: width), parentUsesSize: true);
+      (child.parentData! as _UniformTilesData).offset = Offset(0, y);
+      y += child.size.height + _gap;
+    }
+    size = constraints.constrain(Size(width, y - _gap));
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) =>
+      defaultPaint(context, offset);
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
+      defaultHitTestChildren(result, position: position);
 }
 
 /// Single page, two pages and cover + two pages.

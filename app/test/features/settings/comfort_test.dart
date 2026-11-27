@@ -365,9 +365,10 @@ void main() {
       AppSettings settings, {
       SettingsController? controller,
       String path = 'doc.pdf',
+      Size size = const Size(800, 1200),
     }) async {
       tester.view
-        ..physicalSize = const Size(800, 1200)
+        ..physicalSize = size
         ..devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       screenOn = [];
@@ -632,6 +633,27 @@ void main() {
       await tester.tapAt(const Offset(400, 600));
       await settle(tester);
       expect(find.byType(AppBar), findsNothing);
+    });
+
+    testWidgets('view options stay legible at the largest text size '
+        '(UX §6, #80)', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await show(tester, const AppSettings(), size: const Size(360, 780));
+      await tester.tap(find.byTooltip('View options'));
+      await tester.pumpAndSettle();
+      // The choice tiles keep full-size text and touch targets instead of
+      // shrinking to fit one line.
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      final label = tester.getSize(find.text('Single page'));
+      expect(label.height, greaterThanOrEqualTo(28));
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Two pages'));
+      await tester.pumpAndSettle();
+      expect(
+        view(tester).controller.options.mode,
+        isNot(ReaderMode.continuous),
+      );
     });
 
     testWidgets('keeps the screen on while open (FR-VIEW-013)', (tester) async {
