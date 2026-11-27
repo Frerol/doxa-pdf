@@ -864,6 +864,14 @@
   "@settingsFitModeHint": {
     "description": "Description of the page fit setting."
   },
+  "settingsZoomOutPastFit": "Zoom out past the fit",
+  "@settingsZoomOutPastFit": {
+    "description": "Switch in Viewing settings: allow zooming out below the page fit."
+  },
+  "settingsZoomOutPastFitHint": "Pinching out can make pages smaller than the page fit",
+  "@settingsZoomOutPastFitHint": {
+    "description": "Description of the zoom-out-past-fit switch."
+  },
   "settingsPageColorsHint": "Normal, night, sepia or your own colours",
   "@settingsPageColorsHint": {
     "description": "Description of the default page colours setting."

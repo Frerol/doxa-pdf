@@ -24,7 +24,8 @@ final class AppSettings {
     this.coverPage = true,
     this.tapZones = true,
     this.keepZoomOnTurn = true,
-    this.fitMode = FitMode.page,
+    this.fitMode = FitMode.width,
+    this.zoomOutPastFit = false,
   });
 
   final ThemeMode themeMode;
@@ -53,6 +54,9 @@ final class AppSettings {
   /// How pages and spreads are sized at fit (FR-VIEW-004).
   final FitMode fitMode;
 
+  /// Whether a pinch can make pages smaller than [fitMode] (#120).
+  final bool zoomOutPastFit;
+
   AppSettings copyWith({
     ThemeMode? themeMode,
     bool? dynamicColor,
@@ -66,6 +70,7 @@ final class AppSettings {
     bool? tapZones,
     bool? keepZoomOnTurn,
     FitMode? fitMode,
+    bool? zoomOutPastFit,
   }) => AppSettings(
     themeMode: themeMode ?? this.themeMode,
     dynamicColor: dynamicColor ?? this.dynamicColor,
@@ -79,6 +84,7 @@ final class AppSettings {
     tapZones: tapZones ?? this.tapZones,
     keepZoomOnTurn: keepZoomOnTurn ?? this.keepZoomOnTurn,
     fitMode: fitMode ?? this.fitMode,
+    zoomOutPastFit: zoomOutPastFit ?? this.zoomOutPastFit,
   );
 
   Map<String, Object?> toJson() => {
@@ -94,6 +100,7 @@ final class AppSettings {
     'tapZones': tapZones,
     'keepZoomOnTurn': keepZoomOnTurn,
     'fitMode': fitMode.name,
+    'zoomOutPastFit': zoomOutPastFit,
   };
 
   /// Reads settings written by [toJson]; unknown or broken values fall back
@@ -131,6 +138,7 @@ final class AppSettings {
       tapZones: pick('tapZones', defaults.tapZones),
       keepZoomOnTurn: pick('keepZoomOnTurn', defaults.keepZoomOnTurn),
       fitMode: named(FitMode.values, 'fitMode', defaults.fitMode),
+      zoomOutPastFit: pick('zoomOutPastFit', defaults.zoomOutPastFit),
     );
   }
 }
