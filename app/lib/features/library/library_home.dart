@@ -38,6 +38,7 @@ class LibraryHome extends StatefulWidget {
     required this.settings,
     this.library,
     this.thumbnails,
+    this.openUri,
     this.pdfDocuments,
     this.devDocumentsDir,
     this.libraryFolders,
@@ -48,6 +49,7 @@ class LibraryHome extends StatefulWidget {
 
   final Future<PdfEngine> Function() engine;
   final SettingsController settings;
+  final Future<bool> Function(String uri)? openUri;
 
   /// Null where there is no database: documents open but are not recorded.
   final LibraryRepository? library;
@@ -624,7 +626,8 @@ class _LibraryHomeState extends State<LibraryHome> {
       tooltip: l10n.settingsTitle,
       onPressed: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => SettingsPage(settings: widget.settings),
+          builder: (_) =>
+              SettingsPage(settings: widget.settings, openUri: widget.openUri),
         ),
       ),
     ),

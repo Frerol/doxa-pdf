@@ -127,6 +127,29 @@ void main() {
     });
   });
 
+  testWidgets('the support search result opens the Doxa Ko-fi page (#125)', (
+    tester,
+  ) async {
+    final requestedUris = <String>[];
+    await tester.pumpWidget(
+      DoxaApp(
+        settings: SettingsController(MemorySettingsStore()),
+        openUri: (uri) async {
+          requestedUris.add(uri);
+          return true;
+        },
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(SearchBar), 'Ko-fi');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Support Doxa'));
+
+    expect(requestedUris, ['https://ko-fi.com/P2S82BD7LL']);
+  });
+
   group('app and settings screen (FR-SET-001, FR-SET-002)', () {
     testWidgets('theme, language and dynamic colour apply at once', (
       tester,

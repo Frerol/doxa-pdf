@@ -48,6 +48,10 @@ See the [requirements](docs/plan/02-requirements.md) and [roadmap](docs/plan/08-
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 
+## Support
+
+[Support Doxa on Ko-fi](https://ko-fi.com/P2S82BD7LL)
+
 ## License
 
 Doxa PDF is free software: you can redistribute it and/or modify it under the terms of the

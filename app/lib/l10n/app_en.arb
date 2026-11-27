@@ -885,6 +885,9 @@
       }
     }
   },
+  "settingsAbout": "About",
+  "settingsSupport": "Support Doxa",
+  "settingsSupportHint": "Buy the developer a coffee on Ko-fi",
   "settingsGeneral": "General",
   "@settingsGeneral": {
     "description": "Settings category: theme, language, screen."
