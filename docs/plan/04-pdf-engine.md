@@ -49,6 +49,7 @@ Each Doxa-created annotation carries the ownership marker of [ADR-0005](../adr/0
 an `/NM` of `doxa:` plus a UUID v4, and the private key `/DoxaVersion` with the text value `1` (`DoxaMarker` in `doxa_core`). Both
 must be present: the prefix alone, which another app could copy, does not make an annotation Doxa's. The version goes up when what Doxa
 writes changes, for example the `/DoxaPressure` encoding (one base64url character per quantised pressure, a comma between strokes).
+Doxa's ink also carries `/DoxaTool` (`pen` or `highlighter`); without it, ink counts as drawn by the pen.
 
 Each Doxa-created annotation includes:
 - The standard keys: `/Subtype`, `/Rect`, `/C`, `/CA`, `/NM`, `/M`, `/CreationDate`, `/T` (author), `/Contents`, `/F` (Print).

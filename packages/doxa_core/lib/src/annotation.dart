@@ -20,6 +20,13 @@ abstract final class DoxaMarker {
   /// example the `/DoxaPressure` encoding).
   static const version = '1';
 
+  /// The private key with the raw pressure of Doxa's ink ([PressureCodec]).
+  static const pressureKey = 'DoxaPressure';
+
+  /// The private key with the [InkTool] name of Doxa's ink. Without it,
+  /// ink is drawn by the pen.
+  static const toolKey = 'DoxaTool';
+
   /// A new `/NM` for an annotation Doxa creates.
   static String newId() => '$idPrefix${AnnotationId.generate()}';
 
@@ -275,7 +282,8 @@ final class InkAnnotation extends Annotation {
 
   final List<InkStroke> strokes;
 
-  /// `/BS /W`: the width at full pressure, in points.
+  /// The border width (`/Border`, which PDFium reads and writes): the
+  /// width at full pressure, in points.
   final double width;
   final InkTool tool;
 
