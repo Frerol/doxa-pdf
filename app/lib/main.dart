@@ -13,10 +13,12 @@ import 'features/library/library_repository.dart';
 import 'features/settings/app_settings.dart';
 import 'src/doxa_app.dart';
 import 'src/doxa_theme.dart';
+import 'src/pdfium_licenses.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   registerFontLicenses();
+  registerPdfiumLicenses();
   // The app draws edge to edge on every Android version; full screen
   // (FR-VIEW-012) returns to this mode when it ends.
   unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));

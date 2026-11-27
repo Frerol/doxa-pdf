@@ -12,7 +12,10 @@ import 'package:doxa_pdf/features/reader/view_options.dart';
 import 'package:doxa_pdf/features/settings/app_settings.dart';
 import 'package:doxa_pdf/features/settings/settings_page.dart';
 import 'package:doxa_pdf/l10n/gen/app_localizations.dart';
+import 'package:doxa_pdf/src/app_version.dart';
 import 'package:doxa_pdf/src/doxa_app.dart';
+import 'package:doxa_pdf/src/pdfium_licenses.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -247,6 +250,57 @@ void main() {
       await tester.pumpAndSettle();
       return settings;
     }
+
+    testWidgets('About opens the bundled PDFium licenses (#55)', (
+      tester,
+    ) async {
+      await showSettings(tester);
+      LicenseRegistry.reset();
+      addTearDown(LicenseRegistry.reset);
+      registerPdfiumLicenses();
+      // Read real assets outside the fake clock, then replay the entries.
+      final entries = await tester.runAsync(
+        () => LicenseRegistry.licenses.toList(),
+      );
+      final files = Directory('assets/pdfium-licenses')
+          .listSync()
+          .whereType<File>();
+      expect(files, isNotEmpty);
+      expect(entries, hasLength(files.length));
+      LicenseRegistry.reset();
+      LicenseRegistry.addLicense(() => Stream.fromIterable(entries!));
+
+      for (final query in ['licen', 'licence', 'license', 'open source']) {
+        await tester.enterText(find.byType(SearchBar), query);
+        await tester.pumpAndSettle();
+        expect(find.text('Open-source licenses'), findsOneWidget);
+      }
+      await tester.tap(find.byIcon(Icons.clear));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('About'));
+      await tester.pumpAndSettle();
+
+      final version = appVersion.split('+').first;
+      expect(find.text('Doxa PDF $version'), findsOneWidget);
+      await tester.tap(find.text('Open-source licenses'));
+      await tester.pumpAndSettle();
+      expect(find.text(version), findsOneWidget);
+      expect(find.text('GPL-3.0-or-later'), findsOneWidget);
+      expect(find.text('PDFium'), findsOneWidget);
+    });
+
+    test('the generated About version matches app/pubspec.yaml (#55)', () {
+      final pubspec = File('pubspec.yaml').readAsStringSync();
+      final version = RegExp(
+        r'^version:\s*(\S+)',
+        multiLine: true,
+      ).firstMatch(pubspec)?.group(1);
+      expect(
+        appVersion,
+        version,
+        reason: 'Run python3 tools/generate_app_version.py',
+      );
+    });
 
     testWidgets('each category lists its settings (UX §7)', (tester) async {
       final settings = await showSettings(tester);

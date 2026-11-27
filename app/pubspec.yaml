@@ -36,6 +36,8 @@ flutter:
   assets:
     - assets/brand/doxa-glyph.png
     - assets/fonts/Manrope-OFL.txt
+    # Links to the license directory populated by tools/fetch_pdfium.sh.
+    - assets/pdfium-licenses/
   # The interface font (docs/plan/05-ux-design.md §5); source and licence in
   # assets/fonts/README.md.
   fonts:
