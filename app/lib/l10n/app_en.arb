@@ -371,6 +371,26 @@
   "@settingsCustomBackground": {
     "description": "Custom mode: the colour of the page background."
   },
+  "colourPickerCustom": "Custom colour",
+  "@colourPickerCustom": {
+    "description": "Swatch that opens the custom page colour picker."
+  },
+  "colourPickerHex": "Hex code",
+  "@colourPickerHex": {
+    "description": "Label for the RGB hexadecimal colour field."
+  },
+  "colourPickerInvalidHex": "Not a colour code",
+  "@colourPickerInvalidHex": {
+    "description": "Validation error for an invalid hexadecimal colour."
+  },
+  "colourPickerBrightness": "Brightness",
+  "@colourPickerBrightness": {
+    "description": "Label for the brightness slider in the colour picker."
+  },
+  "colourPickerSample": "Sample text",
+  "@colourPickerSample": {
+    "description": "Text displayed in the page colour preview."
+  },
   "settingsCustomText": "Text colour",
   "@settingsCustomText": {
     "description": "Custom mode: the colour of the text."

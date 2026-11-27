@@ -9,6 +9,7 @@ import '../dictionary/dictionary_library.dart';
 import '../reader/color_mode.dart';
 import '../reader/reader_geometry.dart';
 import 'app_settings.dart';
+import 'colour_picker.dart';
 
 /// Swatches offered for the custom page colours (FR-VIEW-016).
 const customBackgrounds = [
@@ -534,15 +535,18 @@ class CustomColorsEditor extends StatelessWidget {
             label: l10n.settingsCustomBackground,
             colors: customBackgrounds,
             selected: value.customBackground,
-            onSelected: (color) =>
-                settings.update(value.copyWith(customBackground: color)),
+            previewText: value.customText,
+            onSelected: (color) => settings.update(
+              settings.value.copyWith(customBackground: color),
+            ),
           ),
           _Swatches(
             label: l10n.settingsCustomText,
             colors: customTexts,
             selected: value.customText,
+            previewOn: value.customBackground,
             onSelected: (color) =>
-                settings.update(value.copyWith(customText: color)),
+                settings.update(settings.value.copyWith(customText: color)),
           ),
         ],
       ),
@@ -556,17 +560,57 @@ class _Swatches extends StatelessWidget {
     required this.colors,
     required this.selected,
     required this.onSelected,
+    this.previewOn,
+    this.previewText,
   });
 
   final String label;
   final List<Color> colors;
   final Color selected;
   final ValueChanged<Color> onSelected;
+  final Color? previewOn;
+  final Color? previewText;
 
   @override
   Widget build(BuildContext context) {
-    final outline = Theme.of(context).colorScheme.outline;
-    final primary = Theme.of(context).colorScheme.primary;
+    final scheme = Theme.of(context).colorScheme;
+    final customLabel = AppLocalizations.of(context).colourPickerCustom;
+    final customSelected = !colors.contains(selected);
+    final customFill = customSelected ? selected : scheme.surface;
+    final customIconColor = customFill.computeLuminance() > 0.179
+        ? const Color(0xFF000000)
+        : const Color(0xFFFFFFFF);
+
+    Widget swatch({
+      required Color color,
+      required bool isSelected,
+      required String semanticsLabel,
+      required VoidCallback onTap,
+      Widget? icon,
+    }) => Semantics(
+      button: true,
+      selected: isSelected,
+      label: semanticsLabel,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isSelected ? scheme.primary : scheme.outline,
+              width: isSelected ? 3 : 1,
+            ),
+          ),
+          child: icon,
+        ),
+      ),
+    );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Column(
@@ -579,27 +623,32 @@ class _Swatches extends StatelessWidget {
             runSpacing: 8,
             children: [
               for (final (i, color) in colors.indexed)
-                Semantics(
-                  button: true,
-                  selected: color == selected,
-                  label: '$label ${i + 1}',
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () => onSelected(color),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: color == selected ? primary : outline,
-                          width: color == selected ? 3 : 1,
-                        ),
-                      ),
-                    ),
-                  ),
+                swatch(
+                  color: color,
+                  isSelected: color == selected,
+                  semanticsLabel: '$label ${i + 1}',
+                  onTap: () => onSelected(color),
                 ),
+              Tooltip(
+                message: customLabel,
+                excludeFromSemantics: true,
+                child: swatch(
+                  color: customFill,
+                  isSelected: customSelected,
+                  semanticsLabel: '$label: $customLabel',
+                  icon: Icon(Icons.colorize, size: 20, color: customIconColor),
+                  onTap: () async {
+                    final color = await showColourPicker(
+                      context,
+                      initial: selected,
+                      title: label,
+                      previewOn: previewOn,
+                      previewText: previewText,
+                    );
+                    if (color != null) onSelected(color);
+                  },
+                ),
+              ),
             ],
           ),
         ],
