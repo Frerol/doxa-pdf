@@ -492,6 +492,10 @@
       }
     }
   },
+  "readerDocumentActions": "Document actions",
+  "@readerDocumentActions": {
+    "description": "Tooltip for the document actions menu in the compact reader app bar."
+  },
   "addToFavorites": "Add to favorites",
   "@addToFavorites": {
     "description": "Marks a document as favorite."

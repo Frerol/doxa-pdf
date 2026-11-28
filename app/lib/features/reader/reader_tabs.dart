@@ -9,6 +9,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
 import '../../src/doxa_theme.dart';
+import '../library/library_repository.dart';
 import '../settings/app_settings.dart';
 import 'reader_controller.dart';
 import 'reader_page.dart';
@@ -168,11 +169,13 @@ class ReaderWorkspace extends StatefulWidget {
     required this.tabs,
     required this.engine,
     this.settings,
+    this.library,
   });
 
   final ReaderTabs tabs;
   final Future<PdfEngine> engine;
   final SettingsController? settings;
+  final LibraryRepository? library;
 
   /// Widths from which tabs show as a row (Material medium size class).
   static const tabRowWidth = 600.0;
@@ -275,6 +278,8 @@ class _ReaderWorkspaceState extends State<ReaderWorkspace> {
       source: source,
       title: tab.title,
       settings: widget.settings,
+      library: widget.library,
+      libraryId: tab.libraryId,
       initialPosition: tab.position,
       initialRightToLeft: tab.rightToLeft,
       // Called once the engine has closed the document; the tab releases

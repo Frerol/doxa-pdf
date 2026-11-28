@@ -48,6 +48,7 @@ The short form of both, and the rules for coding agents, are in [AGENTS.md](../A
 | [0009](adr/0009-offline-dictionary.md) | Built-in offline dictionary (StarDict, user-imported) | Accepted |
 | [0010](adr/0010-dictionary-downloads-in-app.md) | Dictionary packs downloaded in the app on request (amends 0009) | Accepted |
 | [0011](adr/0011-lucide-icons.md) | Lucide as the app icon set | Accepted |
+| [0012](adr/0012-filled-favourite-star.md) | Filled Lucide star for favourites | Proposed |
 
 New ADRs start from [the template](adr/0000-template.md).
 

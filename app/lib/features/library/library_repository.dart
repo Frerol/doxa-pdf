@@ -163,6 +163,13 @@ final class LibraryRepository {
         ),
       );
 
+  /// The favorite state of one document, or null once it is deleted.
+  Stream<bool?> watchFavorite(int id) =>
+      (_db.select(_db.documents)..where((d) => d.id.equals(id)))
+          .watchSingleOrNull()
+          .map((row) => row?.favorite)
+          .distinct();
+
   Future<void> setFavorite(int id, bool favorite) =>
       (_db.update(_db.documents)..where((d) => d.id.equals(id))).write(
         DocumentsCompanion(favorite: Value(favorite)),

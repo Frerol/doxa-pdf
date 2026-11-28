@@ -14,6 +14,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../src/doxa_theme.dart';
 import '../dictionary/dictionary_library.dart';
 import '../dictionary/dictionary_popup.dart';
+import '../library/library_repository.dart';
 import '../settings/app_settings.dart';
 import 'color_mode.dart';
 import 'frame_probe.dart';
@@ -70,6 +71,8 @@ class ReaderPage extends StatefulWidget {
     this.tabRow,
     this.onGiveUp,
     this.tabsButton,
+    this.library,
+    this.libraryId,
   });
 
   final Future<PdfEngine> engine;
@@ -106,6 +109,9 @@ class ReaderPage extends StatefulWidget {
 
   /// Opens the other tabs on phones (FR-FILE-007); first in the app bar.
   final Widget? tabsButton;
+
+  final LibraryRepository? library;
+  final int? libraryId;
 
   @override
   State<ReaderPage> createState() => _ReaderPageState();
@@ -518,10 +524,12 @@ class _ReaderPageState extends State<ReaderPage> {
                     onPressed: () => setState(() => _searchOpen = true),
                   ),
                   const DictionaryButton(),
-                  IconButton(
-                    icon: const Icon(LucideIcons.eye),
-                    tooltip: l10n.viewOptions,
-                    onPressed: () => showViewOptions(
+                  ReaderDocumentActions(
+                    library: widget.library,
+                    libraryId: widget.libraryId,
+                    compact:
+                        MediaQuery.sizeOf(context).width < _panelBesideWidth,
+                    onViewOptions: () => showViewOptions(
                       context,
                       controller,
                       colorMode: colorMode,
