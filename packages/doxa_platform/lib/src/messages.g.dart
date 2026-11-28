@@ -742,7 +742,8 @@ class DoxaPlatformPluginApi {
     );
   }
 
-  /// Checks the persisted grant and document flags without opening for write.
+  /// Checks the persisted write grant, then the document flags, opening
+  /// the document with "rw" (no write) when the write flag is missing.
   Future<bool> canWrite(String uri) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.canWrite$pigeonVar_messageChannelSuffix';

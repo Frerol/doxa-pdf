@@ -523,7 +523,10 @@ interface DoxaPlatformPluginApi {
   fun moveDocument(uri: String, targetTreeUri: String, targetDocumentId: String?, callback: (Result<PlatformMovedDocument>) -> Unit)
   /** Deletes the document [uri] (FR-FILE-011). Fails like [renameDocument]. */
   fun deleteDocument(uri: String, callback: (Result<Unit>) -> Unit)
-  /** Checks the persisted grant and document flags without opening for write. */
+  /**
+   * Checks the persisted write grant, then the document flags, opening
+   * the document with "rw" (no write) when the write flag is missing.
+   */
   fun canWrite(uri: String, callback: (Result<Boolean>) -> Unit)
   /**
    * Writes and verifies the PDF. A failure after writing starts carries the

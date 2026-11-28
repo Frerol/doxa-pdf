@@ -8,8 +8,10 @@ Part of the [Doxa PDF](../../README.md) workspace. See [architecture §2](../../
 
 Use `DoxaPlatform().pdfSaves.canWrite(uri)` before editing. It checks for a
 persisted write grant (including a library tree grant) and the provider's
-document flags without opening a write stream. Offer Save a copy when the
-check returns false.
+`FLAG_SUPPORTS_WRITE`. Some providers write documents without that flag (the
+media provider behind the picker's Recent and Documents roots), so without it
+the document is opened with `"rw"` and closed, which writes nothing. Offer
+Save a copy when the check returns false.
 
 Pass the engine-verified cache file to `writeBack(uri, tempPath)`. The plugin
 backs up the current URI contents in the cache, opens the URI with `wt`, and
