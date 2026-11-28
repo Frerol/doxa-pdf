@@ -523,6 +523,17 @@ interface DoxaPlatformPluginApi {
   fun moveDocument(uri: String, targetTreeUri: String, targetDocumentId: String?, callback: (Result<PlatformMovedDocument>) -> Unit)
   /** Deletes the document [uri] (FR-FILE-011). Fails like [renameDocument]. */
   fun deleteDocument(uri: String, callback: (Result<Unit>) -> Unit)
+  /** Checks the persisted grant and document flags without opening for write. */
+  fun canWrite(uri: String, callback: (Result<Boolean>) -> Unit)
+  /**
+   * Writes and verifies the PDF. A failure after writing starts carries the
+   * path of the cache backup of the previous contents in its error details.
+   */
+  fun writeBack(uri: String, tempPath: String, callback: (Result<Unit>) -> Unit)
+  /** Creates and verifies a PDF through the system picker; null on cancellation. */
+  fun savePdfCopy(tempPath: String, displayName: String, callback: (Result<String?>) -> Unit)
+  /** Opens the system share sheet for a readable PDF content URI. */
+  fun sharePdf(uri: String)
   /**
    * Asks for dictionary files (a `.zip` or loose StarDict files) and
    * copies them into a new staging folder in the cache, extracting each
@@ -835,6 +846,85 @@ interface DoxaPlatformPluginApi {
                 reply.reply(MessagesPigeonUtils.wrapResult(null))
               }
             }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.canWrite$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val uriArg = args[0] as String
+            api.canWrite(uriArg) { result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(MessagesPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(MessagesPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.writeBack$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val uriArg = args[0] as String
+            val tempPathArg = args[1] as String
+            api.writeBack(uriArg, tempPathArg) { result: Result<Unit> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(MessagesPigeonUtils.wrapError(error))
+              } else {
+                reply.reply(MessagesPigeonUtils.wrapResult(null))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.savePdfCopy$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val tempPathArg = args[0] as String
+            val displayNameArg = args[1] as String
+            api.savePdfCopy(tempPathArg, displayNameArg) { result: Result<String?> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(MessagesPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(MessagesPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.sharePdf$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val uriArg = args[0] as String
+            val wrapped: List<Any?> = try {
+              api.sharePdf(uriArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              MessagesPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
           }
         } else {
           channel.setMessageHandler(null)

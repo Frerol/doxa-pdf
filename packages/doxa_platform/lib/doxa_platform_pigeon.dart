@@ -11,6 +11,7 @@ import 'download_conditions.dart';
 import 'doxa_platform_platform_interface.dart';
 import 'library_folders.dart';
 import 'pdf_documents.dart';
+import 'pdf_saves.dart';
 import 'src/messages.g.dart';
 
 /// An implementation of [DoxaPlatformPlatform] that uses Pigeon, for
@@ -24,6 +25,9 @@ class PigeonDoxaPlatform extends DoxaPlatformPlatform {
 
   @override
   late final PdfDocuments pdfDocuments = _PigeonPdfDocuments(_hostApi);
+
+  @override
+  late final PdfSaves pdfSaves = _PigeonPdfSaves(_hostApi);
 
   @override
   late final LibraryFolders libraryFolders = _PigeonLibraryFolders(_hostApi);
@@ -88,6 +92,47 @@ class _PigeonPdfDocuments implements PdfDocuments, PdfIntentApi {
   Future<void> releasePdf(int leaseId) => _hostApi.releasePdf(leaseId);
 
   Future<T> _access<T>(Future<T> Function() action) => _pdfAccess(action);
+}
+
+class _PigeonPdfSaves implements PdfSaves {
+  _PigeonPdfSaves(this._hostApi);
+
+  final DoxaPlatformPluginApi _hostApi;
+
+  @override
+  Future<bool> canWrite(String uri) =>
+      _saveAction(() => _hostApi.canWrite(uri));
+
+  @override
+  Future<void> writeBack(String uri, String tempPath) =>
+      _saveAction(() => _hostApi.writeBack(uri, tempPath));
+
+  @override
+  Future<String?> saveCopy(String tempPath, String displayName) =>
+      _saveAction(() => _hostApi.savePdfCopy(tempPath, displayName));
+
+  @override
+  Future<void> share(String uri) => _saveAction(() => _hostApi.sharePdf(uri));
+
+  Future<T> _saveAction<T>(Future<T> Function() action) async {
+    try {
+      return await action();
+    } on PlatformException catch (error) {
+      throw PdfSaveException(
+        switch (error.code) {
+          'permissionLost' => PdfSaveError.permissionLost,
+          'readOnly' => PdfSaveError.readOnly,
+          'noSpace' => PdfSaveError.noSpace,
+          'mismatch' => PdfSaveError.mismatch,
+          _ => PdfSaveError.failed,
+        },
+        recoveryPath: switch (error.details) {
+          {'recoveryPath': final String path} => path,
+          _ => null,
+        },
+      );
+    }
+  }
 }
 
 class _PigeonLibraryFolders implements LibraryFolders {

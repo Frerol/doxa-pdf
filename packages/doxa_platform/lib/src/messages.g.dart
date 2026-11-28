@@ -742,6 +742,89 @@ class DoxaPlatformPluginApi {
     );
   }
 
+  /// Checks the persisted grant and document flags without opening for write.
+  Future<bool> canWrite(String uri) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.canWrite$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[uri],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as bool;
+  }
+
+  /// Writes and verifies the PDF. A failure after writing starts carries the
+  /// path of the cache backup of the previous contents in its error details.
+  Future<void> writeBack(String uri, String tempPath) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.writeBack$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[uri, tempPath],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  /// Creates and verifies a PDF through the system picker; null on cancellation.
+  Future<String?> savePdfCopy(String tempPath, String displayName) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.savePdfCopy$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[tempPath, displayName],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+    return pigeonVar_replyValue as String?;
+  }
+
+  /// Opens the system share sheet for a readable PDF content URI.
+  Future<void> sharePdf(String uri) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.doxa_platform.DoxaPlatformPluginApi.sharePdf$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[uri],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
   /// Asks for dictionary files (a `.zip` or loose StarDict files) and
   /// copies them into a new staging folder in the cache, extracting each
   /// `.zip` (FR-TEXT-009). Returns the folder's path, or null when the

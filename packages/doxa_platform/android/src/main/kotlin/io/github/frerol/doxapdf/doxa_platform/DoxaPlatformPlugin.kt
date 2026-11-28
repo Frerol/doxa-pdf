@@ -4,6 +4,7 @@ package io.github.frerol.doxapdf.doxa_platform
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -26,6 +27,8 @@ class DoxaPlatformPlugin :
     private var context: Context? = null
     private var activityBinding: ActivityPluginBinding? = null
     private val activity: Activity? get() = activityBinding?.activity
+    private var pdfSaves: PdfSaves? = null
+    private var pendingCopy: PendingCopy? = null
     private var pdfFiles: PdfFiles? = null
     private var folders: LibraryFolders? = null
     private var documentFiles: DocumentFiles? = null
@@ -42,6 +45,7 @@ class DoxaPlatformPlugin :
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
+        pdfSaves = PdfSaves(flutterPluginBinding.applicationContext)
         pdfFiles = PdfFiles(flutterPluginBinding.applicationContext)
         folders = LibraryFolders(flutterPluginBinding.applicationContext)
         documentFiles = DocumentFiles(flutterPluginBinding.applicationContext)
@@ -291,7 +295,75 @@ class DoxaPlatformPlugin :
         documentFiles?.delete(uri, callback) ?: callback(Result.failure(FlutterError("failed")))
     }
 
+    override fun canWrite(uri: String, callback: (Result<Boolean>) -> Unit) {
+        pdfSaves?.canWrite(uri, callback) ?: callback(Result.failure(FlutterError("failed")))
+    }
+
+    override fun writeBack(uri: String, tempPath: String, callback: (Result<Unit>) -> Unit) {
+        pdfSaves?.writeBack(uri, tempPath, callback) ?: callback(Result.failure(FlutterError("failed")))
+    }
+
+    override fun savePdfCopy(tempPath: String, displayName: String, callback: (Result<String?>) -> Unit) {
+        val host = activity
+        if (host == null || pendingCopy != null || pdfSaves == null) {
+            callback(Result.failure(FlutterError("failed")))
+            return
+        }
+        val picker = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = PDF_MIME
+            putExtra(Intent.EXTRA_TITLE, displayName)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+        pendingCopy = PendingCopy(tempPath, callback)
+        try {
+            @Suppress("DEPRECATION")
+            host.startActivityForResult(picker, CREATE_PDF)
+        } catch (error: RuntimeException) {
+            pendingCopy = null
+            callback(Result.failure(saveError(error)))
+        }
+    }
+
+    override fun sharePdf(uri: String) {
+        val host = activity ?: throw FlutterError("failed")
+        val document = contentUri(uri)
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = PDF_MIME
+            putExtra(Intent.EXTRA_STREAM, document)
+            clipData = ClipData.newRawUri("PDF", document)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        try {
+            host.startActivity(Intent.createChooser(send, null))
+        } catch (error: RuntimeException) {
+            throw saveError(error)
+        }
+    }
+
+    private fun finishCopyPicker(resultCode: Int, data: Intent?): Boolean {
+        val pending = pendingCopy ?: return false
+        pendingCopy = null
+        val uri = data?.data
+        val saves = pdfSaves
+        when {
+            resultCode != Activity.RESULT_OK -> pending.callback(Result.success(null))
+            uri == null || saves == null -> pending.callback(Result.failure(FlutterError("failed")))
+            else -> saves.saveCopy(uri, pending.tempPath, pending.callback)
+        }
+        return true
+    }
+
+    private fun cancelCopyPicker() {
+        val pending = pendingCopy
+        pendingCopy = null
+        pending?.callback?.invoke(Result.success(null))
+    }
+
+    private data class PendingCopy(val tempPath: String, val callback: (Result<String?>) -> Unit)
+
     private fun onPickerResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        if (requestCode == CREATE_PDF) return finishCopyPicker(resultCode, data)
         if (requestCode == PICK_DICTIONARY_FILES || requestCode == PICK_DICTIONARY_FOLDER) {
             onDictionaryResult(requestCode, resultCode, data)
             return true
@@ -406,6 +478,7 @@ class DoxaPlatformPlugin :
 
     override fun onDetachedFromActivity() {
         detachActivity()
+        cancelCopyPicker()
         pendingPicker?.invoke(Result.success(null))
         pendingPicker = null
         pendingFolder?.invoke(Result.success(null))
@@ -416,6 +489,9 @@ class DoxaPlatformPlugin :
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         DoxaPlatformPluginApi.setUp(binding.binaryMessenger, null)
+        cancelCopyPicker()
+        pdfSaves?.close()
+        pdfSaves = null
         pdfIntents = null
         incoming.clear()
         pdfFiles?.close()
@@ -436,6 +512,7 @@ class DoxaPlatformPlugin :
         private const val PICK_FOLDER = 0xD04A
         private const val PICK_DICTIONARY_FILES = 0xD04B
         private const val PICK_DICTIONARY_FOLDER = 0xD04C
+        private const val CREATE_PDF = 0xD04D
         private const val DOWNLOADS_AUTHORITY = "com.android.providers.downloads.documents"
         val OPENABLE_SCHEMES = setOf("http", "https", "mailto")
     }

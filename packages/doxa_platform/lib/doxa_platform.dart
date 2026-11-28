@@ -6,15 +6,19 @@ import 'download_conditions.dart';
 import 'doxa_platform_platform_interface.dart';
 import 'library_folders.dart';
 import 'pdf_documents.dart';
+import 'pdf_saves.dart';
 
 export 'dictionary_imports.dart';
 export 'document_files.dart';
 export 'download_conditions.dart';
 export 'library_folders.dart';
 export 'pdf_documents.dart';
+export 'pdf_saves.dart';
 
 class DoxaPlatform {
   PdfDocuments get pdfDocuments => DoxaPlatformPlatform.instance.pdfDocuments;
+
+  PdfSaves get pdfSaves => DoxaPlatformPlatform.instance.pdfSaves;
 
   LibraryFolders get libraryFolders =>
       DoxaPlatformPlatform.instance.libraryFolders;
