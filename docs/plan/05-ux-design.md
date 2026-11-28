@@ -38,7 +38,9 @@ Move opens Doxa's own folder picker: the library folders on the same storage, th
 | **Expanded** (large tablets, desktop) | Tabs row, annotation toolbar **fixed at the top**, a **side panel docked on the left** (bookmarks, contents, annotations) and a full-screen thumbnail grid (§7). |
 
 ### Annotation toolbar (all sizes)
-`[Highlighter ▾] [Underline/Strike ▾] [Pen 1] [Pen 2] [Highlighter pen] [Eraser ▾] [Lasso] [Note] [Shapes ▾] | [Undo] [Redo] | [Stylus-only ✎]`
+`[Smart highlighter] [Smart pen] [Underline] [Strikeout] [Squiggly] [Pen] [Highlighter pen] [Eraser] [Lasso] [Note] | [Undo] [Redo] | [Stylus-only ✎]`
+
+The tools and their behaviour are in §7, "Annotation toolbar (maintainer decisions 2026-11-28)".
 
 - Long-press or a second tap on a tool opens its options (color palette, width, opacity, pressure).
 - Tool state is **sticky** until the user switches tools or presses Esc or the back gesture.
@@ -108,6 +110,7 @@ maintainer keeps; this section is what the app follows.
 ## 7. Decisions from the MVP session (2026-11-24)
 - **No explicit annotate mode for the stylus**: the S Pen always writes. Finger tools (markup, notes, shapes) are chosen in the toolbar, and otherwise the finger only reads.
 - **Toolbar fixed at the top** on tablets. Phones also put the tools in a row at the top (changed 2026-11-26, §7 "Phones"); the bottom holds the tool's presets.
+  Changed 2026-11-28: on tablets and desktop the toolbar can be docked to any edge (§7, "Annotation toolbar").
 - **Tabs on tablets** as well as desktop.
 - **Tabs (FR-FILE-007), maintainer decisions 2026-11-26:**
   - On medium and expanded widths the tab row sits **under the reader's app bar** and hides with it. Each tab has its own close button,
@@ -210,8 +213,40 @@ Each point below is the target for alpha 1 unless it names a feature that is not
 - **Back:** unlike the reference, system Back first clears a text selection, then leaves the active tool, and only then leaves the document.
   The reference closes the document straight away in those states, which loses context.
 
+### Annotation toolbar (maintainer decisions 2026-11-28, #149)
+Observed in two leading commercial tablet readers through a behaviour specification (clean-room §3); Doxa follows their layout and flows
+with its own icons (Lucide), colours and words.
+
+- **Position:** the tool row sits under the app bar by default. On medium and expanded widths a handle at its end drags it to the **top,
+  bottom, left or right** edge, with drop zones shown while dragging; on a side edge it becomes a vertical rail. The edge is remembered.
+  Phones keep the row at the top (§7 "Phones").
+- **Tools, in order:** smart highlighter, smart pen, underline, strikeout, squiggly, pen, highlighter pen, eraser, lasso, note; then undo
+  and redo; then the stylus-only switch. Every markup type is its own button, none hide in a submenu.
+  - The **smart highlighter** and **smart pen** decide from the stroke: one that runs along text becomes a text markup over the words it
+    covers (FR-MARK-013, `snapStrokeToText`), anything else stays ink (a thick highlighter stroke, or a pen stroke).
+  - A text markup tool also highlights by dragging over text (FR-MARK-004), snapping to whole words.
+- **Undo and redo** are both always in the tool row, greyed out when unavailable.
+- **Active tool:** a tonal rounded square behind it, and its icon tinted with the current preset's colour (FR-ANNO-009).
+- **Presets:** each tool has **four presets**. Selecting a tool shows them next to the tool row (in the row in landscape and on large
+  screens, in the preset bar at the bottom on phones in portrait). Tapping the active preset again opens its **style panel**; editing it
+  changes that preset in place (FR-INK-009).
+- **Style panel:** always a **live preview** at the top.
+  - Pens: colour, width (slider plus the exact value), opacity, **pressure on/off** (FR-INK-002), pen type (nib shapes that change how
+    width follows pressure), line style (solid, dashed, dotted), a straight-line switch, and stroke stabilisation (the optional arc-length
+    smoothing of ADR-0006, never a One-Euro filter).
+  - Text markup: type, colour, opacity (FR-MARK-008).
+  - Colour: a page of preset swatches, a custom colour picker, and recent colours.
+- **Eraser:** whole-stroke or partial erasing (FR-INK-005), sizes as its presets, and an "ink only" switch so it does not erase text
+  markup. The S Pen side button erases with the same settings (FR-INK-006).
+- **Lasso (FR-INK-008):** a box with handles to move, resize and **rotate**, and a pop-up with style (recolour, width), copy, delete, and
+  **bring forward / send back**.
+- **After a markup** the tool stays active (FR-MARK-003) and the new markup is not selected, so passages can be marked one after another.
+  Tapping a markup later opens its menu (FR-MARK-005).
+
 ### Still open
-- (none for the reader layout)
+- Annotation colours on night and sepia pages (#169, FR-VIEW-023).
+- Settings: default tool behaviours (FR-SET-003), author name (FR-ANNO-006), area highlight (FR-MARK-009), notes on markups
+  (FR-NOTE-002), and feedback on pages without text (FR-TEXT-007).
 
 ## 8. Familiar layout and workflows
 
