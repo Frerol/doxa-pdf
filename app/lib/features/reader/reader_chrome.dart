@@ -7,6 +7,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import '../library/favorite_button.dart';
+import '../library/library_repository.dart';
 import 'reader_controller.dart';
 import 'reader_geometry.dart';
 
@@ -374,4 +376,107 @@ class _ViewBuilderState extends State<_ViewBuilder> {
 
   @override
   Widget build(BuildContext context) => widget.builder(context, null);
+}
+
+/// Favourites and view options share a menu when the title needs the space.
+class ReaderDocumentActions extends StatefulWidget {
+  const ReaderDocumentActions({
+    super.key,
+    required this.library,
+    required this.libraryId,
+    required this.compact,
+    required this.onViewOptions,
+  });
+
+  final LibraryRepository? library;
+  final int? libraryId;
+  final bool compact;
+  final VoidCallback onViewOptions;
+
+  @override
+  State<ReaderDocumentActions> createState() => _ReaderDocumentActionsState();
+}
+
+enum _ReaderAction { favorite, viewOptions }
+
+class _ReaderDocumentActionsState extends State<ReaderDocumentActions> {
+  late Stream<bool?>? _favorite = _watchFavorite();
+
+  Stream<bool?>? _watchFavorite() {
+    final id = widget.libraryId;
+    return id == null ? null : widget.library?.watchFavorite(id);
+  }
+
+  @override
+  void didUpdateWidget(ReaderDocumentActions oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.library != oldWidget.library ||
+        widget.libraryId != oldWidget.libraryId) {
+      _favorite = _watchFavorite();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final viewOptions = IconButton(
+      icon: const Icon(LucideIcons.eye),
+      tooltip: l10n.viewOptions,
+      onPressed: widget.onViewOptions,
+    );
+    final stream = _favorite;
+    if (stream == null) return viewOptions;
+    final library = widget.library!;
+    final id = widget.libraryId!;
+    return StreamBuilder<bool?>(
+      key: ObjectKey(stream),
+      stream: stream,
+      builder: (context, snapshot) {
+        final favorite = snapshot.data;
+        if (favorite == null) return viewOptions;
+        void toggleFavorite() => unawaited(library.setFavorite(id, !favorite));
+        if (!widget.compact) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FavoriteButton(favorite: favorite, onPressed: toggleFavorite),
+              viewOptions,
+            ],
+          );
+        }
+        return PopupMenuButton<_ReaderAction>(
+          tooltip: l10n.readerDocumentActions,
+          onSelected: (action) => switch (action) {
+            _ReaderAction.favorite => toggleFavorite(),
+            _ReaderAction.viewOptions => widget.onViewOptions(),
+          },
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              value: _ReaderAction.favorite,
+              child: Semantics(
+                selected: favorite,
+                child: Row(
+                  children: [
+                    FavoriteStar(filled: favorite),
+                    const SizedBox(width: 12),
+                    Flexible(child: Text(favoriteLabel(l10n, favorite))),
+                  ],
+                ),
+              ),
+            ),
+            PopupMenuItem(
+              value: _ReaderAction.viewOptions,
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.eye),
+                  const SizedBox(width: 12),
+                  Flexible(child: Text(l10n.viewOptions)),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }

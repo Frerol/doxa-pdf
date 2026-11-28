@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:doxa_platform/doxa_platform.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
+import 'favorite_button.dart';
 import 'folder_page.dart';
 import 'library_repository.dart';
 
@@ -484,3 +487,100 @@ Future<bool> runFileAction(
   FileAction.move => actions.move(context, uri: uri),
   FileAction.delete => actions.delete(context, uri: uri, name: name),
 };
+
+sealed class _DocumentAction {
+  const _DocumentAction();
+}
+
+class _ToggleFavorite extends _DocumentAction {
+  const _ToggleFavorite();
+}
+
+class _RemoveFromRecents extends _DocumentAction {
+  const _RemoveFromRecents();
+}
+
+class _OnFile extends _DocumentAction {
+  const _OnFile(this.action);
+
+  final FileAction action;
+}
+
+/// Trailing actions shared by the dashboard and the full document lists.
+class DocumentRowActions extends StatelessWidget {
+  const DocumentRowActions({
+    super.key,
+    required this.document,
+    required this.library,
+    required this.actions,
+    required this.showRemoveFromRecents,
+    this.foregroundColor,
+  });
+
+  final LibraryDocument document;
+  final LibraryRepository? library;
+  final DocumentActions? actions;
+  final bool showRemoveFromRecents;
+  final Color? foregroundColor;
+
+  void _select(BuildContext context, _DocumentAction action) {
+    switch (action) {
+      case _ToggleFavorite():
+        unawaited(library?.setFavorite(document.id, !document.favorite));
+      case _RemoveFromRecents():
+        unawaited(library?.removeFromRecents(document.id));
+      case _OnFile(:final action):
+        unawaited(
+          runFileAction(
+            context,
+            actions!,
+            action,
+            uri: document.uri!,
+            name: document.displayName,
+          ),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final fileItems = fileActionItems<_DocumentAction>(
+      l10n,
+      actions,
+      document.uri,
+      _OnFile.new,
+    );
+    final favorite = document.favorite;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FavoriteButton(
+          favorite: favorite,
+          foregroundColor: foregroundColor,
+          onPressed: library == null
+              ? null
+              : () => unawaited(library!.setFavorite(document.id, !favorite)),
+        ),
+        if (showRemoveFromRecents || fileItems.isNotEmpty)
+          PopupMenuButton<_DocumentAction>(
+            iconColor: foregroundColor,
+            onSelected: (action) => _select(context, action),
+            itemBuilder: (_) => [
+              if (showRemoveFromRecents) ...[
+                PopupMenuItem(
+                  value: const _ToggleFavorite(),
+                  child: Text(favoriteLabel(l10n, favorite)),
+                ),
+                PopupMenuItem(
+                  value: const _RemoveFromRecents(),
+                  child: Text(l10n.removeFromRecents),
+                ),
+              ],
+              ...fileItems,
+            ],
+          ),
+      ],
+    );
+  }
+}

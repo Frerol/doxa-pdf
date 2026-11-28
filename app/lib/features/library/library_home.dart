@@ -492,6 +492,7 @@ class _LibraryHomeState extends State<LibraryHome> {
             MaterialPageRoute<void>(
               builder: (_) => ReaderWorkspace(
                 tabs: _readerTabs,
+                library: widget.library,
                 engine: readerEngine ??= Future.sync(engine),
                 settings: widget.settings,
               ),
@@ -713,6 +714,8 @@ class _LibraryHomeState extends State<LibraryHome> {
       ),
       floatingActionButton: _openFileButton(l10n),
       body: HomeDashboard(
+        library: widget.library,
+        actions: _actions,
         recents: _dashboardRecents,
         favorites: _dashboardFavorites,
         folders: _dashboardFolders,
@@ -971,24 +974,6 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-sealed class _DocumentAction {
-  const _DocumentAction();
-}
-
-class _ToggleFavorite extends _DocumentAction {
-  const _ToggleFavorite();
-}
-
-class _RemoveFromRecents extends _DocumentAction {
-  const _RemoveFromRecents();
-}
-
-class _OnFile extends _DocumentAction {
-  const _OnFile(this.action);
-
-  final FileAction action;
-}
-
 class _DocumentTile extends StatelessWidget {
   const _DocumentTile({
     required this.document,
@@ -1020,39 +1005,13 @@ class _DocumentTile extends StatelessWidget {
   final bool selected;
   final VoidCallback onSelect;
 
-  void _select(BuildContext context, _DocumentAction action) {
-    switch (action) {
-      case _ToggleFavorite():
-        unawaited(library?.setFavorite(document.id, !document.favorite));
-      case _RemoveFromRecents():
-        unawaited(library?.removeFromRecents(document.id));
-      case _OnFile(:final action):
-        unawaited(
-          runFileAction(
-            context,
-            actions!,
-            action,
-            uri: document.uri!,
-            name: document.displayName,
-          ),
-        );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final fileItems = fileActionItems<_DocumentAction>(
-      l10n,
-      actions,
-      document.uri,
-      _OnFile.new,
-    );
     final when = lastReadLabel(l10n, document.lastOpenedAt, now);
     final subtitle = document.pageCount == 0
         ? when
         : '${l10n.libraryProgress(document.state.page + 1, document.pageCount, (document.progress * 100).floor())} · $when';
-    final favorite = document.favorite;
     return ListTile(
       selected: selected,
       leading: SelectedMark(
@@ -1069,40 +1028,11 @@ class _DocumentTile extends StatelessWidget {
       onLongPress: selectable ? onSelect : null,
       trailing: selecting
           ? null
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(LucideIcons.star),
-                  isSelected: favorite,
-                  style: iconToggleStyle(context),
-                  tooltip: favorite
-                      ? l10n.removeFromFavorites
-                      : l10n.addToFavorites,
-                  onPressed: () => library?.setFavorite(document.id, !favorite),
-                ),
-                if (showRemoveFromRecents || fileItems.isNotEmpty)
-                  PopupMenuButton<_DocumentAction>(
-                    onSelected: (action) => _select(context, action),
-                    itemBuilder: (_) => [
-                      if (showRemoveFromRecents) ...[
-                        PopupMenuItem(
-                          value: const _ToggleFavorite(),
-                          child: Text(
-                            favorite
-                                ? l10n.removeFromFavorites
-                                : l10n.addToFavorites,
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: const _RemoveFromRecents(),
-                          child: Text(l10n.removeFromRecents),
-                        ),
-                      ],
-                      ...fileItems,
-                    ],
-                  ),
-              ],
+          : DocumentRowActions(
+              document: document,
+              library: library,
+              actions: actions,
+              showRemoveFromRecents: showRemoveFromRecents,
             ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/gen/app_localizations.dart';
 import '../../src/doxa_theme.dart';
+import 'document_actions.dart';
 import 'library_home.dart' show lastReadLabel;
 import 'library_repository.dart';
 import 'library_thumbnails.dart';
@@ -20,6 +21,8 @@ enum HomeSection { recents, favorites, folders }
 class HomeDashboard extends StatelessWidget {
   const HomeDashboard({
     super.key,
+    required this.library,
+    required this.actions,
     required this.recents,
     required this.favorites,
     required this.folders,
@@ -31,6 +34,8 @@ class HomeDashboard extends StatelessWidget {
     this.onBrowse,
   });
 
+  final LibraryRepository? library;
+  final DocumentActions? actions;
   final Stream<List<LibraryDocument>>? recents;
   final Stream<List<LibraryDocument>>? favorites;
 
@@ -81,6 +86,15 @@ class HomeDashboard extends StatelessWidget {
                     _ContinueCard(
                       document: recent.first,
                       thumbnail: thumbnails?.fileFor(recent.first.identity),
+                      actions: DocumentRowActions(
+                        document: recent.first,
+                        library: library,
+                        actions: actions,
+                        showRemoveFromRecents: true,
+                        foregroundColor: Theme.of(context)
+                            .colorScheme
+                            .onPrimary,
+                      ),
                       now: now,
                       onOpen: onOpen,
                     ),
@@ -161,6 +175,12 @@ class HomeDashboard extends StatelessWidget {
                       for (final document in recent.skip(1).take(5))
                         _RecentRow(
                           document: document,
+                          actions: DocumentRowActions(
+                            document: document,
+                            library: library,
+                            actions: actions,
+                            showRemoveFromRecents: true,
+                          ),
                           now: now,
                           onOpen: onOpen,
                         ),
@@ -195,12 +215,14 @@ String pageLabel(AppLocalizations l10n, LibraryDocument document) =>
 class _ContinueCard extends StatelessWidget {
   const _ContinueCard({
     required this.document,
+    required this.actions,
     required this.thumbnail,
     required this.now,
     required this.onOpen,
   });
 
   final LibraryDocument document;
+  final Widget actions;
   final File? thumbnail;
   final DateTime now;
   final ValueChanged<LibraryDocument> onOpen;
@@ -227,7 +249,12 @@ class _ContinueCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Cover(file: thumbnail, width: 120, height: 166),
+              Column(
+                children: [
+                  Cover(file: thumbnail, width: 120, height: 166),
+                  actions,
+                ],
+              ),
               const SizedBox(width: 24),
               Expanded(
                 child: Column(
@@ -454,11 +481,13 @@ class _FolderTile extends StatelessWidget {
 class _RecentRow extends StatelessWidget {
   const _RecentRow({
     required this.document,
+    required this.actions,
     required this.now,
     required this.onOpen,
   });
 
   final LibraryDocument document;
+  final Widget actions;
   final DateTime now;
   final ValueChanged<LibraryDocument> onOpen;
 
@@ -481,28 +510,36 @@ class _RecentRow extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 52),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      document.displayName,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Flexible(
-                    child: Text(
-                      meta,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.end,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+              // The title takes the free space and the details only what
+              // they need, so the details and actions sit at the right.
+              child: LayoutBuilder(
+                builder: (context, constraints) => Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        document.displayName,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 16),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: constraints.maxWidth * 0.45,
+                      ),
+                      child: Text(
+                        meta,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    actions,
+                  ],
+                ),
               ),
             ),
           ),

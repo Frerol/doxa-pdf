@@ -116,6 +116,7 @@
   "lastReadToday": "hoje",
   "lastReadYesterday": "ontem",
   "lastReadDaysAgo": "{count, plural, =1{há 1 dia} other{há {count} dias}}",
+  "readerDocumentActions": "Ações do documento",
   "addToFavorites": "Adicionar aos favoritos",
   "removeFromFavorites": "Remover dos favoritos",
   "removeFromRecents": "Remover dos recentes",

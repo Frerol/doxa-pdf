@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:doxa_engine/testing.dart';
+import 'package:doxa_pdf/features/library/favorite_button.dart';
 import 'package:doxa_pdf/features/library/library_database.dart';
 import 'package:doxa_pdf/features/library/library_home.dart';
 import 'package:doxa_pdf/features/library/library_repository.dart';
@@ -298,6 +299,150 @@ void main() {
       if (favorite) await library.setFavorite(doc.id, true);
     }
 
+    final addFavorite = find.byTooltip('Add to favorites');
+    final removeFavorite = find.byTooltip('Remove from favorites');
+    final favoritesShelf = find.byKey(const ValueKey('section-favorites'));
+    final filledStar = find.byWidgetPredicate(
+      (widget) => widget is FavoriteStar && widget.filled,
+    );
+
+    testWidgets('FR-FILE-005: Continue reading can create the first favorite', (
+      tester,
+    ) async {
+      await seed('Calculus.pdf', 1);
+      await launch(tester);
+      expect(favoritesShelf, findsNothing);
+      expect(filledStar, findsNothing);
+      expect(
+        tester
+            .getSemantics(addFavorite)
+            .flagsCollection
+            .isSelected
+            .toBoolOrNull(),
+        isFalse,
+      );
+
+      await tester.tap(addFavorite);
+      await tester.pumpAndSettle();
+      expect(find.byType(ReaderPage), findsNothing);
+      expect(favoritesShelf, findsOneWidget);
+      expect(
+        tester
+            .getSemantics(removeFavorite)
+            .flagsCollection
+            .isSelected
+            .toBoolOrNull(),
+        isTrue,
+      );
+      expect(filledStar, findsOneWidget);
+
+      await tester.tap(removeFavorite);
+      await tester.pumpAndSettle();
+      expect(favoritesShelf, findsNothing);
+      expect(filledStar, findsNothing);
+    });
+
+    testWidgets('FR-FILE-005: a Recents row can favorite its own document', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await seed('Physics.pdf', 1);
+      await seed('Calculus.pdf', 2);
+      await launch(tester);
+      expect(addFavorite, findsNWidgets(2));
+      await tester.tap(addFavorite.last);
+      await tester.pumpAndSettle();
+
+      final docs = (await tester.runAsync(
+        () => library.watchFavorites().first,
+      ))!;
+      expect(docs.map((doc) => doc.displayName), ['Physics.pdf']);
+      expect(favoritesShelf, findsOneWidget);
+      expect(filledStar, findsOneWidget);
+      expect(
+        tester
+            .getSemantics(removeFavorite)
+            .flagsCollection
+            .isSelected
+            .toBoolOrNull(),
+        isTrue,
+      );
+      expect(find.byType(ReaderPage), findsNothing);
+    });
+
+    testWidgets('Recents rows keep their details and actions at the right', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await seed('Physics.pdf', 1);
+      await seed('Calculus.pdf', 2);
+      await launch(tester);
+      final row = find
+          .ancestor(of: addFavorite.last, matching: find.byType(Card))
+          .first;
+      final menu = find.descendant(
+        of: row,
+        matching: find.byWidgetPredicate((w) => w is PopupMenuButton),
+      );
+      // Only the row's own padding is left after its last action.
+      expect(
+        tester.getRect(row).right - tester.getRect(menu).right,
+        closeTo(16, 1),
+      );
+    });
+
+    testWidgets(
+      'FR-FILE-005: the compact reader can create the first favorite',
+      (tester) async {
+        tester.view
+          ..devicePixelRatio = 1
+          ..physicalSize = const Size(400, 800);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await launch(tester);
+        await openPicked(tester, pdf(1, 'Calculus.pdf'));
+        final menu = find.byTooltip('Document actions');
+
+        await tester.tap(menu);
+        await tester.pumpAndSettle();
+        expect(filledStar, findsNothing);
+        await tester.tap(find.text('Add to favorites'));
+        await tester.pumpAndSettle();
+        expect(find.byType(ReaderPage), findsOneWidget);
+
+        await tester.tap(menu);
+        await tester.pumpAndSettle();
+        expect(find.text('Remove from favorites'), findsOneWidget);
+        expect(filledStar, findsOneWidget);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        await closeReader(tester);
+        expect(favoritesShelf, findsOneWidget);
+        expect(filledStar, findsOneWidget);
+
+        // The wide reader reads the same saved state, and can clear it.
+        tester.view.physicalSize = const Size(800, 800);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Continue on p. 1'));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .getSemantics(removeFavorite)
+              .flagsCollection
+              .isSelected
+              .toBoolOrNull(),
+          isTrue,
+        );
+        await tester.tap(removeFavorite);
+        await tester.pumpAndSettle();
+        expect(addFavorite, findsOneWidget);
+        await closeReader(tester);
+        expect(favoritesShelf, findsNothing);
+      },
+    );
+
     testWidgets('Continue reading reopens the last document where it was', (
       tester,
     ) async {
@@ -514,7 +659,7 @@ void main() {
 
   group('rename, move and delete (FR-FILE-011)', () {
     Future<void> menu(WidgetTester tester, String item) async {
-      // Document menus are in the full lists, not on the dashboard.
+      // The dashboard and full lists offer the same document menu.
       if (find.byTooltip('Show menu').evaluate().isEmpty) {
         await seeAll(tester, 'recents');
       }
