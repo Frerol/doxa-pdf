@@ -15,6 +15,7 @@ final class FakePage {
     this.width = 612,
     this.height = 792,
     this.rotation = 0,
+    this.cropOrigin = const PdfPoint(0, 0),
     this.text = '',
     this.label,
     this.links = const [],
@@ -25,6 +26,9 @@ final class FakePage {
   final double width;
   final double height;
   final int rotation;
+
+  /// The bottom-left corner of the crop box in PDF user space.
+  final PdfPoint cropOrigin;
 
   /// Page text. Char `i` gets a 10 × 12 pt box on one line, in order.
   final String text;
@@ -132,10 +136,10 @@ final class FakePdfEngine implements PdfEngine {
     return PageDetails(
       pageIndex: index,
       cropBox: PdfRect(
-        0,
-        0,
-        rotated ? page.height : page.width,
-        rotated ? page.width : page.height,
+        page.cropOrigin.x,
+        page.cropOrigin.y,
+        page.cropOrigin.x + (rotated ? page.height : page.width),
+        page.cropOrigin.y + (rotated ? page.width : page.height),
       ),
       rotation: page.rotation,
     );

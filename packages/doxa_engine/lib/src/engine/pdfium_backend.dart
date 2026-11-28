@@ -398,13 +398,71 @@ final class PdfiumBackend implements EngineBackend {
     });
     switch (edit) {
       case AddAnnotationsEdit(:final annotations):
+        // Only Doxa's own are added, and Flutter draws those.
         _writer.add(doc, annotations);
         return null;
       case UpdateAnnotationEdit(:final annotation):
-        return _writer.update(doc, annotation);
+        final before = _foreign(doc, annotation.pageIndex, [annotation.id]);
+        final after = _writer.update(doc, annotation);
+        if (before.isNotEmpty) {
+          _mirror(documentId, annotation.pageIndex, (render) {
+            _writer.mirrorUpdate(render, before.single, after);
+          });
+        }
+        return after;
       case DeleteAnnotationsEdit(:final pageIndex, :final ids):
+        final deleted = _foreign(doc, pageIndex, ids);
         _writer.delete(doc, pageIndex, ids);
+        if (deleted.isNotEmpty) {
+          _mirror(documentId, pageIndex, (render) {
+            _writer.mirrorDelete(render, pageIndex, deleted);
+          });
+        }
         return null;
+    }
+  }
+
+  /// The annotations of other apps among [ids] on [pageIndex] of [doc].
+  List<Annotation> _foreign(_DocPtr doc, int pageIndex, List<String> ids) => [
+    for (final a in _annotations.read(doc, pageIndex))
+      if (!a.byDoxa && ids.contains(a.id)) a,
+  ];
+
+  /// Changes another app's annotations in the render instance as they
+  /// changed in the editing instance, since tiles draw them (ADR-0005).
+  /// The page is closed first, so its next render loads it again and
+  /// PDFium rebuilds appearances it removed. An annotation the render
+  /// instance does not hold any more stays as it was until the next save
+  /// reopens the instance.
+  void _mirror(int documentId, int pageIndex, void Function(_DocPtr) change) {
+    final document = _document(documentId);
+    final cached = document.pages.remove(pageIndex);
+    if (cached != null) _pdf.FPDF_ClosePage(cached);
+    try {
+      change(document.render);
+    } on PdfEngineException {
+      // The edit itself succeeded; tiles show the old state until the
+      // next save reopens the render instance.
+    }
+  }
+
+  /// Hides Doxa's own annotations of a render-instance page, in memory
+  /// only (ADR-0005 §3): Flutter draws them, and the render instance is
+  /// never saved.
+  void _hideDoxa(_PagePtr page) {
+    final count = _pdf.FPDFPage_GetAnnotCount(page);
+    for (var i = 0; i < count; i++) {
+      final annot = _pdf.FPDFPage_GetAnnot(page, i);
+      if (annot == nullptr) continue;
+      try {
+        if (!_annotations.isDoxa(annot)) continue;
+        final flags = _pdf.FPDFAnnot_GetFlags(annot);
+        if (flags & FPDF_ANNOT_FLAG_HIDDEN == 0) {
+          _pdf.FPDFAnnot_SetFlags(annot, flags | FPDF_ANNOT_FLAG_HIDDEN);
+        }
+      } finally {
+        _pdf.FPDFPage_CloseAnnot(annot);
+      }
     }
   }
 
@@ -627,6 +685,7 @@ final class PdfiumBackend implements EngineBackend {
         'Cannot load page $pageIndex',
       );
     }
+    _hideDoxa(page);
     document.pages[pageIndex] = page;
     if (document.pages.length > pageCacheSize) {
       _pdf.FPDF_ClosePage(document.pages.remove(document.pages.keys.first)!);

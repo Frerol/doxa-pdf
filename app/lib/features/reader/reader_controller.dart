@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:doxa_core/doxa_core.dart';
@@ -9,6 +10,7 @@ import 'package:doxa_engine/doxa_engine.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'annotation_layer.dart';
 import 'reader_geometry.dart';
 import 'tile_cache.dart';
 
@@ -84,6 +86,13 @@ final class ReaderController {
 
   /// Bumped whenever the picture changes.
   final repaint = ValueNotifier<int>(0);
+
+  /// The document's annotations; the reader draws Doxa's own (ADR-0005).
+  late final annotations = DocumentAnnotations(engine, document)
+    ..onChanged = _annotationsChanged;
+
+  /// The stroke being drawn, on its own layer (ADR-0006); null when none.
+  final liveStroke = ValueNotifier<LiveStroke?>(null);
 
   /// The page under the middle of the screen, for page indicators.
   final page = ValueNotifier<int>(0);
@@ -220,7 +229,7 @@ final class ReaderController {
     // Tiles depend on the page size in pixels: drop those of the old layout.
     _layoutEpoch++;
     _pending.removeWhere((key, _) => key.startsWith('t:'));
-    cache.removeWhere((key) => key.startsWith('t:'));
+    cache.removeWhere((key) => key.startsWith('t:') || _isInkKey(key));
   }
 
   /// The reading position: a page and a point of it, as fractions of the
@@ -454,6 +463,78 @@ final class ReaderController {
       Offset(x1, y1),
       Offset(x2, y2),
     ).shift(pageRect.topLeft);
+  }
+
+  /// The matrix from PDF user space of [page] to document units, or null
+  /// until the page's details have loaded.
+  Float64List? userToDocument(int page) {
+    final layout = _layout;
+    final details = _resolvedDetails[page];
+    if (layout == null || details == null || page >= layout.pageCount) {
+      return null;
+    }
+    final pageRect = layout.pageRect(page);
+    final transform = _transform(details, pageRect);
+    return transform == null ? null : userToDocumentMatrix(transform, pageRect);
+  }
+
+  /// The committed ink of [tool] on [tile], rasterised on first use and
+  /// cached like page tiles (ADR-0006): frames composite it instead of
+  /// replaying every stroke. Null where the tile has no such ink.
+  ui.Image? inkTile(TileSpec tile, InkTool tool) {
+    final key = _inkKey(tile.key, tool);
+    final cached = cache.peek(key);
+    if (cached != null) return cached;
+    final matrix = userToDocument(tile.page);
+    if (matrix == null) return null;
+    final inks = [
+      for (final a in annotations.drawn(tile.page))
+        if (a is InkAnnotation &&
+            a.tool == tool &&
+            (documentRect(tile.page, a.rect)?.overlaps(tile.destination) ??
+                false))
+          a,
+    ];
+    if (inks.isEmpty) return null;
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder)
+      ..scale(tile.width / tile.destination.width)
+      ..translate(-tile.destination.left, -tile.destination.top)
+      ..transform(matrix);
+    for (final ink in inks) {
+      canvas.drawPath(inkPath(ink), inkPaint(ink));
+    }
+    final picture = recorder.endRecording();
+    final image = picture.toImageSync(tile.width, tile.height);
+    picture.dispose();
+    cache.put(key, image);
+    return image;
+  }
+
+  static String _inkKey(String tileKey, InkTool tool) =>
+      'i${tool.index}${tileKey.substring(1)}';
+
+  static bool _isInkKey(String key) => key.startsWith('i');
+
+  void _annotationsChanged(Set<int> pages) {
+    if (_disposed) return;
+    cache.removeWhere((key) {
+      if (!_isInkKey(key)) return false;
+      final page = int.tryParse(key.split(':')[1]);
+      return pages.contains(page);
+    });
+    repaint.value++;
+  }
+
+  /// Renders [page] again, after another app's annotation on it changed:
+  /// its tiles show the change (ADR-0005).
+  void reloadPage(int page) {
+    if (_disposed) return;
+    bool ofPage(String key) => key == 'p:$page' || key.startsWith('t:$page:');
+    _pending.removeWhere((key, _) => ofPage(key));
+    cache.removeWhere(ofPage);
+    _ensure();
+    repaint.value++;
   }
 
   /// A point in document units mapped to PDF user space of [page], or null
@@ -826,7 +907,12 @@ final class ReaderController {
     return {
       for (final page in layout.pagesIn(visible)) ...[
         'p:$page',
-        for (final tile in _tiles(page, visible)) tile.key,
+        for (final tile in _tiles(page, visible)) ...[
+          tile.key,
+          for (final tool in InkTool.values)
+            if (cache.contains(_inkKey(tile.key, tool)))
+              _inkKey(tile.key, tool),
+        ],
       ],
     };
   }
@@ -924,6 +1010,14 @@ final class ReaderController {
     final visiblePages = layout.pagesIn(visible).toList();
     _loadVisibleDetails();
     for (final page in visiblePages) {
+      if (annotations.isLoaded(page)) continue;
+      unawaited(
+        pageDetails(page)
+            .then((_) => annotations.load(page))
+            .catchError((Object _) {}),
+      );
+    }
+    for (final page in visiblePages) {
       _request(previewFor(layout, page), RenderPriority.visiblePreview);
     }
     for (final page in visiblePages) {
@@ -995,6 +1089,7 @@ final class ReaderController {
     _disposed = true;
     cache.clear();
     repaint.dispose();
+    liveStroke.dispose();
     page.dispose();
     history.dispose();
   }
