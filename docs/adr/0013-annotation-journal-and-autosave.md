@@ -1,6 +1,6 @@
 # ADR-0013 — Annotation journal and autosave
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-28
 
 ## Context
