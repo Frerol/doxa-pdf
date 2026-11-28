@@ -89,6 +89,12 @@ final class AnnotationReader {
     return nm == null || nm.isEmpty ? 'page$pageIndex-annot$index' : nm;
   }
 
+  /// Whether the annotation is one of Doxa's own ([DoxaMarker]).
+  bool isDoxa(Pointer<fpdf_annotation_t__> annot) => DoxaMarker.owns(
+    nm: _string(annot, 'NM'),
+    versionValue: _string(annot, DoxaMarker.versionKey),
+  );
+
   /// Whether the annotation has an appearance dictionary.
   bool hasAppearance(Pointer<fpdf_annotation_t__> annot) => _has(annot, 'AP');
 

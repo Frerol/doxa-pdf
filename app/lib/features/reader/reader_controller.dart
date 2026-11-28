@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:doxa_core/doxa_core.dart';
@@ -9,6 +10,7 @@ import 'package:doxa_engine/doxa_engine.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'annotation_layer.dart';
 import 'reader_geometry.dart';
 import 'tile_cache.dart';
 
@@ -58,12 +60,14 @@ final class ReaderController {
     required this.document,
     required this.info,
     BitmapDecoder decoder = decodeBitmap,
+    InkRasterizer inkRasterizer = rasterizeInk,
     int cacheBudgetBytes = 160 << 20,
     ReaderOptions options = const ReaderOptions(),
     ReadingPosition? initialPosition,
     FitMode fitMode = FitMode.page,
     bool zoomOutPastFit = false,
   }) : _decode = decoder,
+       _rasterizeInk = inkRasterizer,
        _options = options, // ignore: prefer_initializing_formals
        _initial = initialPosition,
        _fitMode = fitMode, // ignore: prefer_initializing_formals
@@ -84,6 +88,13 @@ final class ReaderController {
 
   /// Bumped whenever the picture changes.
   final repaint = ValueNotifier<int>(0);
+
+  /// The document's annotations; the reader draws Doxa's own (ADR-0005).
+  late final annotations = DocumentAnnotations(engine, document)
+    ..onChanged = _annotationsChanged;
+
+  /// The stroke being drawn, on its own layer (ADR-0006); null when none.
+  final liveStroke = ValueNotifier<LiveStroke?>(null);
 
   /// The page under the middle of the screen, for page indicators.
   final page = ValueNotifier<int>(0);
@@ -220,7 +231,7 @@ final class ReaderController {
     // Tiles depend on the page size in pixels: drop those of the old layout.
     _layoutEpoch++;
     _pending.removeWhere((key, _) => key.startsWith('t:'));
-    cache.removeWhere((key) => key.startsWith('t:'));
+    cache.removeWhere((key) => key.startsWith('t:') || _isInkKey(key));
   }
 
   /// The reading position: a page and a point of it, as fractions of the
@@ -454,6 +465,148 @@ final class ReaderController {
       Offset(x1, y1),
       Offset(x2, y2),
     ).shift(pageRect.topLeft);
+  }
+
+  /// The matrix from PDF user space of [page] to document units, or null
+  /// until the page's details have loaded.
+  Float64List? userToDocument(int page) {
+    final layout = _layout;
+    final details = _resolvedDetails[page];
+    if (layout == null || details == null || page >= layout.pageCount) {
+      return null;
+    }
+    final pageRect = layout.pageRect(page);
+    final transform = _transform(details, pageRect);
+    return transform == null ? null : userToDocumentMatrix(transform, pageRect);
+  }
+
+  /// The committed ink of [tool] on [tile] once it is rasterised, or
+  /// null. Frames composite these tiles instead of replaying every stroke
+  /// (ADR-0006); [_ensureInk] builds them ahead of the screen.
+  ui.Image? inkTile(TileSpec tile, InkTool tool) =>
+      cache.peek(_inkKey(tile.key, tool));
+
+  /// Doxa's ink of [tool] that touches [tile]. While its tile is not
+  /// rasterised, the painter draws these as vectors, so ink never blinks.
+  List<InkAnnotation> inksOn(TileSpec tile, InkTool tool) => [
+    for (final (ink, rect) in _inkRects(tile.page))
+      if (ink.tool == tool && rect.overlaps(tile.destination)) ink,
+  ];
+
+  /// Doxa's ink of [page] with its bounds in document units, kept until
+  /// the page's annotations or the layout change.
+  List<(InkAnnotation, Rect)> _inkRects(int page) {
+    final key = (_layoutEpoch, _inkVersion(page));
+    final cached = _inkBounds[page];
+    if (cached != null && cached.$1 == key) return cached.$2;
+    if (userToDocument(page) == null) return const [];
+    final list = [
+      for (final a in annotations.drawn(page))
+        if (a is InkAnnotation)
+          if (documentRect(page, a.rect) case final rect?) (a, rect),
+    ];
+    _inkBounds[page] = (key, list);
+    return list;
+  }
+
+  final _inkBounds = <int, ((int, int), List<(InkAnnotation, Rect)>)>{};
+  final _inkVersions = <int, int>{};
+  final _inkPending = <String>{};
+
+  /// Ink tiles rasterised since the view or the ink last changed. One the
+  /// cache drops for the budget is not made again until then, which would
+  /// loop.
+  final _inkTried = <String>{};
+  var _inkWanted = <TileSpec>[];
+  final InkRasterizer _rasterizeInk;
+
+  int _inkVersion(int page) => _inkVersions[page] ?? 0;
+
+  /// At most this many ink tiles rasterise at once, so a new zoom level
+  /// spreads its work over frames.
+  static const maxInkRasterizing = 4;
+
+  /// Rasterises the ink tiles of [_inkWanted] (the screen first, then one
+  /// screen ahead) that are missing, a few at a time.
+  void _ensureInk() {
+    if (_disposed || _renderingSuspended) return;
+    for (final tile in _inkWanted) {
+      if (_inkPending.length >= maxInkRasterizing) return;
+      for (final tool in InkTool.values) {
+        final key = _inkKey(tile.key, tool);
+        if (_inkTried.contains(key) || cache.contains(key)) continue;
+        final inks = inksOn(tile, tool);
+        final matrix = userToDocument(tile.page);
+        if (inks.isEmpty || matrix == null) continue;
+        final recorder = ui.PictureRecorder();
+        final canvas = Canvas(recorder)
+          ..scale(tile.width / tile.destination.width)
+          ..translate(-tile.destination.left, -tile.destination.top)
+          ..transform(matrix);
+        for (final ink in inks) {
+          canvas.drawPath(inkPath(ink), inkPaint(ink));
+        }
+        final picture = recorder.endRecording();
+        _inkPending.add(key);
+        _inkTried.add(key);
+        final version = _inkVersion(tile.page), epoch = _layoutEpoch;
+        unawaited(
+          _rasterizeInk(picture, tile.width, tile.height)
+              .then((image) {
+                if (_disposed ||
+                    epoch != _layoutEpoch ||
+                    version != _inkVersion(tile.page)) {
+                  image.dispose();
+                  return;
+                }
+                cache.put(key, image);
+                // Ink tiles share the page tiles' budget.
+                cache.evict(keep: visibleKeys());
+                repaint.value++;
+              }, onError: (Object _) {})
+              .whenComplete(() {
+                picture.dispose();
+                _inkPending.remove(key);
+                _ensureInk();
+              }),
+        );
+      }
+    }
+  }
+
+  static String _inkKey(String tileKey, InkTool tool) =>
+      'i${tool.index}${tileKey.substring(1)}';
+
+  static bool _isInkKey(String key) => key.startsWith('i');
+
+  void _annotationsChanged(Set<int> pages) {
+    if (_disposed) return;
+    for (final page in pages) {
+      _inkVersions[page] = _inkVersion(page) + 1;
+    }
+    _inkTried.removeWhere(
+      (key) => pages.contains(int.tryParse(key.split(':')[1])),
+    );
+    // Old tiles would show the old ink: drop them. Until new ones are
+    // rasterised, the painter draws the page's ink as vectors.
+    cache.removeWhere((key) {
+      if (!_isInkKey(key)) return false;
+      final page = int.tryParse(key.split(':')[1]);
+      return pages.contains(page);
+    });
+    _ensureInk();
+    repaint.value++;
+  }
+
+  /// Renders [page] again, after another app's annotation on it changed:
+  /// its tiles show the change (ADR-0005).
+  void reloadPage(int page) {
+    if (_disposed) return;
+    bool ofPage(String key) => key == 'p:$page' || key.startsWith('t:$page:');
+    _pending.removeWhere((key, _) => ofPage(key));
+    cache.removeWhere(ofPage);
+    _ensure();
+    repaint.value++;
   }
 
   /// A point in document units mapped to PDF user space of [page], or null
@@ -826,7 +979,12 @@ final class ReaderController {
     return {
       for (final page in layout.pagesIn(visible)) ...[
         'p:$page',
-        for (final tile in _tiles(page, visible)) tile.key,
+        for (final tile in _tiles(page, visible)) ...[
+          tile.key,
+          for (final tool in InkTool.values)
+            if (cache.contains(_inkKey(tile.key, tool)))
+              _inkKey(tile.key, tool),
+        ],
       ],
     };
   }
@@ -924,6 +1082,14 @@ final class ReaderController {
     final visiblePages = layout.pagesIn(visible).toList();
     _loadVisibleDetails();
     for (final page in visiblePages) {
+      if (annotations.isLoaded(page)) continue;
+      unawaited(
+        pageDetails(page)
+            .then((_) => annotations.load(page))
+            .catchError((Object _) {}),
+      );
+    }
+    for (final page in visiblePages) {
       _request(previewFor(layout, page), RenderPriority.visiblePreview);
     }
     for (final page in visiblePages) {
@@ -940,6 +1106,12 @@ final class ReaderController {
         _request(tile, RenderPriority.nearTile);
       }
     }
+    _inkTried.clear();
+    _inkWanted = [
+      for (final page in visiblePages) ..._tiles(page, visible),
+      for (final page in nearPages) ..._tiles(page, near),
+    ];
+    _ensureInk();
   }
 
   void _request(TileSpec spec, RenderPriority priority) {
@@ -995,6 +1167,7 @@ final class ReaderController {
     _disposed = true;
     cache.clear();
     repaint.dispose();
+    liveStroke.dispose();
     page.dispose();
     history.dispose();
   }

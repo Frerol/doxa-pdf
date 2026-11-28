@@ -3,12 +3,14 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:doxa_core/doxa_core.dart';
 import 'package:doxa_engine/doxa_engine.dart';
 import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'annotation_layer.dart';
 import 'frame_probe.dart';
 import 'reader_controller.dart';
 import 'reader_geometry.dart';
@@ -417,30 +419,42 @@ class _ReaderViewState extends State<ReaderView>
                 : (details) => unawaited(
                     widget.selection!.extendTo(details.localPosition),
                   ),
-            child: RepaintBoundary(
-              child: CustomPaint(
-                size: size,
-                painter: ReaderPainter(
-                  _controller,
-                  // Behind the page (UX §5): the deepest surface in the dark theme,
-                  // a soft grey in the light one.
-                  background: Theme.of(context).brightness == Brightness.dark
-                      ? colors.surfaceContainerLowest
-                      : colors.surfaceContainerHigh,
-                  probe: widget.probe,
-                  selection: widget.selection,
-                  highlightColors: {
-                    HighlightLayer.searchHits: const Color(0x66FFD54F),
-                    HighlightLayer.currentHit: const Color(0x99FF9800),
-                    HighlightLayer.selection: colors.primary.withValues(
-                      alpha: 0.3,
+            child: Stack(
+              children: [
+                RepaintBoundary(
+                  child: CustomPaint(
+                    size: size,
+                    painter: ReaderPainter(
+                      _controller,
+                      // Behind the page (UX §5): the deepest surface in the dark theme,
+                      // a soft grey in the light one.
+                      background:
+                          Theme.of(context).brightness == Brightness.dark
+                          ? colors.surfaceContainerLowest
+                          : colors.surfaceContainerHigh,
+                      probe: widget.probe,
+                      selection: widget.selection,
+                      highlightColors: {
+                        HighlightLayer.searchHits: const Color(0x66FFD54F),
+                        HighlightLayer.currentHit: const Color(0x99FF9800),
+                        HighlightLayer.selection: colors.primary.withValues(
+                          alpha: 0.3,
+                        ),
+                      },
+                      handleColor: colors.primary,
+                      colorFilter: widget.colorFilter,
+                      sheetColor: widget.sheetColor,
                     ),
-                  },
-                  handleColor: colors.primary,
-                  colorFilter: widget.colorFilter,
-                  sheetColor: widget.sheetColor,
+                  ),
                 ),
-              ),
+                // The stroke being drawn repaints alone (ADR-0006).
+                RepaintBoundary(
+                  child: CustomPaint(
+                    size: size,
+                    painter: LiveStrokePainter(_controller),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -507,6 +521,7 @@ class ReaderPainter extends CustomPainter {
           _draw(canvas, tileImage, tile.destination, image);
         }
       }
+      _paintAnnotations(canvas, page);
     }
     for (final page in layout.pagesIn(visible)) {
       for (final MapEntry(key: layer, value: color)
@@ -531,6 +546,56 @@ class ReaderPainter extends CustomPainter {
     probe?.painted(blank: blank);
   }
 
+  /// Doxa's own annotations of [page] over its tiles (ADR-0005 §4):
+  /// markup as vectors, then committed ink from its own tiles, the
+  /// highlighter's with Multiply (FR-INK-004).
+  void _paintAnnotations(Canvas canvas, int page) {
+    final matrix = controller.userToDocument(page);
+    if (matrix == null) return;
+    final drawn = controller.annotations.drawn(page);
+    if (drawn.isEmpty) return;
+    canvas
+      ..save()
+      ..transform(matrix);
+    for (final markup in drawn.whereType<TextMarkup>()) {
+      paintMarkup(canvas, markup);
+    }
+    canvas.restore();
+    final multiply = Paint()
+      ..filterQuality = FilterQuality.low
+      ..blendMode = BlendMode.multiply;
+    final normal = Paint()..filterQuality = FilterQuality.low;
+    for (final tool in [InkTool.highlighter, InkTool.pen]) {
+      final paint = tool == InkTool.highlighter ? multiply : normal;
+      final missing = ui.Path();
+      final vectors = <InkAnnotation>{};
+      for (final tile in controller.visibleTiles(page)) {
+        final ink = controller.inkTile(tile, tool);
+        if (ink != null) {
+          _draw(canvas, ink, tile.destination, paint);
+          continue;
+        }
+        final inks = controller.inksOn(tile, tool);
+        if (inks.isEmpty) continue;
+        missing.addRect(tile.destination);
+        vectors.addAll(inks);
+      }
+      if (vectors.isEmpty) continue;
+      // Until its tiles are rasterised, ink draws as vectors there.
+      canvas
+        ..save()
+        ..clipPath(missing)
+        ..saveLayer(missing.getBounds(), paint)
+        ..transform(matrix);
+      for (final ink in vectors) {
+        canvas.drawPath(inkPath(ink), inkPaint(ink));
+      }
+      canvas
+        ..restore()
+        ..restore();
+    }
+  }
+
   void _draw(Canvas canvas, ui.Image image, Rect destination, Paint paint) {
     canvas.drawImageRect(
       image,
@@ -549,4 +614,34 @@ class ReaderPainter extends CustomPainter {
       oldDelegate.colorFilter != colorFilter ||
       oldDelegate.sheetColor != sheetColor ||
       !mapEquals(oldDelegate.highlightColors, highlightColors);
+}
+
+/// Paints [ReaderController.liveStroke] on its own layer, so a pen sample
+/// repaints only this stroke (ADR-0006).
+class LiveStrokePainter extends CustomPainter {
+  LiveStrokePainter(this.controller)
+    : super(
+        repaint: Listenable.merge([controller.repaint, controller.liveStroke]),
+      );
+
+  final ReaderController controller;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stroke = controller.liveStroke.value;
+    if (stroke == null || stroke.points.isEmpty) return;
+    final matrix = controller.userToDocument(stroke.pageIndex);
+    if (matrix == null) return;
+    final offset = controller.offset;
+    canvas
+      ..clipRect(Offset.zero & size)
+      ..scale(controller.zoom)
+      ..translate(-offset.dx, -offset.dy)
+      ..transform(matrix)
+      ..drawPath(stroke.path(), stroke.paint());
+  }
+
+  @override
+  bool shouldRepaint(LiveStrokePainter oldDelegate) =>
+      oldDelegate.controller != controller;
 }

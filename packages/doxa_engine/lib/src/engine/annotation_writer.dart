@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:convert';
 import 'dart:ffi';
 
 import 'package:doxa_core/doxa_core.dart';
@@ -131,6 +132,68 @@ final class AnnotationWriter {
     _remove(page, indices);
   });
 
+  /// Applies to the render instance [doc] the change of another app's
+  /// annotation from [before] to [after] that [update] made in the editing
+  /// instance, so tiles show it (ADR-0005). The annotation is found by its
+  /// content (`/Rect` aside, see [_contentKey]): ids can differ between the instances, since one without
+  /// `/NM` gets a new one when edited. [after]'s `/NM` is copied, so later
+  /// edits find it either way. Returns false when it is not found.
+  bool mirrorUpdate(
+    Pointer<fpdf_document_t__> doc,
+    Annotation before,
+    Annotation after,
+  ) => _onPage(doc, before.pageIndex, (page) {
+    final index = _findLike(page, before);
+    if (index == null) return false;
+    final annot = _pdf.FPDFPage_GetAnnot(page, index);
+    try {
+      final current = _reader.readOne(annot, before.pageIndex, index)!;
+      _patchForeign(annot, current, after, nm: after.id, rendered: true);
+      return true;
+    } finally {
+      _pdf.FPDFPage_CloseAnnot(annot);
+    }
+  });
+
+  /// Deletes from the render instance [doc] the annotations of another app
+  /// that [delete] removed from the editing instance, found by content as
+  /// in [mirrorUpdate]. Returns false when one is not found; the others
+  /// are still deleted.
+  bool mirrorDelete(
+    Pointer<fpdf_document_t__> doc,
+    int pageIndex,
+    List<Annotation> deleted,
+  ) {
+    final ids = _onPage(doc, pageIndex, (page) {
+      return [
+        for (final annotation in deleted)
+          if (_findLike(page, annotation) case final index?)
+            _idAt(page, pageIndex, index),
+      ];
+    });
+    if (ids.isNotEmpty) delete(doc, pageIndex, ids);
+    return ids.length == deleted.length;
+  }
+
+  /// The index of the annotation equal to [wanted] in all but its id.
+  int? _findLike(_Page page, Annotation wanted) {
+    final key = _contentKey(wanted);
+    final count = _pdf.FPDFPage_GetAnnotCount(page);
+    for (var i = 0; i < count; i++) {
+      final annotation = _readAt(page, wanted.pageIndex, i);
+      if (annotation != null && _contentKey(annotation) == key) return i;
+    }
+    return null;
+  }
+
+  /// [annotation] without its id and `/Rect`: PDFium grows the `/Rect`
+  /// of an annotation whose appearance it builds while rendering.
+  static String _contentKey(Annotation annotation) => jsonEncode(
+    AnnotationJson.encode(annotation)
+      ..remove('id')
+      ..remove('rect'),
+  );
+
   T _onPage<T>(
     Pointer<fpdf_document_t__> doc,
     int pageIndex,
@@ -173,6 +236,15 @@ final class AnnotationWriter {
       }
     }
     return null;
+  }
+
+  String _idAt(_Page page, int pageIndex, int index) {
+    final annot = _pdf.FPDFPage_GetAnnot(page, index);
+    try {
+      return _reader.idOf(annot, pageIndex, index);
+    } finally {
+      _pdf.FPDFPage_CloseAnnot(annot);
+    }
   }
 
   Annotation? _readAt(_Page page, int pageIndex, int index) {
@@ -338,10 +410,16 @@ final class AnnotationWriter {
   }
 
   /// Patches the keys of another app's annotation that [wanted] changes.
-  void _patchForeign(_Annot annot, Annotation current, Annotation wanted) {
+  void _patchForeign(
+    _Annot annot,
+    Annotation current,
+    Annotation wanted, {
+    String? nm,
+    bool rendered = false,
+  }) {
     if (wanted.byDoxa ||
         wanted.subtype != current.subtype ||
-        wanted.rect != current.rect ||
+        (wanted.rect != current.rect && !rendered) ||
         !_sameGeometry(current, wanted)) {
       throw PdfEngineException(
         EngineErrorKind.unsupportedEdit,
@@ -352,8 +430,11 @@ final class AnnotationWriter {
     if (wanted.color != current.color || wanted.opacity != current.opacity) {
       if (_reader.hasAppearance(annot)) {
         // A markup is drawn without /AP (ADR-0008), so its appearance can
-        // go; other appearances would need rebuilding.
-        if (current is! TextMarkup) {
+        // go; other appearances would need rebuilding. In a [rendered]
+        // instance, an edit that passed in the editing instance means any
+        // other appearance is one PDFium generated while rendering, which
+        // it builds again when the page reloads.
+        if (current is! TextMarkup && !rendered) {
           throw PdfEngineException(
             EngineErrorKind.unsupportedEdit,
             'The appearance of ${wanted.subtype} ${wanted.id} sets its colour',
@@ -381,7 +462,9 @@ final class AnnotationWriter {
       _check(_pdf.FPDFAnnot_SetFlags(annot, wanted.flags) != 0, 'SetFlags');
     }
     // An annotation without /NM gets one the first time it changes (03 §5).
-    if (!_hasKey(annot, 'NM')) _setString(annot, 'NM', AnnotationId.generate());
+    if (!_hasKey(annot, 'NM')) {
+      _setString(annot, 'NM', nm ?? AnnotationId.generate());
+    }
     _setString(annot, 'M', formatPdfDate(wanted.modified ?? now()));
   }
 
