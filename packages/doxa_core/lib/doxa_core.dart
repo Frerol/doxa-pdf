@@ -8,7 +8,10 @@
 library;
 
 export 'src/annotation.dart';
+export 'src/annotation_command.dart';
+export 'src/annotation_history.dart';
 export 'src/annotation_id.dart';
+export 'src/annotation_json.dart' show AnnotationJson;
 export 'src/geometry.dart';
 export 'src/page_transform.dart';
 export 'src/pdf_date.dart';
