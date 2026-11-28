@@ -225,5 +225,22 @@
   "dictionaryCatalogFailed": "Não foi possível carregar a lista de dicionários. Tente mais tarde ou importe um arquivo de dicionário.",
   "dictionaryDownloadFailed": "O download falhou. Tente mais tarde.",
   "dictionaryCorrupt": "O arquivo baixado está danificado. Tente de novo.",
-  "dictionaryDownloadsNote": "Os dicionários são baixados das versões do Doxa no GitHub. As palavras que você consulta nunca saem deste aparelho."
+  "dictionaryDownloadsNote": "Os dicionários são baixados das versões do Doxa no GitHub. As palavras que você consulta nunca saem deste aparelho.",
+  "settingsAnnotationSaving": "Salvamento de anotações",
+  "settingsAnnotationSavingHint": "Escolha quando salvar as alterações no PDF.",
+  "annotationAutosave": "Salvar automaticamente",
+  "annotationAskOnClose": "Perguntar ao fechar",
+  "annotationUnsaved": "Alterações não salvas",
+  "annotationRestore": "Restaurar alterações",
+  "annotationDiscard": "Descartar",
+  "annotationSave": "Salvar",
+  "annotationRestorePrompt": "Restaurar as anotações não salvas deste PDF?",
+  "annotationChangedPrompt": "Este PDF mudou desde a sua edição. Restaurar as alterações que ainda podem ser aplicadas?",
+  "annotationSkipped": "{count, plural, one{Uma alteração não pôde ser restaurada.} other{{count} alterações não puderam ser restauradas.}}",
+  "annotationMissingPrompt": "O PDF está indisponível. Localize o arquivo novamente ou descarte as alterações não salvas.",
+  "annotationLocate": "Localizar arquivo",
+  "annotationClosePrompt": "Salvar as alterações antes de fechar esta aba?",
+  "annotationSaveFailed": "Não foi possível salvar as anotações.",
+  "annotationEditFailed": "Não foi possível aplicar as alterações nas anotações.",
+  "annotationReadOnly": "Não é possível gravar neste PDF. As alterações não salvas foram mantidas para recuperação."
 }

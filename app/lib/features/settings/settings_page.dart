@@ -136,6 +136,26 @@ final List<_Setting> _settings = [
     },
   ),
   (
+    category: SettingsCategory.general,
+    section: (l10n) => l10n.settingsAnnotationSaving,
+    title: (l10n) => l10n.settingsAnnotationSaving,
+    description: (l10n) => l10n.settingsAnnotationSavingHint,
+    build: (context, settings, _) {
+      final l10n = AppLocalizations.of(context);
+      return _ChoiceTile<bool>(
+        title: l10n.settingsAnnotationSaving,
+        description: l10n.settingsAnnotationSavingHint,
+        value: settings.value.annotationAutosave,
+        choices: {
+          true: l10n.annotationAutosave,
+          false: l10n.annotationAskOnClose,
+        },
+        onChanged: (value) =>
+            settings.update(settings.value.copyWith(annotationAutosave: value)),
+      );
+    },
+  ),
+  (
     category: SettingsCategory.viewing,
     section: (l10n) => l10n.settingsReading,
     title: (l10n) => l10n.settingsFitMode,

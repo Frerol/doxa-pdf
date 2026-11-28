@@ -20,6 +20,7 @@ final class AppSettings {
     this.customBackground = defaultCustomBackground,
     this.customText = defaultCustomText,
     this.keepScreenOn = false,
+    this.annotationAutosave = true,
     this.readerMode = ReaderMode.continuous,
     this.coverPage = true,
     this.tapZones = true,
@@ -43,6 +44,7 @@ final class AppSettings {
 
   /// Keep the screen on while a document is open.
   final bool keepScreenOn;
+  final bool annotationAutosave;
 
   /// Layout defaults every document opens with (FR-VIEW-006); right to
   /// left is per document (FR-VIEW-019) and not kept here.
@@ -65,6 +67,7 @@ final class AppSettings {
     Color? customBackground,
     Color? customText,
     bool? keepScreenOn,
+    bool? annotationAutosave,
     ReaderMode? readerMode,
     bool? coverPage,
     bool? tapZones,
@@ -79,6 +82,7 @@ final class AppSettings {
     customBackground: customBackground ?? this.customBackground,
     customText: customText ?? this.customText,
     keepScreenOn: keepScreenOn ?? this.keepScreenOn,
+    annotationAutosave: annotationAutosave ?? this.annotationAutosave,
     readerMode: readerMode ?? this.readerMode,
     coverPage: coverPage ?? this.coverPage,
     tapZones: tapZones ?? this.tapZones,
@@ -95,6 +99,7 @@ final class AppSettings {
     'customBackground': customBackground.toARGB32(),
     'customText': customText.toARGB32(),
     'keepScreenOn': keepScreenOn,
+    'annotationAutosave': annotationAutosave,
     'readerMode': readerMode.name,
     'coverPage': coverPage,
     'tapZones': tapZones,
@@ -133,6 +138,10 @@ final class AppSettings {
       ),
       customText: Color(pick('customText', defaults.customText.toARGB32())),
       keepScreenOn: pick('keepScreenOn', defaults.keepScreenOn),
+      annotationAutosave: pick(
+        'annotationAutosave',
+        defaults.annotationAutosave,
+      ),
       readerMode: named(ReaderMode.values, 'readerMode', defaults.readerMode),
       coverPage: pick('coverPage', defaults.coverPage),
       tapZones: pick('tapZones', defaults.tapZones),

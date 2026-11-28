@@ -87,13 +87,47 @@ class OpenTabs extends Table {
   Set<Column<Object>> get primaryKey => {documentId};
 }
 
-@DriftDatabase(tables: [Documents, Folders, OpenTabs])
+@DataClassName('JournalSessionRow')
+class JournalSessions extends Table {
+  IntColumn get documentId => integer()();
+  TextColumn get location => text()();
+  TextColumn get baseIdentity => text()();
+  TextColumn get displayName => text()();
+  DateTimeColumn get startedAt => dateTime()();
+  IntColumn get format => integer().withDefault(const Constant(1))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {documentId};
+}
+
+class JournalEntries extends Table {
+  IntColumn get sessionId => integer().references(
+    JournalSessions,
+    #documentId,
+    onDelete: KeyAction.cascade,
+  )();
+  IntColumn get sequence => integer()();
+  TextColumn get command => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {sessionId, sequence};
+}
+
+@DriftDatabase(
+  tables: [Documents, Folders, OpenTabs, JournalSessions, JournalEntries],
+)
 class LibraryDatabase extends _$LibraryDatabase {
   LibraryDatabase(super.executor);
 
   /// Opens the database file in [directory], on a background isolate.
   factory LibraryDatabase.inDirectory(String directory) => LibraryDatabase(
-    NativeDatabase.createInBackground(File('$directory/library.sqlite')),
+    NativeDatabase.createInBackground(
+      File('$directory/library.sqlite'),
+      setup: (db) {
+        db.execute('PRAGMA journal_mode = WAL');
+        db.execute('PRAGMA synchronous = NORMAL');
+      },
+    ),
   );
 
   /// A database in memory (tests).
@@ -103,13 +137,18 @@ class LibraryDatabase extends _$LibraryDatabase {
   /// `dart run drift_dev make-migrations` in `app/` to save the new schema
   /// for the migration tests.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    beforeOpen: (_) => customStatement('PRAGMA foreign_keys = ON'),
     onUpgrade: stepByStep(
       from1To2: (m, schema) => m.createTable(schema.libraryFolders),
       from2To3: (m, schema) => m.createTable(schema.openTabs),
+      from3To4: (m, schema) async {
+        await m.createTable(schema.journalSessions);
+        await m.createTable(schema.journalEntries);
+      },
     ),
   );
 }

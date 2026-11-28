@@ -11,6 +11,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'annotation_layer.dart';
+import 'annotation_session.dart';
 import 'reader_geometry.dart';
 import 'tile_cache.dart';
 
@@ -88,6 +89,9 @@ final class ReaderController {
 
   /// Bumped whenever the picture changes.
   final repaint = ValueNotifier<int>(0);
+
+  /// Coordinates durable edits for a library document.
+  AnnotationSession? annotationSession;
 
   /// The document's annotations; the reader draws Doxa's own (ADR-0005).
   late final annotations = DocumentAnnotations(engine, document)
