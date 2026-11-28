@@ -13,6 +13,7 @@ export 'src/annotation_history.dart';
 export 'src/annotation_id.dart';
 export 'src/annotation_json.dart' show AnnotationJson;
 export 'src/geometry.dart';
+export 'src/markup_selection.dart';
 export 'src/page_transform.dart';
 export 'src/pdf_date.dart';
 export 'src/study_palette.dart';

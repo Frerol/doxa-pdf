@@ -262,8 +262,11 @@ final class PageText {
     required this.text,
     required this.charIndexOfUnit,
     required this.charBoxes,
+    this.charAngles,
   }) {
-    if (charIndexOfUnit.length != text.length || charBoxes.length.isOdd) {
+    if (charIndexOfUnit.length != text.length ||
+        charBoxes.length % 4 != 0 ||
+        (charAngles != null && charAngles!.length != charCount)) {
       throw ArgumentError('Text layer arrays do not match');
     }
   }
@@ -280,6 +283,10 @@ final class PageText {
   /// Four values per PDFium char (left, bottom, right, top) in PDF user
   /// space. A char without a box has all four values equal to zero.
   final Float64List charBoxes;
+
+  /// Counterclockwise glyph angles in radians in PDF user space.
+  /// Null when the text provider does not supply orientation.
+  final Float64List? charAngles;
 
   int get charCount => charBoxes.length ~/ 4;
 

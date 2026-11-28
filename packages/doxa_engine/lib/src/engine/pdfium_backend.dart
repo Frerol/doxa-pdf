@@ -527,6 +527,7 @@ final class PdfiumBackend implements EngineBackend {
       final count = _pdf.FPDFText_CountChars(textPage);
       final n = count < 0 ? 0 : count;
       final boxes = Float64List(n * 4);
+      final angles = Float64List(n);
       final text = StringBuffer();
       final unitToChar = <int>[];
       final codes = [
@@ -568,6 +569,9 @@ final class PdfiumBackend implements EngineBackend {
               box + 3,
             ) !=
             0) {
+          // PDFium reports clockwise radians. The core uses PDF user space.
+          final angle = _pdf.FPDFText_GetCharAngle(textPage, i);
+          if (angle >= 0) angles[i] = -angle;
           // GetCharBox returns left, right, bottom, top.
           boxes
             ..[i * 4] = box[0]
@@ -581,6 +585,7 @@ final class PdfiumBackend implements EngineBackend {
         text: text.toString(),
         charIndexOfUnit: Int32List.fromList(unitToChar),
         charBoxes: boxes,
+        charAngles: angles,
       );
       document.texts[pageIndex] = result;
       if (document.texts.length > textCacheSize) {

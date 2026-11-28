@@ -203,6 +203,12 @@ def write_annotations_pdf(path):
     serialize(path, objects)
 
 
+def write_markup_selection_pdf(path):
+    mixed = b"BT /F1 12 Tf 72 700 Td (small ) Tj /F1 30 Tf (BIG) Tj ET"
+    rotated = b"BT /F1 14 Tf 0 1 -1 0 300 420 Tm (Upright) Tj ET"
+    write_pdf(path, mixed + b"\n" + rotated, [""])
+
+
 def main():
     sample = text_block(72, 700, [
         "A field notebook",
@@ -233,6 +239,7 @@ def main():
     ])
     write_pdf(CORPUS / "two-column-article.pdf", article, [""])
     write_pdf(CORPUS / "many-pages.pdf", sample, [""] * 1001)
+    write_markup_selection_pdf(CORPUS / "markup-selection.pdf")
     write_navigation_pdf(CORPUS / "navigation.pdf")
     write_annotations_pdf(CORPUS / "annotations.pdf")
 

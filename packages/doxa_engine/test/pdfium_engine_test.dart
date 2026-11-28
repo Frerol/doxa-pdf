@@ -56,6 +56,105 @@ void main() {
     generation: generation,
   );
 
+  group('markup selection (FR-TEXT-005, FR-MARK-001)', () {
+    MarkupTextRange range(PageText page, {int start = 0, int? end}) => (
+      pageIndex: page.pageIndex,
+      text: page.text,
+      charIndexOfUnit: page.charIndexOfUnit,
+      charBoxes: page.charBoxes,
+      charAngles: page.charAngles,
+      start: start,
+      end: end ?? page.charCount,
+    );
+
+    MarkupTextRange phrase(PageText page, String text) {
+      final unit = page.text.indexOf(text);
+      expect(unit, isNonNegative, reason: text);
+      return range(
+        page,
+        start: page.charIndexOfUnit[unit],
+        end: page.charIndexOfUnit[unit + text.length - 1] + 1,
+      );
+    }
+
+    void expectBounds(PdfQuad quad, PageText page, MarkupTextRange range) {
+      final bounds = [
+        for (var i = range.start; i < range.end; i++) ?page.charBox(i),
+      ].reduce((a, b) => a.union(b));
+      final actual = quad.boundingRect;
+      expect(actual.left, closeTo(bounds.left, 0.5));
+      expect(actual.right, closeTo(bounds.right, 0.5));
+      expect(actual.bottom, closeTo(bounds.bottom, 0.5));
+      expect(actual.top, closeTo(bounds.top, 0.5));
+    }
+
+    test('follows each column without spanning the gutter', () async {
+      final opened = await openFile('two-column-article.pdf');
+      final page = await engine.pageText(opened.handle, 0);
+      final selected = buildMarkupSelection([range(page)]).single;
+      const lines = [
+        'Notes from a river survey',
+        'Methods',
+        'We set out at dawn. Two teams',
+        'walked along opposite banks.',
+        'Each team recorded water depth',
+        'at five equally spaced sites.',
+        'Results',
+        'The river was deeper on the',
+        'west side near the bend. At',
+        'the last site both banks had',
+        'similar measured depths.',
+      ];
+      expect(selected.text.split('\n'), lines);
+      expect(selected.quads, hasLength(lines.length));
+      for (var i = 0; i < lines.length; i++) {
+        expectBounds(selected.quads[i], page, phrase(page, lines[i]));
+      }
+    });
+
+    test('keeps a rotated page in PDF user space', () async {
+      final opened = await openFile('rotated-pages.pdf');
+      final page = await engine.pageText(opened.handle, 1);
+      final selectedRange = phrase(page, 'A field notebook');
+      final quad = buildMarkupSelection([selectedRange]).single.quads.single;
+      expectBounds(quad, page, selectedRange);
+      expect(quad.p2.x, greaterThan(quad.p1.x));
+      expect(quad.p2.y, closeTo(quad.p1.y, 0.5));
+    });
+
+    test('covers the tallest glyph on a mixed-size baseline', () async {
+      final opened = await openFile('markup-selection.pdf');
+      final page = await engine.pageText(opened.handle, 0);
+      final selectedRange = phrase(page, 'small BIG');
+      final selected = buildMarkupSelection([selectedRange]).single;
+      expect(selected.text, 'small BIG');
+      expectBounds(selected.quads.single, page, selectedRange);
+    });
+
+    test('preserves the baseline direction of rotated glyphs', () async {
+      final opened = await openFile('markup-selection.pdf');
+      final page = await engine.pageText(opened.handle, 0);
+      final selectedRange = phrase(page, 'Upright');
+      final quad = buildMarkupSelection([selectedRange]).single.quads.single;
+      expectBounds(quad, page, selectedRange);
+      expect(quad.p2.y, greaterThan(quad.p1.y));
+      expect(quad.p2.x, closeTo(quad.p1.x, 0.5));
+    });
+
+    test('keeps partial selections on their own pages', () async {
+      final opened = await openFile('navigation.pdf');
+      final first = await engine.pageText(opened.handle, 0);
+      final second = await engine.pageText(opened.handle, 1);
+      final tail = phrase(first, 'for Doxa PDF.');
+      final head = phrase(second, 'Page ii');
+      final selected = buildMarkupSelection([head, tail]);
+      expect(selected.map((page) => page.pageIndex), [0, 1]);
+      expect(selected.map((page) => page.text), ['for Doxa PDF.', 'Page ii']);
+      expectBounds(selected.first.quads.single, first, tail);
+      expectBounds(selected.last.quads.single, second, head);
+    });
+  });
+
   group('open', () {
     test('reads a memory document and its text', () async {
       final result = await engine.open(MemorySource(buildMinimalPdf()));
