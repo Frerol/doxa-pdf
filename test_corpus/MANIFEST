@@ -5,6 +5,7 @@ annotated-pdfjs.pdf	-	https://github.com/Frerol/doxa-pdf/issues/9	GPL-3.0-or-lat
 annotations.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. Annotations with known values: Doxa's own and foreign markup and ink, a square, a popup, a link, broken quads, a rotated page and an offset CropBox.
 encrypted.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. AES-256.
 many-pages.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. 1,001 pages sharing a content stream.
+markup-selection.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. Mixed font sizes on one baseline and text rotated within page content.
 marked-up-xournalpp.pdf	-	https://github.com/Frerol/doxa-pdf/issues/9	GPL-3.0-or-later	Doxa PDF. Xournal++ 1.3.8 exported pen and highlighter strokes over two-column-article.pdf with its qpdf backend.
 navigation.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. Six pages with an outline, page labels (i, ii, 1–3, A-1), and internal, URI and remote links.
 offset-cropbox.pdf	-	https://github.com/Frerol/doxa-pdf/blob/main/tools/generate_corpus.py	GPL-3.0-or-later	Doxa PDF. Fractional, non-zero CropBox origin.
