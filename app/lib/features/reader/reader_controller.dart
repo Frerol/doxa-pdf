@@ -306,6 +306,18 @@ final class ReaderController {
     return _fitView(currentSpread).zoom.clamp(minZoom, maxZoom);
   }
 
+  bool _pinching = false;
+
+  /// Whether fingers are zooming now. Meanwhile no ink tile rasterises:
+  /// that work shares the raster thread with the frames, and the zoom
+  /// level keeps changing, so images stand in until the fingers lift.
+  bool get pinching => _pinching;
+  set pinching(bool value) {
+    if (_pinching == value) return;
+    _pinching = value;
+    if (!value) _ensureInk();
+  }
+
   /// Sets the zoom so that [documentPoint] stays under [screenPoint]. At
   /// [lowestZoom] the view goes back to the fit of the current page.
   void zoomAround(double zoom, Offset documentPoint, Offset screenPoint) {
@@ -526,53 +538,156 @@ final class ReaderController {
   /// spreads its work over frames.
   static const maxInkRasterizing = 4;
 
-  /// Rasterises the ink tiles of [_inkWanted] (the screen first, then one
-  /// screen ahead) that are missing, a few at a time.
+  /// The width in pixels of a page's ink preview: one bitmap of all its
+  /// ink, which stands in while tiles of a new zoom level rasterise, so a
+  /// pinch never replays vectors (about 4 MB per page and tool).
+  static const inkPreviewPixels = 1024;
+
+  /// Rasterises what [_inkWanted] needs, a few at a time: the ink previews
+  /// of its pages first, then its tiles (the screen first, then one screen
+  /// ahead).
   void _ensureInk() {
-    if (_disposed || _renderingSuspended) return;
-    for (final tile in _inkWanted) {
-      if (_inkPending.length >= maxInkRasterizing) return;
+    if (_disposed || _renderingSuspended || _pinching) return;
+    final layout = _layout;
+    if (layout == null) return;
+    for (final page in {for (final tile in _inkWanted) tile.page}) {
+      final rect = layout.pageRect(page);
+      if (rect.width <= 0) continue;
+      final height = math.max(
+        1,
+        (rect.height / rect.width * inkPreviewPixels).ceil(),
+      );
       for (final tool in InkTool.values) {
-        final key = _inkKey(tile.key, tool);
-        if (_inkTried.contains(key) || cache.contains(key)) continue;
-        final inks = inksOn(tile, tool);
-        final matrix = userToDocument(tile.page);
-        if (inks.isEmpty || matrix == null) continue;
-        final recorder = ui.PictureRecorder();
-        final canvas = Canvas(recorder)
-          ..scale(tile.width / tile.destination.width)
-          ..translate(-tile.destination.left, -tile.destination.top)
-          ..transform(matrix);
-        for (final ink in inks) {
-          canvas.drawPath(inkPath(ink), inkPaint(ink));
+        final inks = [
+          for (final (ink, _) in _inkRects(page))
+            if (ink.tool == tool) ink,
+        ];
+        if (!_rasterize(
+          _inkPreviewKey(page, tool),
+          page,
+          inks,
+          rect,
+          inkPreviewPixels,
+          height,
+        )) {
+          return;
         }
-        final picture = recorder.endRecording();
-        _inkPending.add(key);
-        _inkTried.add(key);
-        final version = _inkVersion(tile.page), epoch = _layoutEpoch;
-        unawaited(
-          _rasterizeInk(picture, tile.width, tile.height)
-              .then((image) {
-                if (_disposed ||
-                    epoch != _layoutEpoch ||
-                    version != _inkVersion(tile.page)) {
-                  image.dispose();
-                  return;
-                }
-                cache.put(key, image);
-                // Ink tiles share the page tiles' budget.
-                cache.evict(keep: visibleKeys());
-                repaint.value++;
-              }, onError: (Object _) {})
-              .whenComplete(() {
-                picture.dispose();
-                _inkPending.remove(key);
-                _ensureInk();
-              }),
-        );
+      }
+    }
+    for (final tile in _inkWanted) {
+      for (final tool in InkTool.values) {
+        if (!_rasterize(
+          _inkKey(tile.key, tool),
+          tile.page,
+          inksOn(tile, tool),
+          tile.destination,
+          tile.width,
+          tile.height,
+        )) {
+          return;
+        }
       }
     }
   }
+
+  /// Starts rasterising [inks] of [page] that cover [destination] into a
+  /// [width] × [height] image cached as [key], unless it is cached, was
+  /// tried since the last change, or there is nothing to draw. Returns
+  /// false when enough are already rasterising.
+  bool _rasterize(
+    String key,
+    int page,
+    List<InkAnnotation> inks,
+    Rect destination,
+    int width,
+    int height,
+  ) {
+    if (_inkPending.length >= maxInkRasterizing) return false;
+    if (_inkTried.contains(key) || cache.contains(key) || inks.isEmpty) {
+      return true;
+    }
+    final matrix = userToDocument(page);
+    if (matrix == null) return true;
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder)
+      ..scale(width / destination.width)
+      ..translate(-destination.left, -destination.top)
+      ..transform(matrix);
+    for (final ink in inks) {
+      canvas.drawPath(inkPath(ink), inkPaint(ink));
+    }
+    final picture = recorder.endRecording();
+    _inkPending.add(key);
+    _inkTried.add(key);
+    final version = _inkVersion(page), epoch = _layoutEpoch;
+    unawaited(
+      _rasterizeInk(picture, width, height)
+          .then((image) {
+            if (_disposed ||
+                epoch != _layoutEpoch ||
+                version != _inkVersion(page)) {
+              image.dispose();
+              return;
+            }
+            cache.put(key, image);
+            // Ink images share the page tiles' budget.
+            cache.evict(keep: visibleKeys());
+            repaint.value++;
+          }, onError: (Object _) {})
+          .whenComplete(() {
+            picture.dispose();
+            _inkPending.remove(key);
+            _ensureInk();
+          }),
+    );
+    return true;
+  }
+
+  /// What stands in for the ink of [tool] on [page] where its tiles at the
+  /// current zoom are not rasterised yet: the page's ink preview, then the
+  /// cached ink tiles of other zoom levels, the nearest last, each with
+  /// where it goes in document units. Empty when there are none, and the
+  /// painter then draws vectors.
+  List<(ui.Image, Rect)> inkStandIns(int page, InkTool tool) {
+    final layout = _layout;
+    if (layout == null) return const [];
+    final rect = layout.pageRect(page);
+    final preview = cache.peek(_inkPreviewKey(page, tool));
+    final prefix = 'i${tool.index}:$page:';
+    final tiles = <(double, ui.Image, Rect)>[];
+    for (final key in cache.keys) {
+      if (!key.startsWith(prefix)) continue;
+      // i<tool>:<page>:<bucket>:<column>:<row>
+      final parts = key.split(':');
+      if (parts.length != 5) continue;
+      final keyBucket = double.tryParse(parts[2]);
+      final column = int.tryParse(parts[3]), row = int.tryParse(parts[4]);
+      if (keyBucket == null || column == null || row == null) continue;
+      if (keyBucket == bucket) continue;
+      final image = cache.peek(key)!;
+      final pxPerUnit = keyBucket * _devicePixelRatio;
+      final units = tilePixels / pxPerUnit;
+      tiles.add((
+        (math.log(keyBucket / bucket)).abs(),
+        image,
+        Rect.fromLTWH(
+          rect.left + column * units,
+          rect.top + row * units,
+          image.width / pxPerUnit,
+          image.height / pxPerUnit,
+        ),
+      ));
+    }
+    // Farthest first, so the sharpest nearby level ends on top.
+    tiles.sort((a, b) => b.$1.compareTo(a.$1));
+    return [
+      if (preview != null) (preview, rect),
+      for (final (_, image, destination) in tiles) (image, destination),
+    ];
+  }
+
+  static String _inkPreviewKey(int page, InkTool tool) =>
+      'i${tool.index}:$page:preview';
 
   static String _inkKey(String tileKey, InkTool tool) =>
       'i${tool.index}${tileKey.substring(1)}';
@@ -979,6 +1094,9 @@ final class ReaderController {
     return {
       for (final page in layout.pagesIn(visible)) ...[
         'p:$page',
+        for (final tool in InkTool.values)
+          if (cache.contains(_inkPreviewKey(page, tool)))
+            _inkPreviewKey(page, tool),
         for (final tile in _tiles(page, visible)) ...[
           tile.key,
           for (final tool in InkTool.values)

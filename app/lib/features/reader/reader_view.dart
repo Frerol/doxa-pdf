@@ -188,6 +188,7 @@ class _ReaderViewState extends State<ReaderView>
       _lastFocal = details.localFocalPoint;
     }
     if (details.pointerCount >= 2) {
+      _controller.pinching = true;
       _controller.zoomAround(
         _startZoom * details.scale,
         _focalDocument,
@@ -207,6 +208,7 @@ class _ReaderViewState extends State<ReaderView>
     // The recognizer also ends the gesture when a finger is added or lifted;
     // only the last finger lifting ends the interaction.
     if (details.pointerCount > 0) return;
+    _controller.pinching = false;
     final velocity = details.velocity.pixelsPerSecond;
     if (_controller.layout?.paged ?? false) {
       final target = _controller.settle(
@@ -463,6 +465,11 @@ class _ReaderViewState extends State<ReaderView>
   }
 }
 
+/// How many times ink was drawn as vectors because no image could stand
+/// in for missing tiles; for tests.
+@visibleForTesting
+int debugInkVectorPasses = 0;
+
 /// Paints the visible pages: a white sheet, the preview, then the tiles of
 /// the current zoom bucket on top.
 class ReaderPainter extends CustomPainter {
@@ -581,18 +588,45 @@ class ReaderPainter extends CustomPainter {
         vectors.addAll(inks);
       }
       if (vectors.isEmpty) continue;
-      // Until its tiles are rasterised, ink draws as vectors there.
+      // Until its tiles are rasterised, the page's ink preview and tiles
+      // of other zoom levels stand in, a little soft for a moment; only
+      // without any does ink draw as vectors there.
+      final area = missing.getBounds().intersect(controller.visibleRect);
+      // Only images over the missing part of the screen: a tile of a low
+      // zoom level can cover more than the whole screen at a high one.
+      final standIns = [
+        for (final standIn in controller.inkStandIns(page, tool))
+          if (standIn.$2.overlaps(area)) standIn,
+      ];
+      // Missing tiles are whole rectangles: no antialiasing needed.
       canvas
         ..save()
-        ..clipPath(missing)
-        ..saveLayer(missing.getBounds(), paint)
-        ..transform(matrix);
-      for (final ink in vectors) {
-        canvas.drawPath(inkPath(ink), inkPaint(ink));
+        ..clipRect(area)
+        ..clipPath(missing, doAntiAlias: false);
+      if (standIns.isEmpty) {
+        debugInkVectorPasses++;
+        canvas
+          ..saveLayer(area, paint)
+          ..transform(matrix);
+        for (final ink in vectors) {
+          canvas.drawPath(inkPath(ink), inkPaint(ink));
+        }
+        canvas.restore();
+      } else if (standIns.length == 1) {
+        _draw(canvas, standIns.single.$1, standIns.single.$2, paint);
+      } else {
+        // Each image replaces what is under it, so ink with alpha is not
+        // laid down twice; that needs a layer of its own.
+        final replace = Paint()
+          ..filterQuality = FilterQuality.low
+          ..blendMode = BlendMode.src;
+        canvas.saveLayer(area, paint);
+        for (final (i, (image, destination)) in standIns.indexed) {
+          _draw(canvas, image, destination, i == 0 ? normal : replace);
+        }
+        canvas.restore();
       }
-      canvas
-        ..restore()
-        ..restore();
+      canvas.restore();
     }
   }
 
