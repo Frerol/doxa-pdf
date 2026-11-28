@@ -1048,5 +1048,29 @@
   "dictionaryDownloadsNote": "Dictionaries download from Doxa's releases on GitHub. The words you look up never leave this device.",
   "@dictionaryDownloadsNote": {
     "description": "Privacy note under the list of packs (ADR-0010)."
+  },
+  "settingsAnnotationSaving": "Saving annotations",
+  "settingsAnnotationSavingHint": "Choose when changes are saved to the PDF.",
+  "annotationAutosave": "Autosave",
+  "annotationAskOnClose": "Ask on close",
+  "annotationUnsaved": "Unsaved changes",
+  "annotationRestore": "Restore changes",
+  "annotationDiscard": "Discard",
+  "annotationSave": "Save",
+  "annotationRestorePrompt": "Restore the unsaved annotations in this PDF?",
+  "annotationChangedPrompt": "This PDF changed since you edited it. Restore the changes that still fit?",
+  "annotationSkipped": "{count, plural, one{One change could not be restored.} other{{count} changes could not be restored.}}",
+  "annotationMissingPrompt": "The PDF is unavailable. Locate it again or discard the unsaved changes.",
+  "annotationLocate": "Locate file",
+  "annotationClosePrompt": "Save changes before closing this tab?",
+  "annotationSaveFailed": "Could not save the annotations.",
+  "annotationEditFailed": "Could not apply the annotation changes.",
+  "annotationReadOnly": "This PDF cannot be written. Unsaved changes are kept for recovery.",
+  "@annotationSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

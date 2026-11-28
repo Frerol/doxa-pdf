@@ -14,8 +14,10 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../src/doxa_theme.dart';
 import '../dictionary/dictionary_library.dart';
 import '../dictionary/dictionary_popup.dart';
+import '../library/document_identity.dart';
 import '../library/library_repository.dart';
 import '../settings/app_settings.dart';
+import 'annotation_session.dart';
 import 'color_mode.dart';
 import 'frame_probe.dart';
 import 'navigation_panel.dart';
@@ -73,6 +75,10 @@ class ReaderPage extends StatefulWidget {
     this.tabsButton,
     this.library,
     this.libraryId,
+    this.journalLocation,
+    this.openedIdentity,
+    this.onAnnotationSession,
+    this.active = true,
   });
 
   final Future<PdfEngine> engine;
@@ -112,6 +118,10 @@ class ReaderPage extends StatefulWidget {
 
   final LibraryRepository? library;
   final int? libraryId;
+  final String? journalLocation;
+  final String? openedIdentity;
+  final ValueChanged<AnnotationSession?>? onAnnotationSession;
+  final bool active;
 
   @override
   State<ReaderPage> createState() => _ReaderPageState();
@@ -155,7 +165,13 @@ class _ReaderPageState extends State<ReaderPage> {
   @override
   void initState() {
     super.initState();
-    _lifecycle = AppLifecycleListener(onHide: _saveReadingState);
+    _lifecycle = AppLifecycleListener(
+      onHide: () {
+        _saveReadingState();
+        _controller?.annotationSession?.backgroundSave();
+      },
+      onPause: () => _controller?.annotationSession?.backgroundSave(),
+    );
     _opening = _open();
     widget.settings?.addListener(_onSettings);
     _applyKeepScreenOn();
@@ -164,6 +180,9 @@ class _ReaderPageState extends State<ReaderPage> {
   /// Settings can change while the document is open (custom colours from
   /// the view options, keep screen on).
   void _onSettings() {
+    _controller?.annotationSession?.updateAutosave(
+      widget.settings!.value.annotationAutosave,
+    );
     _controller
       ?..setFitMode(widget.settings!.value.fitMode)
       ..setZoomOutPastFit(widget.settings!.value.zoomOutPastFit);
@@ -251,6 +270,117 @@ class _ReaderPageState extends State<ReaderPage> {
           };
       }
     });
+    if (_controller case final controller?) {
+      await _openAnnotationSession(controller);
+    }
+  }
+
+  Future<void> _openAnnotationSession(ReaderController controller) async {
+    final library = widget.library;
+    final id = widget.libraryId;
+    final location = widget.journalLocation;
+    final source = widget.source;
+    if (library == null ||
+        id == null ||
+        location == null ||
+        source is! FileSource) {
+      return;
+    }
+    try {
+      final journal = await library.journalFor(id);
+      final identity =
+          widget.openedIdentity ?? await documentIdentity(source.path);
+      if (!mounted) return;
+      final android = Uri.tryParse(location)?.scheme == 'content';
+      final platform = DoxaPlatform();
+      final session = AnnotationSession(
+        library: library,
+        documentId: id,
+        displayName: widget.title,
+        location: location,
+        baseIdentity: identity,
+        path: source.path,
+        engine: controller.engine,
+        document: controller.document,
+        pageCount: controller.info.pageCount,
+        annotations: controller.annotations,
+        reloadPage: controller.reloadPage,
+        strokeInProgress: () => controller.liveStroke.value != null,
+        autosave: widget.settings?.value.annotationAutosave ?? true,
+        saf: android ? platform.pdfSaves : null,
+        cacheDirectory: android
+            ? platform.downloadConditions.cacheDirectory
+            : null,
+        onError: (_) {
+          if (!mounted) return;
+          final l10n = AppLocalizations.of(context);
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(l10n.annotationSaveFailed)));
+        },
+      );
+      if (journal != null) {
+        final l10n = AppLocalizations.of(context);
+        final restore = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: Text(l10n.annotationUnsaved),
+            content: Text(
+              journal.baseIdentity == identity
+                  ? l10n.annotationRestorePrompt
+                  : l10n.annotationChangedPrompt,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l10n.annotationDiscard),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(l10n.annotationRestore),
+              ),
+            ],
+          ),
+        );
+        if (!mounted || restore == null) return;
+        if (restore) {
+          // Publish the session before engine work so closing waits for replay.
+          _attachSession(controller, session);
+          final skipped = await session.restore(journal);
+          if (!mounted) return;
+          if (skipped != 0) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.annotationSkipped(skipped))),
+            );
+          }
+          return;
+        } else {
+          await library.discardJournal(id);
+        }
+      }
+      if (!mounted) return;
+      _attachSession(controller, session);
+    } on Object {
+      if (!mounted) return;
+      if (controller.annotationSession case final session?) {
+        controller.liveStroke.removeListener(session.onStrokeChanged);
+        controller.annotationSession = null;
+        widget.onAnnotationSession?.call(null);
+        await session.dispose();
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).annotationEditFailed),
+        ),
+      );
+    }
+  }
+
+  void _attachSession(ReaderController controller, AnnotationSession session) {
+    controller.annotationSession = session;
+    controller.liveStroke.addListener(session.onStrokeChanged);
+    widget.onAnnotationSession?.call(session);
   }
 
   Future<void> _askForPassword() async {
@@ -281,6 +411,7 @@ class _ReaderPageState extends State<ReaderPage> {
   Future<void> _closeSource(ReaderController? controller) async {
     try {
       await _opening;
+      await controller?.annotationSession?.dispose();
       if (controller != null) await _engine?.close(controller.document);
     } finally {
       await widget.releaseSource?.call();
@@ -312,6 +443,7 @@ class _ReaderPageState extends State<ReaderPage> {
     _search?.dispose();
     _selection?.dispose();
     final controller = _controller;
+    widget.onAnnotationSession?.call(null);
     controller?.dispose();
     unawaited(
       _closeSource(controller).catchError((Object error) {
@@ -600,9 +732,9 @@ class _ReaderPageState extends State<ReaderPage> {
     // first sent readers to page 1 when they wanted to leave (maintainer
     // decision after the tablet check of #50).
     return PopScope(
-      canPop: !_searchOpen,
+      canPop: !widget.active || !_searchOpen,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop || !_searchOpen) return;
+        if (didPop || !_searchOpen || !widget.active) return;
         setState(() {
           _search?.close();
           _searchOpen = false;

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:doxa_core/doxa_core.dart';
 import 'package:drift/drift.dart';
 
 import '../reader/reader_geometry.dart';
@@ -20,7 +22,7 @@ typedef ReadingState = ({
 
 /// A document as the library lists it.
 final class LibraryDocument {
-  LibraryDocument._(DocumentRow row)
+  LibraryDocument._(DocumentRow row, {this.hasUnsavedChanges = false})
     : id = row.id,
       identity = row.identity,
       uri = row.uri,
@@ -36,6 +38,7 @@ final class LibraryDocument {
         rightToLeft: row.rightToLeft,
       );
 
+  final bool hasUnsavedChanges;
   final int id;
   final String identity;
 
@@ -75,13 +78,18 @@ final class LibraryRepository {
     required String identity,
     required String displayName,
     String? uri,
+    String? journalLocation,
+    int? recoveryDocumentId,
   }) {
     return _db.transaction(() async {
       final now = _clock();
+      final pending = recoveryDocumentId == null
+          ? await journalAt(journalLocation ?? uri)
+          : await journalFor(recoveryDocumentId);
       final existing = await (_db.select(
         _db.documents,
       )..where((d) => d.identity.equals(identity))).getSingleOrNull();
-      if (existing == null) {
+      if (pending == null && existing == null) {
         final id = await _db
             .into(_db.documents)
             .insert(
@@ -97,7 +105,7 @@ final class LibraryRepository {
       }
       await (_db.update(
         _db.documents,
-      )..where((d) => d.id.equals(existing.id))).write(
+      )..where((d) => d.id.equals(pending?.documentId ?? existing!.id))).write(
         DocumentsCompanion(
           displayName: Value(displayName),
           uri: uri == null ? const Value.absent() : Value(uri),
@@ -105,7 +113,7 @@ final class LibraryRepository {
           lastOpenedAt: Value(now),
         ),
       );
-      return _byId(existing.id);
+      return _byId(pending?.documentId ?? existing!.id);
     });
   }
 
@@ -131,8 +139,9 @@ final class LibraryRepository {
       );
 
   /// Recent documents, most recently opened first (FR-FILE-004).
-  Stream<List<LibraryDocument>> watchRecents() =>
-      _watch((d) => d.inRecents.equals(true));
+  Stream<List<LibraryDocument>> watchRecents() => _watch(
+    (d) => d.inRecents.equals(true) | d.id.isInQuery(_pendingJournalIds),
+  );
 
   /// Favorite documents, most recently opened first (FR-FILE-005).
   Stream<List<LibraryDocument>> watchFavorites() =>
@@ -147,10 +156,23 @@ final class LibraryRepository {
         (d) => OrderingTerm.desc(d.lastOpenedAt),
         (d) => OrderingTerm.desc(d.id),
       ]);
-    return query.watch().map(
-      (rows) => [for (final row in rows) LibraryDocument._(row)],
+    final pending = _pendingJournalIds;
+    final unsaved = _db.documents.id.isInQuery(pending);
+    final joined = query.join([])..addColumns([unsaved]);
+    return joined.watch().map(
+      (rows) => [
+        for (final row in rows)
+          LibraryDocument._(
+            row.readTable(_db.documents),
+            hasUnsavedChanges: row.read(unsaved) ?? false,
+          ),
+      ],
     );
   }
+
+  BaseSelectStatement<TypedResult> get _pendingJournalIds =>
+      _db.selectOnly(_db.journalEntries)
+        ..addColumns([_db.journalEntries.sessionId]);
 
   /// Records document [id] as read now, for example when its tab is shown
   /// again: it moves to the top of recents and of "Continue reading"
@@ -197,9 +219,21 @@ final class LibraryRepository {
     String uri, {
     required String? newUri,
     required String displayName,
-  }) => (_db.update(_db.documents)..where((d) => d.uri.equals(uri))).write(
-    DocumentsCompanion(uri: Value(newUri), displayName: Value(displayName)),
-  );
+  }) => _db.transaction(() async {
+    await (_db.update(_db.documents)..where((d) => d.uri.equals(uri))).write(
+      DocumentsCompanion(uri: Value(newUri), displayName: Value(displayName)),
+    );
+    await (_db.update(
+      _db.journalSessions,
+    )..where((s) => s.location.equals(journalLocationOf(uri)))).write(
+      JournalSessionsCompanion(
+        location: newUri == null
+            ? const Value.absent()
+            : Value(journalLocationOf(newUri)),
+        displayName: Value(displayName),
+      ),
+    );
+  });
 
   /// Forgets the documents opened from [uri] once the file was deleted
   /// (FR-FILE-011), and returns their identities so their thumbnails can be
@@ -208,6 +242,10 @@ final class LibraryRepository {
     final rows = await (_db.select(
       _db.documents,
     )..where((d) => d.uri.equals(uri))).get();
+    await (_db.update(
+          _db.documents,
+        )..where((d) => d.uri.equals(uri) & d.id.isInQuery(_pendingJournalIds)))
+        .write(const DocumentsCompanion(uri: Value(null)));
     await (_db.delete(_db.documents)..where((d) => d.uri.equals(uri))).go();
     return [for (final row in rows) row.identity];
   });
@@ -324,4 +362,111 @@ final class ThumbnailStore {
     final file = fileFor(identity);
     if (await file.exists()) await file.delete();
   }
+}
+
+/// The journal stores file paths and SAF content URIs.
+String journalLocationOf(String location) {
+  final uri = Uri.tryParse(location);
+  return uri?.scheme == 'file' ? uri!.toFilePath() : location;
+}
+
+/// Durable applied commands, in their original order (FR-SAVE-003).
+extension AnnotationJournalRepository on LibraryRepository {
+  Future<JournalSessionRow?> journalFor(int id) =>
+      (_db.select(_db.journalSessions)..where(
+            (s) =>
+                s.documentId.equals(id) &
+                s.documentId.isInQuery(_pendingJournalIds),
+          ))
+          .getSingleOrNull();
+
+  Future<JournalSessionRow?> journalAt(String? location) async {
+    if (location == null) return null;
+    return (_db.select(_db.journalSessions)
+          ..where(
+            (s) =>
+                s.location.equals(journalLocationOf(location)) &
+                s.documentId.isInQuery(_pendingJournalIds),
+          )
+          ..orderBy([(s) => OrderingTerm.desc(s.startedAt)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  Future<List<AnnotationCommand>> journalCommands(
+    JournalSessionRow session,
+  ) async {
+    if (session.format != 1) {
+      throw const FormatException('Unknown journal format');
+    }
+    final rows =
+        await (_db.select(_db.journalEntries)
+              ..where((e) => e.sessionId.equals(session.documentId))
+              ..orderBy([(e) => OrderingTerm.asc(e.sequence)]))
+            .get();
+    return [
+      for (final row in rows)
+        AnnotationCommand.fromJson(jsonDecode(row.command)),
+    ];
+  }
+
+  Future<void> appendJournal(
+    JournalSessionsCompanion session,
+    AnnotationCommand command,
+  ) => _db.transaction(() => _writeJournal(session, [command]));
+
+  Future<void> replaceJournal(
+    JournalSessionsCompanion session,
+    List<AnnotationCommand> commands,
+  ) => _db.transaction(() async {
+    await discardJournal(session.documentId.value);
+    await _writeJournal(session, commands);
+  });
+
+  Future<void> _writeJournal(
+    JournalSessionsCompanion session,
+    List<AnnotationCommand> commands,
+  ) async {
+    final id = session.documentId.value;
+    await _db
+        .into(_db.journalSessions)
+        .insert(session, mode: InsertMode.insertOrIgnore);
+    final entries = _db.journalEntries;
+    final latest =
+        await (_db.select(entries)
+              ..where((e) => e.sessionId.equals(id))
+              ..orderBy([(e) => OrderingTerm.desc(e.sequence)])
+              ..limit(1))
+            .getSingleOrNull();
+    var sequence = latest?.sequence ?? 0;
+    for (final command in commands) {
+      await _db
+          .into(entries)
+          .insert(
+            JournalEntriesCompanion.insert(
+              sessionId: id,
+              sequence: ++sequence,
+              command: jsonEncode(command.toJson()),
+            ),
+          );
+    }
+  }
+
+  Future<void> discardJournal(int id) => _db.transaction(() async {
+    await (_db.delete(
+      _db.journalEntries,
+    )..where((e) => e.sessionId.equals(id))).go();
+    await (_db.delete(
+      _db.journalSessions,
+    )..where((s) => s.documentId.equals(id))).go();
+  });
+
+  Future<void> completeAnnotationSave(int id, String identity) =>
+      _db.transaction(() async {
+        await discardJournal(id);
+        final changed =
+            await (_db.update(_db.documents)..where((d) => d.id.equals(id)))
+                .write(DocumentsCompanion(identity: Value(identity)));
+        if (changed != 1) throw StateError('Library document is missing');
+      });
 }

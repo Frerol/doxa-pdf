@@ -1326,12 +1326,701 @@ class OpenTabsCompanion extends UpdateCompanion<OpenTabRow> {
   }
 }
 
+class $JournalSessionsTable extends JournalSessions
+    with TableInfo<$JournalSessionsTable, JournalSessionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $JournalSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _documentIdMeta = const VerificationMeta(
+    'documentId',
+  );
+  @override
+  late final GeneratedColumn<int> documentId = GeneratedColumn<int>(
+    'document_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _locationMeta = const VerificationMeta(
+    'location',
+  );
+  @override
+  late final GeneratedColumn<String> location = GeneratedColumn<String>(
+    'location',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _baseIdentityMeta = const VerificationMeta(
+    'baseIdentity',
+  );
+  @override
+  late final GeneratedColumn<String> baseIdentity = GeneratedColumn<String>(
+    'base_identity',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _formatMeta = const VerificationMeta('format');
+  @override
+  late final GeneratedColumn<int> format = GeneratedColumn<int>(
+    'format',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    documentId,
+    location,
+    baseIdentity,
+    displayName,
+    startedAt,
+    format,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'journal_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<JournalSessionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('document_id')) {
+      context.handle(
+        _documentIdMeta,
+        documentId.isAcceptableOrUnknown(data['document_id']!, _documentIdMeta),
+      );
+    }
+    if (data.containsKey('location')) {
+      context.handle(
+        _locationMeta,
+        location.isAcceptableOrUnknown(data['location']!, _locationMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_locationMeta);
+    }
+    if (data.containsKey('base_identity')) {
+      context.handle(
+        _baseIdentityMeta,
+        baseIdentity.isAcceptableOrUnknown(
+          data['base_identity']!,
+          _baseIdentityMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_baseIdentityMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_displayNameMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('format')) {
+      context.handle(
+        _formatMeta,
+        format.isAcceptableOrUnknown(data['format']!, _formatMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {documentId};
+  @override
+  JournalSessionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return JournalSessionRow(
+      documentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}document_id'],
+      )!,
+      location: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}location'],
+      )!,
+      baseIdentity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}base_identity'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      format: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}format'],
+      )!,
+    );
+  }
+
+  @override
+  $JournalSessionsTable createAlias(String alias) {
+    return $JournalSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class JournalSessionRow extends DataClass
+    implements Insertable<JournalSessionRow> {
+  final int documentId;
+  final String location;
+  final String baseIdentity;
+  final String displayName;
+  final DateTime startedAt;
+  final int format;
+  const JournalSessionRow({
+    required this.documentId,
+    required this.location,
+    required this.baseIdentity,
+    required this.displayName,
+    required this.startedAt,
+    required this.format,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['document_id'] = Variable<int>(documentId);
+    map['location'] = Variable<String>(location);
+    map['base_identity'] = Variable<String>(baseIdentity);
+    map['display_name'] = Variable<String>(displayName);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    map['format'] = Variable<int>(format);
+    return map;
+  }
+
+  JournalSessionsCompanion toCompanion(bool nullToAbsent) {
+    return JournalSessionsCompanion(
+      documentId: Value(documentId),
+      location: Value(location),
+      baseIdentity: Value(baseIdentity),
+      displayName: Value(displayName),
+      startedAt: Value(startedAt),
+      format: Value(format),
+    );
+  }
+
+  factory JournalSessionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return JournalSessionRow(
+      documentId: serializer.fromJson<int>(json['documentId']),
+      location: serializer.fromJson<String>(json['location']),
+      baseIdentity: serializer.fromJson<String>(json['baseIdentity']),
+      displayName: serializer.fromJson<String>(json['displayName']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      format: serializer.fromJson<int>(json['format']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'documentId': serializer.toJson<int>(documentId),
+      'location': serializer.toJson<String>(location),
+      'baseIdentity': serializer.toJson<String>(baseIdentity),
+      'displayName': serializer.toJson<String>(displayName),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'format': serializer.toJson<int>(format),
+    };
+  }
+
+  JournalSessionRow copyWith({
+    int? documentId,
+    String? location,
+    String? baseIdentity,
+    String? displayName,
+    DateTime? startedAt,
+    int? format,
+  }) => JournalSessionRow(
+    documentId: documentId ?? this.documentId,
+    location: location ?? this.location,
+    baseIdentity: baseIdentity ?? this.baseIdentity,
+    displayName: displayName ?? this.displayName,
+    startedAt: startedAt ?? this.startedAt,
+    format: format ?? this.format,
+  );
+  JournalSessionRow copyWithCompanion(JournalSessionsCompanion data) {
+    return JournalSessionRow(
+      documentId: data.documentId.present
+          ? data.documentId.value
+          : this.documentId,
+      location: data.location.present ? data.location.value : this.location,
+      baseIdentity: data.baseIdentity.present
+          ? data.baseIdentity.value
+          : this.baseIdentity,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      format: data.format.present ? data.format.value : this.format,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('JournalSessionRow(')
+          ..write('documentId: $documentId, ')
+          ..write('location: $location, ')
+          ..write('baseIdentity: $baseIdentity, ')
+          ..write('displayName: $displayName, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('format: $format')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    documentId,
+    location,
+    baseIdentity,
+    displayName,
+    startedAt,
+    format,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is JournalSessionRow &&
+          other.documentId == this.documentId &&
+          other.location == this.location &&
+          other.baseIdentity == this.baseIdentity &&
+          other.displayName == this.displayName &&
+          other.startedAt == this.startedAt &&
+          other.format == this.format);
+}
+
+class JournalSessionsCompanion extends UpdateCompanion<JournalSessionRow> {
+  final Value<int> documentId;
+  final Value<String> location;
+  final Value<String> baseIdentity;
+  final Value<String> displayName;
+  final Value<DateTime> startedAt;
+  final Value<int> format;
+  const JournalSessionsCompanion({
+    this.documentId = const Value.absent(),
+    this.location = const Value.absent(),
+    this.baseIdentity = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.format = const Value.absent(),
+  });
+  JournalSessionsCompanion.insert({
+    this.documentId = const Value.absent(),
+    required String location,
+    required String baseIdentity,
+    required String displayName,
+    required DateTime startedAt,
+    this.format = const Value.absent(),
+  }) : location = Value(location),
+       baseIdentity = Value(baseIdentity),
+       displayName = Value(displayName),
+       startedAt = Value(startedAt);
+  static Insertable<JournalSessionRow> custom({
+    Expression<int>? documentId,
+    Expression<String>? location,
+    Expression<String>? baseIdentity,
+    Expression<String>? displayName,
+    Expression<DateTime>? startedAt,
+    Expression<int>? format,
+  }) {
+    return RawValuesInsertable({
+      if (documentId != null) 'document_id': documentId,
+      if (location != null) 'location': location,
+      if (baseIdentity != null) 'base_identity': baseIdentity,
+      if (displayName != null) 'display_name': displayName,
+      if (startedAt != null) 'started_at': startedAt,
+      if (format != null) 'format': format,
+    });
+  }
+
+  JournalSessionsCompanion copyWith({
+    Value<int>? documentId,
+    Value<String>? location,
+    Value<String>? baseIdentity,
+    Value<String>? displayName,
+    Value<DateTime>? startedAt,
+    Value<int>? format,
+  }) {
+    return JournalSessionsCompanion(
+      documentId: documentId ?? this.documentId,
+      location: location ?? this.location,
+      baseIdentity: baseIdentity ?? this.baseIdentity,
+      displayName: displayName ?? this.displayName,
+      startedAt: startedAt ?? this.startedAt,
+      format: format ?? this.format,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (documentId.present) {
+      map['document_id'] = Variable<int>(documentId.value);
+    }
+    if (location.present) {
+      map['location'] = Variable<String>(location.value);
+    }
+    if (baseIdentity.present) {
+      map['base_identity'] = Variable<String>(baseIdentity.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (format.present) {
+      map['format'] = Variable<int>(format.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('JournalSessionsCompanion(')
+          ..write('documentId: $documentId, ')
+          ..write('location: $location, ')
+          ..write('baseIdentity: $baseIdentity, ')
+          ..write('displayName: $displayName, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('format: $format')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $JournalEntriesTable extends JournalEntries
+    with TableInfo<$JournalEntriesTable, JournalEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $JournalEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<int> sessionId = GeneratedColumn<int>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES journal_sessions (document_id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _sequenceMeta = const VerificationMeta(
+    'sequence',
+  );
+  @override
+  late final GeneratedColumn<int> sequence = GeneratedColumn<int>(
+    'sequence',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _commandMeta = const VerificationMeta(
+    'command',
+  );
+  @override
+  late final GeneratedColumn<String> command = GeneratedColumn<String>(
+    'command',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [sessionId, sequence, command];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'journal_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<JournalEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('sequence')) {
+      context.handle(
+        _sequenceMeta,
+        sequence.isAcceptableOrUnknown(data['sequence']!, _sequenceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sequenceMeta);
+    }
+    if (data.containsKey('command')) {
+      context.handle(
+        _commandMeta,
+        command.isAcceptableOrUnknown(data['command']!, _commandMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_commandMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sessionId, sequence};
+  @override
+  JournalEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return JournalEntry(
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}session_id'],
+      )!,
+      sequence: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sequence'],
+      )!,
+      command: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}command'],
+      )!,
+    );
+  }
+
+  @override
+  $JournalEntriesTable createAlias(String alias) {
+    return $JournalEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class JournalEntry extends DataClass implements Insertable<JournalEntry> {
+  final int sessionId;
+  final int sequence;
+  final String command;
+  const JournalEntry({
+    required this.sessionId,
+    required this.sequence,
+    required this.command,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['session_id'] = Variable<int>(sessionId);
+    map['sequence'] = Variable<int>(sequence);
+    map['command'] = Variable<String>(command);
+    return map;
+  }
+
+  JournalEntriesCompanion toCompanion(bool nullToAbsent) {
+    return JournalEntriesCompanion(
+      sessionId: Value(sessionId),
+      sequence: Value(sequence),
+      command: Value(command),
+    );
+  }
+
+  factory JournalEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return JournalEntry(
+      sessionId: serializer.fromJson<int>(json['sessionId']),
+      sequence: serializer.fromJson<int>(json['sequence']),
+      command: serializer.fromJson<String>(json['command']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sessionId': serializer.toJson<int>(sessionId),
+      'sequence': serializer.toJson<int>(sequence),
+      'command': serializer.toJson<String>(command),
+    };
+  }
+
+  JournalEntry copyWith({int? sessionId, int? sequence, String? command}) =>
+      JournalEntry(
+        sessionId: sessionId ?? this.sessionId,
+        sequence: sequence ?? this.sequence,
+        command: command ?? this.command,
+      );
+  JournalEntry copyWithCompanion(JournalEntriesCompanion data) {
+    return JournalEntry(
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      sequence: data.sequence.present ? data.sequence.value : this.sequence,
+      command: data.command.present ? data.command.value : this.command,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('JournalEntry(')
+          ..write('sessionId: $sessionId, ')
+          ..write('sequence: $sequence, ')
+          ..write('command: $command')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(sessionId, sequence, command);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is JournalEntry &&
+          other.sessionId == this.sessionId &&
+          other.sequence == this.sequence &&
+          other.command == this.command);
+}
+
+class JournalEntriesCompanion extends UpdateCompanion<JournalEntry> {
+  final Value<int> sessionId;
+  final Value<int> sequence;
+  final Value<String> command;
+  final Value<int> rowid;
+  const JournalEntriesCompanion({
+    this.sessionId = const Value.absent(),
+    this.sequence = const Value.absent(),
+    this.command = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  JournalEntriesCompanion.insert({
+    required int sessionId,
+    required int sequence,
+    required String command,
+    this.rowid = const Value.absent(),
+  }) : sessionId = Value(sessionId),
+       sequence = Value(sequence),
+       command = Value(command);
+  static Insertable<JournalEntry> custom({
+    Expression<int>? sessionId,
+    Expression<int>? sequence,
+    Expression<String>? command,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sessionId != null) 'session_id': sessionId,
+      if (sequence != null) 'sequence': sequence,
+      if (command != null) 'command': command,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  JournalEntriesCompanion copyWith({
+    Value<int>? sessionId,
+    Value<int>? sequence,
+    Value<String>? command,
+    Value<int>? rowid,
+  }) {
+    return JournalEntriesCompanion(
+      sessionId: sessionId ?? this.sessionId,
+      sequence: sequence ?? this.sequence,
+      command: command ?? this.command,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sessionId.present) {
+      map['session_id'] = Variable<int>(sessionId.value);
+    }
+    if (sequence.present) {
+      map['sequence'] = Variable<int>(sequence.value);
+    }
+    if (command.present) {
+      map['command'] = Variable<String>(command.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('JournalEntriesCompanion(')
+          ..write('sessionId: $sessionId, ')
+          ..write('sequence: $sequence, ')
+          ..write('command: $command, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$LibraryDatabase extends GeneratedDatabase {
   _$LibraryDatabase(QueryExecutor e) : super(e);
   $LibraryDatabaseManager get managers => $LibraryDatabaseManager(this);
   late final $DocumentsTable documents = $DocumentsTable(this);
   late final $FoldersTable folders = $FoldersTable(this);
   late final $OpenTabsTable openTabs = $OpenTabsTable(this);
+  late final $JournalSessionsTable journalSessions = $JournalSessionsTable(
+    this,
+  );
+  late final $JournalEntriesTable journalEntries = $JournalEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1340,7 +2029,19 @@ abstract class _$LibraryDatabase extends GeneratedDatabase {
     documents,
     folders,
     openTabs,
+    journalSessions,
+    journalEntries,
   ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'journal_sessions',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('journal_entries', kind: UpdateKind.delete)],
+    ),
+  ]);
 }
 
 typedef $$DocumentsTableCreateCompanionBuilder = DocumentsCompanion Function({
@@ -2051,6 +2752,629 @@ typedef $$OpenTabsTableProcessedTableManager =
       OpenTabRow,
       PrefetchHooks Function()
     >;
+typedef $$JournalSessionsTableCreateCompanionBuilder =
+    JournalSessionsCompanion Function({
+      Value<int> documentId,
+      required String location,
+      required String baseIdentity,
+      required String displayName,
+      required DateTime startedAt,
+      Value<int> format,
+    });
+typedef $$JournalSessionsTableUpdateCompanionBuilder =
+    JournalSessionsCompanion Function({
+      Value<int> documentId,
+      Value<String> location,
+      Value<String> baseIdentity,
+      Value<String> displayName,
+      Value<DateTime> startedAt,
+      Value<int> format,
+    });
+
+final class $$JournalSessionsTableReferences
+    extends
+        BaseReferences<
+          _$LibraryDatabase,
+          $JournalSessionsTable,
+          JournalSessionRow
+        > {
+  $$JournalSessionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$JournalEntriesTable, List<JournalEntry>>
+  _journalEntriesRefsTable(_$LibraryDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.journalEntries,
+        aliasName: 'journal_sessions__document_id__journal_entries__session_id',
+      );
+
+  $$JournalEntriesTableProcessedTableManager get journalEntriesRefs {
+    final manager = $$JournalEntriesTableTableManager($_db, $_db.journalEntries)
+        .filter(
+          (f) => f.sessionId.documentId.sqlEquals(
+            $_itemColumn<int>('document_id')!,
+          ),
+        );
+
+    final cache = $_typedResult.readTableOrNull(_journalEntriesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$JournalSessionsTableFilterComposer
+    extends Composer<_$LibraryDatabase, $JournalSessionsTable> {
+  $$JournalSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get documentId => $composableBuilder(
+    column: $table.documentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get location => $composableBuilder(
+    column: $table.location,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get baseIdentity => $composableBuilder(
+    column: $table.baseIdentity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get format => $composableBuilder(
+    column: $table.format,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> journalEntriesRefs(
+    Expression<bool> Function($$JournalEntriesTableFilterComposer f) f,
+  ) {
+    final $$JournalEntriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.journalEntries,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$JournalEntriesTableFilterComposer(
+            $db: $db,
+            $table: $db.journalEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$JournalSessionsTableOrderingComposer
+    extends Composer<_$LibraryDatabase, $JournalSessionsTable> {
+  $$JournalSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get documentId => $composableBuilder(
+    column: $table.documentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get location => $composableBuilder(
+    column: $table.location,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get baseIdentity => $composableBuilder(
+    column: $table.baseIdentity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get format => $composableBuilder(
+    column: $table.format,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$JournalSessionsTableAnnotationComposer
+    extends Composer<_$LibraryDatabase, $JournalSessionsTable> {
+  $$JournalSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get documentId => $composableBuilder(
+    column: $table.documentId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get location =>
+      $composableBuilder(column: $table.location, builder: (column) => column);
+
+  GeneratedColumn<String> get baseIdentity => $composableBuilder(
+    column: $table.baseIdentity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get format =>
+      $composableBuilder(column: $table.format, builder: (column) => column);
+
+  Expression<T> journalEntriesRefs<T extends Object>(
+    Expression<T> Function($$JournalEntriesTableAnnotationComposer a) f,
+  ) {
+    final $$JournalEntriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.journalEntries,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$JournalEntriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.journalEntries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$JournalSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$LibraryDatabase,
+          $JournalSessionsTable,
+          JournalSessionRow,
+          $$JournalSessionsTableFilterComposer,
+          $$JournalSessionsTableOrderingComposer,
+          $$JournalSessionsTableAnnotationComposer,
+          $$JournalSessionsTableCreateCompanionBuilder,
+          $$JournalSessionsTableUpdateCompanionBuilder,
+          (JournalSessionRow, $$JournalSessionsTableReferences),
+          JournalSessionRow,
+          PrefetchHooks Function({bool journalEntriesRefs})
+        > {
+  $$JournalSessionsTableTableManager(
+    _$LibraryDatabase db,
+    $JournalSessionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$JournalSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$JournalSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$JournalSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> documentId = const Value.absent(),
+                Value<String> location = const Value.absent(),
+                Value<String> baseIdentity = const Value.absent(),
+                Value<String> displayName = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<int> format = const Value.absent(),
+              }) => JournalSessionsCompanion(
+                documentId: documentId,
+                location: location,
+                baseIdentity: baseIdentity,
+                displayName: displayName,
+                startedAt: startedAt,
+                format: format,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> documentId = const Value.absent(),
+                required String location,
+                required String baseIdentity,
+                required String displayName,
+                required DateTime startedAt,
+                Value<int> format = const Value.absent(),
+              }) => JournalSessionsCompanion.insert(
+                documentId: documentId,
+                location: location,
+                baseIdentity: baseIdentity,
+                displayName: displayName,
+                startedAt: startedAt,
+                format: format,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$JournalSessionsTable, JournalSessionRow>(table),
+                  $$JournalSessionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({journalEntriesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (journalEntriesRefs) db.journalEntries,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (journalEntriesRefs)
+                    await $_getPrefetchedDataByColumns<
+                      JournalSessionRow,
+                      $JournalSessionsTable,
+                      JournalEntry,
+                      $JournalEntriesTable
+                    >(
+                      currentTable: table,
+                      referencedTable: $$JournalSessionsTableReferences
+                          ._journalEntriesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$JournalSessionsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).journalEntriesRefs,
+                      currentColumn: 'document_id',
+                      referencedColumn: 'session_id',
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$JournalSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LibraryDatabase,
+      $JournalSessionsTable,
+      JournalSessionRow,
+      $$JournalSessionsTableFilterComposer,
+      $$JournalSessionsTableOrderingComposer,
+      $$JournalSessionsTableAnnotationComposer,
+      $$JournalSessionsTableCreateCompanionBuilder,
+      $$JournalSessionsTableUpdateCompanionBuilder,
+      (JournalSessionRow, $$JournalSessionsTableReferences),
+      JournalSessionRow,
+      PrefetchHooks Function({bool journalEntriesRefs})
+    >;
+typedef $$JournalEntriesTableCreateCompanionBuilder =
+    JournalEntriesCompanion Function({
+      required int sessionId,
+      required int sequence,
+      required String command,
+      Value<int> rowid,
+    });
+typedef $$JournalEntriesTableUpdateCompanionBuilder =
+    JournalEntriesCompanion Function({
+      Value<int> sessionId,
+      Value<int> sequence,
+      Value<String> command,
+      Value<int> rowid,
+    });
+
+final class $$JournalEntriesTableReferences
+    extends
+        BaseReferences<_$LibraryDatabase, $JournalEntriesTable, JournalEntry> {
+  $$JournalEntriesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $JournalSessionsTable _sessionIdTable(_$LibraryDatabase db) =>
+      db.journalSessions.createAlias(
+        'journal_entries__session_id__journal_sessions__document_id',
+      );
+
+  $$JournalSessionsTableProcessedTableManager get sessionId {
+    final $_column = $_itemColumn<int>('session_id')!;
+
+    final manager = $$JournalSessionsTableTableManager(
+      $_db,
+      $_db.journalSessions,
+    ).filter((f) => f.documentId.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$JournalEntriesTableFilterComposer
+    extends Composer<_$LibraryDatabase, $JournalEntriesTable> {
+  $$JournalEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get sequence => $composableBuilder(
+    column: $table.sequence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get command => $composableBuilder(
+    column: $table.command,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$JournalSessionsTableFilterComposer get sessionId {
+    final $$JournalSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.journalSessions,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$JournalSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.journalSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$JournalEntriesTableOrderingComposer
+    extends Composer<_$LibraryDatabase, $JournalEntriesTable> {
+  $$JournalEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get sequence => $composableBuilder(
+    column: $table.sequence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get command => $composableBuilder(
+    column: $table.command,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$JournalSessionsTableOrderingComposer get sessionId {
+    final $$JournalSessionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.journalSessions,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$JournalSessionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.journalSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$JournalEntriesTableAnnotationComposer
+    extends Composer<_$LibraryDatabase, $JournalEntriesTable> {
+  $$JournalEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get sequence =>
+      $composableBuilder(column: $table.sequence, builder: (column) => column);
+
+  GeneratedColumn<String> get command =>
+      $composableBuilder(column: $table.command, builder: (column) => column);
+
+  $$JournalSessionsTableAnnotationComposer get sessionId {
+    final $$JournalSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.journalSessions,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$JournalSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.journalSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$JournalEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$LibraryDatabase,
+          $JournalEntriesTable,
+          JournalEntry,
+          $$JournalEntriesTableFilterComposer,
+          $$JournalEntriesTableOrderingComposer,
+          $$JournalEntriesTableAnnotationComposer,
+          $$JournalEntriesTableCreateCompanionBuilder,
+          $$JournalEntriesTableUpdateCompanionBuilder,
+          (JournalEntry, $$JournalEntriesTableReferences),
+          JournalEntry,
+          PrefetchHooks Function({bool sessionId})
+        > {
+  $$JournalEntriesTableTableManager(
+    _$LibraryDatabase db,
+    $JournalEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$JournalEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$JournalEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$JournalEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> sessionId = const Value.absent(),
+                Value<int> sequence = const Value.absent(),
+                Value<String> command = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => JournalEntriesCompanion(
+                sessionId: sessionId,
+                sequence: sequence,
+                command: command,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int sessionId,
+                required int sequence,
+                required String command,
+                Value<int> rowid = const Value.absent(),
+              }) => JournalEntriesCompanion.insert(
+                sessionId: sessionId,
+                sequence: sequence,
+                command: command,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$JournalEntriesTable, JournalEntry>(table),
+                  $$JournalEntriesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({sessionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (sessionId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.sessionId,
+                        referencedTable: $$JournalEntriesTableReferences
+                            ._sessionIdTable(db),
+                        referencedColumn: $$JournalEntriesTableReferences
+                            ._sessionIdTable(db)
+                            .documentId,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$JournalEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LibraryDatabase,
+      $JournalEntriesTable,
+      JournalEntry,
+      $$JournalEntriesTableFilterComposer,
+      $$JournalEntriesTableOrderingComposer,
+      $$JournalEntriesTableAnnotationComposer,
+      $$JournalEntriesTableCreateCompanionBuilder,
+      $$JournalEntriesTableUpdateCompanionBuilder,
+      (JournalEntry, $$JournalEntriesTableReferences),
+      JournalEntry,
+      PrefetchHooks Function({bool sessionId})
+    >;
 
 class $LibraryDatabaseManager {
   final _$LibraryDatabase _db;
@@ -2061,4 +3385,8 @@ class $LibraryDatabaseManager {
       $$FoldersTableTableManager(_db, _db.folders);
   $$OpenTabsTableTableManager get openTabs =>
       $$OpenTabsTableTableManager(_db, _db.openTabs);
+  $$JournalSessionsTableTableManager get journalSessions =>
+      $$JournalSessionsTableTableManager(_db, _db.journalSessions);
+  $$JournalEntriesTableTableManager get journalEntries =>
+      $$JournalEntriesTableTableManager(_db, _db.journalEntries);
 }

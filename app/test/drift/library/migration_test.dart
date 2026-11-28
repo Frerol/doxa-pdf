@@ -10,6 +10,7 @@ import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
+import 'generated/schema_v4.dart' as v4;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -136,6 +137,24 @@ void main() {
           v3.LibraryFoldersData.fromJson(folder.toJson()),
         ]);
         expect(await newDb.select(newDb.openTabs).get(), isEmpty);
+      },
+    );
+  });
+  test('FR-SAVE-003 v3 to v4 preserves saved tabs and starts with an empty journal', () async {
+    const tab = v3.OpenTabsData(documentId: 23, position: 0, active: 1);
+    await verifier.testWithDataIntegrity(
+      oldVersion: 3,
+      newVersion: 4,
+      createOld: v3.DatabaseAtV3.new,
+      createNew: v4.DatabaseAtV4.new,
+      openTestedDatabase: LibraryDatabase.new,
+      createItems: (batch, oldDb) => batch.insert(oldDb.openTabs, tab),
+      validateItems: (newDb) async {
+        expect(await newDb.select(newDb.openTabs).get(), [
+          v4.OpenTabsData.fromJson(tab.toJson()),
+        ]);
+        expect(await newDb.select(newDb.journalSessions).get(), isEmpty);
+        expect(await newDb.select(newDb.journalEntries).get(), isEmpty);
       },
     );
   });

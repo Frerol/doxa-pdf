@@ -255,16 +255,21 @@ class _LibraryHomeState extends State<LibraryHome> {
     final uri = document.uri;
     final parsed = uri == null ? null : Uri.tryParse(uri);
     if (parsed == null) {
-      _showCannotReopen(document);
+      await _showCannotReopen(document.id);
       return;
     }
     if (parsed.scheme == 'file') {
-      await _openFile(File(parsed.toFilePath()));
+      final file = File(parsed.toFilePath());
+      if (!await file.exists()) {
+        await _showCannotReopen(document.id);
+      } else {
+        await _openFile(file);
+      }
       return;
     }
     final documents = widget.pdfDocuments;
     if (documents == null) {
-      _showCannotReopen(document);
+      await _showCannotReopen(document.id);
       return;
     }
     try {
@@ -274,7 +279,7 @@ class _LibraryHomeState extends State<LibraryHome> {
       if (error.error
           case PdfAccessError.missing || PdfAccessError.permissionLost) {
         await widget.library?.forgetLocation(document.id);
-        _showCannotReopen(document);
+        await _showCannotReopen(document.id);
       } else {
         _showAccessError(error.error);
       }
@@ -284,12 +289,18 @@ class _LibraryHomeState extends State<LibraryHome> {
     }
   }
 
-  Future<void> _openPlatformPdf(PdfDocuments documents, PlatformPdf pdf) {
+  Future<void> _openPlatformPdf(
+    PdfDocuments documents,
+    PlatformPdf pdf, {
+    int? recoveryDocumentId,
+  }) {
     return _openRecorded(
       path: pdf.path,
       displayName: pdf.displayName,
       // A grant that does not persist cannot reopen the file later.
       uri: pdf.persistedRead ? pdf.uri : null,
+      journalLocation: pdf.uri,
+      recoveryDocumentId: recoveryDocumentId,
       release: () => documents.releasePdf(pdf.leaseId),
     );
   }
@@ -304,6 +315,8 @@ class _LibraryHomeState extends State<LibraryHome> {
     required String path,
     required String displayName,
     String? uri,
+    String? journalLocation,
+    int? recoveryDocumentId,
     Future<void> Function()? release,
   }) async {
     LibraryDocument? record;
@@ -316,6 +329,8 @@ class _LibraryHomeState extends State<LibraryHome> {
           identity: identity,
           displayName: displayName,
           uri: uri,
+          journalLocation: journalLocation,
+          recoveryDocumentId: recoveryDocumentId,
         );
       } on Object catch (error) {
         // The library is a convenience: the document still opens.
@@ -332,6 +347,8 @@ class _LibraryHomeState extends State<LibraryHome> {
         key: identity ?? path,
         title: displayName,
         record: record,
+        journalLocation: journalLocation ?? uri,
+        openedIdentity: identity,
         source: FileSource(path),
         release: release,
       ),
@@ -345,6 +362,8 @@ class _LibraryHomeState extends State<LibraryHome> {
     required String key,
     required String title,
     LibraryDocument? record,
+    String? journalLocation,
+    String? openedIdentity,
     DocumentSource? source,
     Future<void> Function()? release,
     Future<LeasedSource> Function()? reopen,
@@ -359,6 +378,9 @@ class _LibraryHomeState extends State<LibraryHome> {
       release: release,
       reopen: reopen,
       libraryId: record?.id,
+      journalLocation: journalLocation ?? record?.uri,
+      openedIdentity: openedIdentity,
+      onUnavailable: record == null ? null : () => _showCannotReopen(record.id),
       thumbnail: identity == null ? null : widget.thumbnails?.fileFor(identity),
       position: state == null
           ? null
@@ -456,10 +478,13 @@ class _LibraryHomeState extends State<LibraryHome> {
     final parsed = Uri.tryParse(document.uri ?? '');
     if (parsed == null) return null;
     if (parsed.scheme == 'file') {
-      return () async => (
-        source: FileSource(parsed.toFilePath()) as DocumentSource,
-        release: null,
-      );
+      return () async {
+        final path = parsed.toFilePath();
+        if (!await File(path).exists()) {
+          throw const PdfAccessException(PdfAccessError.missing);
+        }
+        return (source: FileSource(path) as DocumentSource, release: null);
+      };
     }
     final documents = widget.pdfDocuments;
     if (documents == null) return null;
@@ -529,8 +554,55 @@ class _LibraryHomeState extends State<LibraryHome> {
     );
   }
 
-  void _showCannotReopen(LibraryDocument document) =>
-      _showMessage(AppLocalizations.of(context).libraryCannotReopen);
+  Future<void> _showCannotReopen(int documentId) async {
+    final library = widget.library;
+    final journal = await library?.journalFor(documentId);
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    if (journal == null) {
+      _showMessage(l10n.libraryCannotReopen);
+      return;
+    }
+    final documents = widget.pdfDocuments;
+    final locate = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.annotationUnsaved),
+        content: Text(l10n.annotationMissingPrompt),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.annotationDiscard),
+          ),
+          if (documents != null)
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.annotationLocate),
+            ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    try {
+      if (locate == false) await library!.discardJournal(documentId);
+      if (locate == true && documents != null) {
+        final pdf = await documents.pickPdf();
+        if (pdf != null) {
+          await _openPlatformPdf(
+            documents,
+            pdf,
+            recoveryDocumentId: documentId,
+          );
+        }
+      }
+    } on Object {
+      if (mounted) _showMessage(l10n.libraryCannotReopen);
+    }
+  }
 
   void _showAccessError(PdfAccessError error) {
     if (!mounted) return;
@@ -1023,7 +1095,11 @@ class _DocumentTile extends StatelessWidget {
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text(subtitle),
+      subtitle: Text(
+        document.hasUnsavedChanges
+            ? '${l10n.annotationUnsaved} · $subtitle'
+            : subtitle,
+      ),
       onTap: selecting ? onSelect : () => onOpen(document),
       onLongPress: selectable ? onSelect : null,
       trailing: selecting

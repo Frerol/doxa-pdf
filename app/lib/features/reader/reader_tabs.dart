@@ -11,6 +11,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../src/doxa_theme.dart';
 import '../library/library_repository.dart';
 import '../settings/app_settings.dart';
+import 'annotation_session.dart';
 import 'reader_controller.dart';
 import 'reader_page.dart';
 
@@ -20,9 +21,9 @@ typedef LeasedSource = ({
   Future<void> Function()? release,
 });
 
-/// One open document (FR-FILE-007). Only the active tab has its document
-/// open in the engine; the others keep their place and nothing else, so
-/// several textbooks fit the memory budget (NFR-PERF-006).
+/// One open document (FR-FILE-007). Inactive read-only tabs keep their
+/// place without keeping a document open in the engine. Edited tabs keep
+/// their editing instance and undo history while the workspace is open.
 final class ReaderTab {
   ReaderTab({
     required this.key,
@@ -31,6 +32,9 @@ final class ReaderTab {
     this._release,
     this.reopen,
     this.libraryId,
+    this.journalLocation,
+    this._openedIdentity,
+    this.onUnavailable,
     this.thumbnail,
     this.position,
     this.rightToLeft = false,
@@ -52,6 +56,11 @@ final class ReaderTab {
 
   /// The library document, so the tab can be restored after a restart.
   final int? libraryId;
+  final String? journalLocation;
+  String? _openedIdentity;
+  final Future<void> Function()? onUnavailable;
+  AnnotationSession? _editing;
+  bool _closing = false;
 
   /// The first page, for the tab switcher on phones.
   final File? thumbnail;
@@ -82,7 +91,11 @@ final class ReaderTabs extends ChangeNotifier {
   /// Shows [tab]. A document that already has a tab is shown there instead,
   /// and the new source is given back.
   void open(ReaderTab tab) {
-    final existing = _tabs.indexWhere((t) => t.key == tab.key);
+    final existing = _tabs.indexWhere(
+      (t) =>
+          t.key == tab.key ||
+          (tab.libraryId != null && t.libraryId == tab.libraryId),
+    );
     if (existing >= 0) {
       unawaited(tab._release?.call());
       _active = existing;
@@ -139,6 +152,73 @@ final class ReaderTabs extends ChangeNotifier {
     }
     notifyListeners();
     _release(tab);
+  }
+
+  Future<void> requestClose(BuildContext context, int index) async {
+    final tab = _tabs[index];
+    if (tab._closing) return;
+    tab._closing = true;
+    try {
+      final session = tab._editing;
+      if (session != null && session.isBusy && !await session.waitForSave()) {
+        return;
+      }
+      if (session != null && session.hasUnsavedChanges) {
+        if (!context.mounted) return;
+        final l10n = AppLocalizations.of(context);
+        if (session.autosave) {
+          if (!await session.save() && !session.readOnly) return;
+        } else {
+          final choice = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text(l10n.annotationUnsaved),
+              content: Text(l10n.annotationClosePrompt),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(l10n.cancel),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(l10n.annotationDiscard),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(l10n.annotationSave),
+                ),
+              ],
+            ),
+          );
+          if (choice == null) return;
+          if (choice) {
+            if (!await session.save()) {
+              if (session.readOnly && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.annotationReadOnly)),
+                );
+              }
+              return;
+            }
+          } else {
+            try {
+              await session.discard();
+            } on Object {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.annotationEditFailed)),
+                );
+              }
+              return;
+            }
+          }
+        }
+      }
+      final current = _tabs.indexOf(tab);
+      if (current >= 0) close(current);
+    } finally {
+      tab._closing = false;
+    }
   }
 
   /// Gives back the source once the engine has closed the document.
@@ -226,7 +306,7 @@ class _ReaderWorkspaceState extends State<ReaderWorkspace> {
             _acquiring.remove(tab);
             if (mounted) setState(() {});
           })
-          .catchError((Object error) {
+          .catchError((Object error) async {
             _acquiring.remove(tab);
             debugPrint('Doxa: cannot reopen ${tab.title}: $error');
             final index = widget.tabs.tabs.indexOf(tab);
@@ -234,7 +314,11 @@ class _ReaderWorkspaceState extends State<ReaderWorkspace> {
             final messenger = ScaffoldMessenger.of(context);
             final message = AppLocalizations.of(context).libraryCannotReopen;
             widget.tabs.close(index);
-            messenger.showSnackBar(SnackBar(content: Text(message)));
+            if (tab.onUnavailable case final unavailable?) {
+              await unavailable();
+            } else {
+              messenger.showSnackBar(SnackBar(content: Text(message)));
+            }
           }),
     );
   }
@@ -248,6 +332,37 @@ class _ReaderWorkspaceState extends State<ReaderWorkspace> {
     // Shown from the first tab, so any document can be closed here.
     final tabRow = wide ? ReaderTabRow(tabs: widget.tabs) : null;
     final tabsButton = wide ? null : _TabsButton(tabs: widget.tabs);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (final candidate in widget.tabs.tabs)
+          if (candidate == tab ||
+              (candidate._editing?.hasUnsavedChanges ?? false) ||
+              (candidate._editing?.canUndo ?? false) ||
+              (candidate._editing?.canRedo ?? false))
+            Offstage(
+              key: ObjectKey(candidate),
+              offstage: candidate != tab,
+              child: TickerMode(
+                enabled: candidate == tab,
+                child: _buildTab(
+                  candidate,
+                  tabRow,
+                  tabsButton,
+                  candidate == tab,
+                ),
+              ),
+            ),
+      ],
+    );
+  }
+
+  Widget _buildTab(
+    ReaderTab tab,
+    PreferredSizeWidget? tabRow,
+    Widget? tabsButton,
+    bool active,
+  ) {
     final source = tab._source;
     if (source == null) {
       _acquire(tab);
@@ -271,8 +386,7 @@ class _ReaderWorkspaceState extends State<ReaderWorkspace> {
       return idle;
     });
     return ReaderPage(
-      // A new page per tab: the old one saves its place and closes its
-      // document, so only the active tab holds pages in memory.
+      // One page per loaded tab, keyed across tab switches.
       key: ObjectKey(tab),
       engine: widget.engine,
       source: source,
@@ -280,6 +394,16 @@ class _ReaderWorkspaceState extends State<ReaderWorkspace> {
       settings: widget.settings,
       library: widget.library,
       libraryId: tab.libraryId,
+      journalLocation: tab.journalLocation,
+      openedIdentity: tab._openedIdentity,
+      onAnnotationSession: (session) {
+        if (session == null) {
+          tab._openedIdentity =
+              tab._editing?.baseIdentity ?? tab._openedIdentity;
+        }
+        tab._editing = session;
+      },
+      active: active,
       initialPosition: tab.position,
       initialRightToLeft: tab.rightToLeft,
       // Called once the engine has closed the document; the tab releases
@@ -387,7 +511,8 @@ class ReaderTabRow extends StatelessWidget implements PreferredSizeWidget {
                             icon: const Icon(LucideIcons.x, size: 18),
                             tooltip: l10n.closeTab(all[i].title),
                             visualDensity: VisualDensity.compact,
-                            onPressed: () => tabs.close(i),
+                            onPressed: () =>
+                                unawaited(tabs.requestClose(context, i)),
                           ),
                         ],
                       ),
@@ -466,7 +591,7 @@ class TabSwitcher extends StatelessWidget {
                 tabs.activate(i);
                 Navigator.of(context).pop();
               },
-              onClose: () => tabs.close(i),
+              onClose: () => unawaited(tabs.requestClose(context, i)),
             ),
           ),
         );

@@ -279,7 +279,9 @@ class _ContinueCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      details,
+                      document.hasUnsavedChanges
+                          ? '${l10n.annotationUnsaved} · $details'
+                          : details,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: scheme.onPrimary.withValues(alpha: 0.9),
                       ),
@@ -528,7 +530,9 @@ class _RecentRow extends StatelessWidget {
                         maxWidth: constraints.maxWidth * 0.45,
                       ),
                       child: Text(
-                        meta,
+                        document.hasUnsavedChanges
+                            ? AppLocalizations.of(context).annotationUnsaved
+                            : meta,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.end,
