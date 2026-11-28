@@ -156,7 +156,8 @@ abstract class DoxaPlatformPluginApi {
   @asyncCallback
   void deleteDocument(String uri);
 
-  /// Checks the persisted grant and document flags without opening for write.
+  /// Checks the persisted write grant, then the document flags, opening
+  /// the document with "rw" (no write) when the write flag is missing.
   @asyncCallback
   bool canWrite(String uri);
 

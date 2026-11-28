@@ -76,8 +76,17 @@ internal class PdfSaves(private val context: Context) {
         val flags = resolver.query(uri, arrayOf(Document.COLUMN_FLAGS), null, null, null)?.use { cursor ->
             val column = cursor.getColumnIndex(Document.COLUMN_FLAGS)
             if (cursor.moveToFirst() && column >= 0) cursor.getInt(column) else null
-        } ?: return "readOnly"
-        return if (flags and Document.FLAG_SUPPORTS_WRITE != 0) null else "readOnly"
+        }
+        return writeVerdict(flags) { opensForWrite(uri) }
+    }
+
+    /** Opens [uri] with "rw", which neither truncates nor writes, and closes it. */
+    private fun opensForWrite(uri: Uri): Boolean = try {
+        resolver.openFileDescriptor(uri, "rw")?.use { true } ?: false
+    } catch (error: SecurityException) {
+        throw error
+    } catch (_: Exception) {
+        false
     }
 
     private fun writeAndVerify(uri: Uri, source: InputStream) {
@@ -107,6 +116,19 @@ internal class PdfSaves(private val context: Context) {
             main.post { callback(result) }
         }
     }
+}
+
+/**
+ * Null when a document with these [flags] (null when the provider gave
+ * none) can be written, else "readOnly". Some providers write documents
+ * without FLAG_SUPPORTS_WRITE (the media provider behind the picker's
+ * Recent and Documents roots, on Android 16), so a missing flag is
+ * checked with [opensForWrite].
+ */
+internal fun writeVerdict(flags: Int?, opensForWrite: () -> Boolean): String? = when {
+    flags != null && flags and Document.FLAG_SUPPORTS_WRITE != 0 -> null
+    opensForWrite() -> null
+    else -> "readOnly"
 }
 
 internal fun contentUri(value: String): Uri = Uri.parse(value).also {

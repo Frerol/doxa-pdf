@@ -55,3 +55,19 @@ internal class LibraryFoldersTest {
         assertFalse(isListed(null, "readme.txt"))
     }
 }
+
+internal class PdfSavesTest {
+    @Test
+    fun missingWriteFlagFallsBackToOpeningForWrite() {
+        val supportsWrite = android.provider.DocumentsContract.Document.FLAG_SUPPORTS_WRITE
+        // The media provider's flags on Android 16: delete, no write (FR-SAVE-002).
+        val mediaFlags = 0x10004
+        var probed = false
+        assertEquals(null, writeVerdict(supportsWrite) { probed = true; false })
+        assertFalse(probed, "a provider that declares write support is not probed")
+        assertEquals(null, writeVerdict(mediaFlags) { true })
+        assertEquals(null, writeVerdict(null) { true })
+        assertEquals("readOnly", writeVerdict(mediaFlags) { false })
+        assertEquals("readOnly", writeVerdict(null) { false })
+    }
+}

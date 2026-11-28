@@ -20,8 +20,9 @@ class PdfSaveException implements Exception {
 /// Android PDF write-back, export and sharing (FR-SAVE-002, FR-FILE-010,
 /// FR-SAVE-005). Platform failures throw [PdfSaveException].
 abstract interface class PdfSaves {
-  /// Whether the provider advertises write support and a persisted write
-  /// grant covers [uri]. This preflight does not open the document for write.
+  /// Whether a persisted write grant covers [uri] and the provider can
+  /// write it: it declares write support, or, where it does not, the
+  /// document opens with "rw" (closed again without writing).
   Future<bool> canWrite(String uri);
 
   /// Copies the engine-verified PDF from [tempPath] to [uri] and checks
