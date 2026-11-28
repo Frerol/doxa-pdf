@@ -1,6 +1,6 @@
 # ADR-0012 — Filled Lucide star for favourites
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-28
 
 ## Context

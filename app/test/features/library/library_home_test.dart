@@ -371,6 +371,28 @@ void main() {
       expect(find.byType(ReaderPage), findsNothing);
     });
 
+    testWidgets('Recents rows keep their details and actions at the right', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await seed('Physics.pdf', 1);
+      await seed('Calculus.pdf', 2);
+      await launch(tester);
+      final row = find
+          .ancestor(of: addFavorite.last, matching: find.byType(Card))
+          .first;
+      final menu = find.descendant(
+        of: row,
+        matching: find.byWidgetPredicate((w) => w is PopupMenuButton),
+      );
+      // Only the row's own padding is left after its last action.
+      expect(
+        tester.getRect(row).right - tester.getRect(menu).right,
+        closeTo(16, 1),
+      );
+    });
+
     testWidgets(
       'FR-FILE-005: the compact reader can create the first favorite',
       (tester) async {
