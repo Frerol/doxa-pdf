@@ -8,6 +8,7 @@ import 'download_conditions.dart';
 import 'doxa_platform_pigeon.dart';
 import 'library_folders.dart';
 import 'pdf_documents.dart';
+import 'pdf_saves.dart';
 
 abstract class DoxaPlatformPlatform extends PlatformInterface {
   /// Constructs a DoxaPlatformPlatform.
@@ -32,6 +33,9 @@ abstract class DoxaPlatformPlatform extends PlatformInterface {
 
   PdfDocuments get pdfDocuments =>
       throw UnsupportedError('PDF document access is not available.');
+
+  PdfSaves get pdfSaves =>
+      throw UnsupportedError('PDF saving is not available.');
 
   LibraryFolders get libraryFolders =>
       throw UnsupportedError('Library folders are not available.');

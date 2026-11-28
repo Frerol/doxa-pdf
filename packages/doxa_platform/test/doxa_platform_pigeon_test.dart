@@ -53,6 +53,59 @@ void main() {
     );
   });
 
+  group('PDF saves (FR-SAVE-002, FR-FILE-010, FR-SAVE-005)', () {
+    const uri = 'content://provider/document/book';
+    const tempPath = '/cache/edited.pdf';
+    const recoveryPath = '/cache/original.pdf';
+
+    for (final (code, expected) in [
+      ('permissionLost', PdfSaveError.permissionLost),
+      ('readOnly', PdfSaveError.readOnly),
+      ('noSpace', PdfSaveError.noSpace),
+      ('mismatch', PdfSaveError.mismatch),
+      ('failed', PdfSaveError.failed),
+      ('unknown', PdfSaveError.failed),
+    ]) {
+      test(
+        'write-back maps $code and preserves recovery information',
+        () async {
+          final path = code == 'mismatch' ? recoveryPath : null;
+          final api = FakeDoxaPlatformPluginApi(platformVersion: '42')
+            ..saveFailure = PlatformException(
+              code: code,
+              details: path == null
+                  ? 'unrelated diagnostic'
+                  : {'recoveryPath': path},
+            );
+          final saves = PigeonDoxaPlatform(api: api).pdfSaves;
+          await expectLater(
+            saves.writeBack(uri, tempPath),
+            throwsA(
+              isA<PdfSaveException>()
+                  .having((e) => e.error, 'error', expected)
+                  .having((e) => e.recoveryPath, 'recoveryPath', path),
+            ),
+          );
+        },
+      );
+    }
+
+    test('export and share failures are typed', () async {
+      final api = FakeDoxaPlatformPluginApi(platformVersion: '42')
+        ..saveFailure = PlatformException(code: 'permissionLost');
+      final saves = PigeonDoxaPlatform(api: api).pdfSaves;
+      final failure = throwsA(
+        isA<PdfSaveException>().having(
+          (e) => e.error,
+          'error',
+          PdfSaveError.permissionLost,
+        ),
+      );
+      await expectLater(saves.saveCopy(tempPath, 'Book.pdf'), failure);
+      await expectLater(saves.share(uri), failure);
+    });
+  });
+
   test('staging failures keep their cause (FR-TEXT-009)', () async {
     final api = FakeDoxaPlatformPluginApi(platformVersion: '42');
     final imports = PigeonDoxaPlatform(api: api).dictionaryImports;
@@ -253,6 +306,27 @@ class FakeDoxaPlatformPluginApi implements DoxaPlatformPluginApi {
   @override
   Future<void> deleteDocument(String uri) =>
       throw PlatformException(code: fileError);
+
+  PlatformException? saveFailure;
+
+  @override
+  Future<bool> canWrite(String uri) async => false;
+
+  @override
+  Future<void> writeBack(String uri, String tempPath) async {
+    if (saveFailure case final error?) throw error;
+  }
+
+  @override
+  Future<String?> savePdfCopy(String tempPath, String displayName) async {
+    if (saveFailure case final error?) throw error;
+    return null;
+  }
+
+  @override
+  Future<void> sharePdf(String uri) async {
+    if (saveFailure case final error?) throw error;
+  }
 
   String? staged;
   String? stageError;

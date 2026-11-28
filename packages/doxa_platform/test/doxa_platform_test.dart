@@ -13,6 +13,9 @@ class MockDoxaPlatformPlatform
   PdfDocuments get pdfDocuments => throw UnimplementedError();
 
   @override
+  PdfSaves get pdfSaves => throw UnimplementedError();
+
+  @override
   LibraryFolders get libraryFolders => throw UnimplementedError();
 
   @override

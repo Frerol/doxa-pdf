@@ -156,6 +156,22 @@ abstract class DoxaPlatformPluginApi {
   @asyncCallback
   void deleteDocument(String uri);
 
+  /// Checks the persisted grant and document flags without opening for write.
+  @asyncCallback
+  bool canWrite(String uri);
+
+  /// Writes and verifies the PDF. A failure after writing starts carries the
+  /// path of the cache backup of the previous contents in its error details.
+  @asyncCallback
+  void writeBack(String uri, String tempPath);
+
+  /// Creates and verifies a PDF through the system picker; null on cancellation.
+  @asyncCallback
+  String? savePdfCopy(String tempPath, String displayName);
+
+  /// Opens the system share sheet for a readable PDF content URI.
+  void sharePdf(String uri);
+
   /// Asks for dictionary files (a `.zip` or loose StarDict files) and
   /// copies them into a new staging folder in the cache, extracting each
   /// `.zip` (FR-TEXT-009). Returns the folder's path, or null when the
