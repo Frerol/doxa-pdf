@@ -561,17 +561,38 @@ class ReaderPainter extends CustomPainter {
       paintMarkup(canvas, markup);
     }
     canvas.restore();
-    final paints = {
-      InkTool.highlighter: Paint()
-        ..filterQuality = FilterQuality.low
-        ..blendMode = BlendMode.multiply,
-      InkTool.pen: Paint()..filterQuality = FilterQuality.low,
-    };
-    for (final MapEntry(key: tool, value: paint) in paints.entries) {
+    final multiply = Paint()
+      ..filterQuality = FilterQuality.low
+      ..blendMode = BlendMode.multiply;
+    final normal = Paint()..filterQuality = FilterQuality.low;
+    for (final tool in [InkTool.highlighter, InkTool.pen]) {
+      final paint = tool == InkTool.highlighter ? multiply : normal;
+      final missing = ui.Path();
+      final vectors = <InkAnnotation>{};
       for (final tile in controller.visibleTiles(page)) {
         final ink = controller.inkTile(tile, tool);
-        if (ink != null) _draw(canvas, ink, tile.destination, paint);
+        if (ink != null) {
+          _draw(canvas, ink, tile.destination, paint);
+          continue;
+        }
+        final inks = controller.inksOn(tile, tool);
+        if (inks.isEmpty) continue;
+        missing.addRect(tile.destination);
+        vectors.addAll(inks);
       }
+      if (vectors.isEmpty) continue;
+      // Until its tiles are rasterised, ink draws as vectors there.
+      canvas
+        ..save()
+        ..clipPath(missing)
+        ..saveLayer(missing.getBounds(), paint)
+        ..transform(matrix);
+      for (final ink in vectors) {
+        canvas.drawPath(inkPath(ink), inkPaint(ink));
+      }
+      canvas
+        ..restore()
+        ..restore();
     }
   }
 

@@ -8,6 +8,17 @@ import 'package:doxa_engine/doxa_engine.dart';
 import 'package:doxa_ink/doxa_ink.dart';
 import 'package:flutter/foundation.dart';
 
+/// Rasterises a recorded ink tile; tests pass a synchronous one.
+typedef InkRasterizer = Future<ui.Image> Function(
+  ui.Picture picture,
+  int width,
+  int height,
+);
+
+/// Rasterises off the frame, on the raster thread.
+Future<ui.Image> rasterizeInk(ui.Picture picture, int width, int height) =>
+    picture.toImage(width, height);
+
 /// The colour of a markup or ink without `/C`.
 const defaultAnnotationColor = 0xFFD400;
 

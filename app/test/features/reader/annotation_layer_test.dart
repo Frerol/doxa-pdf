@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:doxa_core/doxa_core.dart';
@@ -71,6 +72,8 @@ Future<ReaderController> _show(
   WidgetTester tester,
   FakePage page, {
   List<Annotation> annotations = const [],
+  InkRasterizer? rasterizer,
+  int cacheBudgetBytes = 160 << 20,
 }) async {
   tester.view
     ..physicalSize = _view
@@ -97,6 +100,8 @@ Future<ReaderController> _show(
     document: opened.handle,
     info: opened.info,
     decoder: decoder.call,
+    inkRasterizer: rasterizer ?? _syncRasterizer,
+    cacheBudgetBytes: cacheBudgetBytes,
   );
   addTearDown(controller.dispose);
   await tester.pumpWidget(
@@ -110,6 +115,11 @@ Future<ReaderController> _show(
   await _settle(tester);
   return controller;
 }
+
+/// Rasterises at once; the real one finishes on the raster thread, which
+/// a widget test's fake clock does not wait for.
+Future<ui.Image> _syncRasterizer(ui.Picture p, int w, int h) async =>
+    p.toImageSync(w, h);
 
 Future<void> _settle(WidgetTester tester) async {
   for (var i = 0; i < 20; i++) {
@@ -201,22 +211,93 @@ void main() {
     ) async {
       final page = _page(0, const PdfPoint(0, 0));
       final ink = _ink(page.bottomRight);
-      final controller = await _show(tester, page.page, annotations: [ink]);
-      final tile = controller
+      var rasterised = 0;
+      final controller = await _show(
+        tester,
+        page.page,
+        annotations: [ink],
+        rasterizer: (p, w, h) async {
+          rasterised++;
+          return p.toImageSync(w, h);
+        },
+      );
+      final tiles = controller
           .visibleTiles(0)
-          .firstWhere((t) => controller.inkTile(t, InkTool.pen) != null);
-      final first = controller.inkTile(tile, InkTool.pen);
-      controller.repaint.value++;
-      await tester.pump();
-      expect(controller.inkTile(tile, InkTool.pen), same(first));
+          .where((t) => controller.inksOn(t, InkTool.pen).isNotEmpty)
+          .toList();
+      expect(tiles, isNotEmpty);
+      final first = [for (final t in tiles) controller.inkTile(t, InkTool.pen)];
+      expect(first, everyElement(isNotNull));
+      final count = rasterised;
+
+      // Frames reuse the tiles.
+      for (var i = 0; i < 3; i++) {
+        controller.repaint.value++;
+        await tester.pump();
+      }
+      expect(rasterised, count);
 
       controller.annotations.apply(
         UpdateAnnotation(before: ink, after: ink.copyWith(color: 0xFF0000)),
       );
-      await tester.pump();
-      final changed = controller.inkTile(tile, InkTool.pen);
-      expect(changed, isNotNull);
-      expect(changed, isNot(same(first)));
+      await _settle(tester);
+      for (final (i, t) in tiles.indexed) {
+        final changed = controller.inkTile(t, InkTool.pen);
+        expect(changed, isNotNull);
+        expect(changed, isNot(same(first[i])));
+      }
+    });
+
+    testWidgets('ink shows as vectors while its tiles rasterise', (
+      tester,
+    ) async {
+      final page = _page(0, const PdfPoint(0, 0));
+      final never = Completer<ui.Image>();
+      final controller = await _show(
+        tester,
+        page.page,
+        annotations: [_ink(page.bottomRight)],
+        rasterizer: (p, w, h) => never.future,
+      );
+      expect(
+        controller
+            .visibleTiles(0)
+            .map((t) => controller.inkTile(t, InkTool.pen)),
+        everyElement(isNull),
+      );
+      final ink = _at(controller, await _pixels(tester), page.bottomRight);
+      expect(ink.r + ink.g + ink.b, lessThan(60), reason: '$ink');
+    });
+
+    testWidgets('ink tiles stay within the image budget', (tester) async {
+      final page = _page(0, const PdfPoint(0, 0));
+      final controller = await _show(
+        tester,
+        page.page,
+        // Room for what is on screen only.
+        cacheBudgetBytes: 1,
+      );
+      controller.zoomTo(2);
+      await _settle(tester);
+      // Ink over the whole page, added once every page tile has loaded:
+      // its tiles, on screen and one screen ahead, come last.
+      const whole = PdfRect(0, 0, 400, 600);
+      controller.annotations.apply(
+        AddAnnotations([
+          InkAnnotation(
+            id: DoxaMarker.newId(),
+            pageIndex: 0,
+            strokes: [
+              for (var y = 20.0; y < 600; y += 40)
+                InkStroke([PdfPoint(whole.left, y), PdfPoint(whole.right, y)]),
+            ],
+            width: 30,
+            byDoxa: true,
+          ),
+        ]),
+      );
+      await _settle(tester);
+      expect(controller.cache.keys.toSet(), controller.visibleKeys());
     });
 
     testWidgets('the live stroke shows on its layer and goes', (tester) async {
