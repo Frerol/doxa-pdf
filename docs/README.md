@@ -49,6 +49,7 @@ The short form of both, and the rules for coding agents, are in [AGENTS.md](../A
 | [0010](adr/0010-dictionary-downloads-in-app.md) | Dictionary packs downloaded in the app on request (amends 0009) | Accepted |
 | [0011](adr/0011-lucide-icons.md) | Lucide as the app icon set | Accepted |
 | [0012](adr/0012-filled-favourite-star.md) | Filled Lucide star for favourites | Accepted |
+| [0013](adr/0013-annotation-journal-and-autosave.md) | Annotation journal and autosave | Proposed |
 
 New ADRs start from [the template](adr/0000-template.md).
 
