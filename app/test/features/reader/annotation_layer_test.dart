@@ -333,6 +333,43 @@ void main() {
       expect(ink.r + ink.g + ink.b, lessThan(60), reason: '$ink');
     });
 
+    testWidgets('a pinch rasterises no ink tile until the fingers lift', (
+      tester,
+    ) async {
+      final page = _page(0, const PdfPoint(0, 0));
+      var rasterised = 0;
+      final controller = await _show(
+        tester,
+        page.page,
+        annotations: [_ink(page.bottomRight)],
+        rasterizer: (p, w, h) async {
+          rasterised++;
+          return p.toImageSync(w, h);
+        },
+      );
+      final before = rasterised;
+      controller.pinching = true;
+      for (final zoom in [1.5, 2.2, 3.1]) {
+        controller.zoomTo(zoom);
+        await tester.pump();
+      }
+      await controller.reveal(0, page.bottomRight);
+      await _settle(tester);
+      expect(rasterised, before);
+      expect(controller.inkStandIns(0, InkTool.pen), isNotEmpty);
+
+      controller.pinching = false;
+      await _settle(tester);
+      expect(rasterised, greaterThan(before));
+      expect(
+        controller
+            .visibleTiles(0)
+            .where((t) => controller.inksOn(t, InkTool.pen).isNotEmpty)
+            .map((t) => controller.inkTile(t, InkTool.pen)),
+        everyElement(isNotNull),
+      );
+    });
+
     testWidgets('the live stroke shows on its layer and goes', (tester) async {
       final page = _page(0, const PdfPoint(0, 0));
       final controller = await _show(tester, page.page);

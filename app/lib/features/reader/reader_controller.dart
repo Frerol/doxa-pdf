@@ -306,6 +306,18 @@ final class ReaderController {
     return _fitView(currentSpread).zoom.clamp(minZoom, maxZoom);
   }
 
+  bool _pinching = false;
+
+  /// Whether fingers are zooming now. Meanwhile no ink tile rasterises:
+  /// that work shares the raster thread with the frames, and the zoom
+  /// level keeps changing, so images stand in until the fingers lift.
+  bool get pinching => _pinching;
+  set pinching(bool value) {
+    if (_pinching == value) return;
+    _pinching = value;
+    if (!value) _ensureInk();
+  }
+
   /// Sets the zoom so that [documentPoint] stays under [screenPoint]. At
   /// [lowestZoom] the view goes back to the fit of the current page.
   void zoomAround(double zoom, Offset documentPoint, Offset screenPoint) {
@@ -535,7 +547,7 @@ final class ReaderController {
   /// of its pages first, then its tiles (the screen first, then one screen
   /// ahead).
   void _ensureInk() {
-    if (_disposed || _renderingSuspended) return;
+    if (_disposed || _renderingSuspended || _pinching) return;
     final layout = _layout;
     if (layout == null) return;
     for (final page in {for (final tile in _inkWanted) tile.page}) {
