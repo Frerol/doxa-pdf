@@ -463,6 +463,11 @@ class _ReaderViewState extends State<ReaderView>
   }
 }
 
+/// How many times ink was drawn as vectors because no image could stand
+/// in for missing tiles; for tests.
+@visibleForTesting
+int debugInkVectorPasses = 0;
+
 /// Paints the visible pages: a white sheet, the preview, then the tiles of
 /// the current zoom bucket on top.
 class ReaderPainter extends CustomPainter {
@@ -581,14 +586,29 @@ class ReaderPainter extends CustomPainter {
         vectors.addAll(inks);
       }
       if (vectors.isEmpty) continue;
-      // Until its tiles are rasterised, ink draws as vectors there.
+      // Until its tiles are rasterised, the page's ink preview and tiles
+      // of other zoom levels stand in, a little soft for a moment; only
+      // without any does ink draw as vectors there.
+      final standIns = controller.inkStandIns(page, tool);
       canvas
         ..save()
         ..clipPath(missing)
-        ..saveLayer(missing.getBounds(), paint)
-        ..transform(matrix);
-      for (final ink in vectors) {
-        canvas.drawPath(inkPath(ink), inkPaint(ink));
+        ..saveLayer(missing.getBounds(), paint);
+      if (standIns.isEmpty) {
+        debugInkVectorPasses++;
+        canvas.transform(matrix);
+        for (final ink in vectors) {
+          canvas.drawPath(inkPath(ink), inkPaint(ink));
+        }
+      } else {
+        // Each image replaces what is under it, so ink with alpha is not
+        // laid down twice.
+        final replace = Paint()
+          ..filterQuality = FilterQuality.low
+          ..blendMode = BlendMode.src;
+        for (final (i, (image, destination)) in standIns.indexed) {
+          _draw(canvas, image, destination, i == 0 ? normal : replace);
+        }
       }
       canvas
         ..restore()

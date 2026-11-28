@@ -300,6 +300,39 @@ void main() {
       expect(controller.cache.keys.toSet(), controller.visibleKeys());
     });
 
+    testWidgets('while a new zoom level rasterises, images stand in for '
+        'its ink tiles, not vectors', (tester) async {
+      final page = _page(0, const PdfPoint(0, 0));
+      var held = false;
+      final controller = await _show(
+        tester,
+        page.page,
+        annotations: [_ink(page.bottomRight)],
+        rasterizer: (p, w, h) =>
+            held ? Completer<ui.Image>().future : _syncRasterizer(p, w, h),
+      );
+      held = true;
+      controller.zoomTo(2);
+      await controller.reveal(0, page.bottomRight);
+      await _settle(tester);
+      final tiles = controller
+          .visibleTiles(0)
+          .where((t) => controller.inksOn(t, InkTool.pen).isNotEmpty);
+      expect(tiles, isNotEmpty);
+      expect(
+        tiles.map((t) => controller.inkTile(t, InkTool.pen)),
+        everyElement(isNull),
+      );
+      expect(controller.inkStandIns(0, InkTool.pen), isNotEmpty);
+
+      debugInkVectorPasses = 0;
+      controller.repaint.value++;
+      await tester.pump();
+      expect(debugInkVectorPasses, 0);
+      final ink = _at(controller, await _pixels(tester), page.bottomRight);
+      expect(ink.r + ink.g + ink.b, lessThan(60), reason: '$ink');
+    });
+
     testWidgets('the live stroke shows on its layer and goes', (tester) async {
       final page = _page(0, const PdfPoint(0, 0));
       final controller = await _show(tester, page.page);
